@@ -24,3 +24,16 @@ todo:
 * Setup ESP-IDF toolchain according to [http://esp-idf.readthedocs.io/en/latest/](http://esp-idf.readthedocs.io/en/latest/)
 * run `make menuconfig` and adjust serial port 
 * the partition table `partitions.csv`setup assumes that the ESP32 has at least 4MB flash available, so that their is a remaining of 896MB flash for SPIFFS data area
+
+## hardware
+
+![gong speaker-box][gong.jpg]
+
+
+![speaker-box with sparkfun thing][wiring.jpg]
+
+
+* SparkFun thing
+* Adafruit MAX98357A
+* Standard 3" speaker
+* 3D printed case - [Fusion 360 model](http://a360.co/2oedo4p)
