@@ -27,13 +27,14 @@ todo:
 
 ## hardware
 
-![gong speaker-box][gong.jpg]
-
-
-![speaker-box with sparkfun thing][wiring.jpg]
-
-
 * SparkFun thing
 * Adafruit MAX98357A
 * Standard 3" speaker
 * 3D printed case - [Fusion 360 model](http://a360.co/2oedo4p)
+
+![gong speaker-box](gong.jpg)
+
+
+![speaker-box with sparkfun thing](wiring.jpg)
+
+
