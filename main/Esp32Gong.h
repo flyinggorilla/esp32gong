@@ -17,7 +17,8 @@ public:
 	void Start();
 
 	void TaskWebServer();
-	void TaskDisplay();
+	void TaskResetButton();
+	void TaskDnsServer();
 
 	void IndicateApiCall() 	{ mbApiCallReceived = true; };
 

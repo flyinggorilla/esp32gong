@@ -21,6 +21,7 @@
 #include "WebServer.hpp"
 #include "Wifi.hpp"
 #include "Config.hpp"
+#include "DnsSrv.hpp"
 
 #define ONBOARDLED_GPIO GPIO_NUM_5  // GPIO5 on Sparkfun ESP32 Thing
 #define LOGTAG "main"
@@ -31,6 +32,7 @@ Esp32Gong esp32gong;
 SpiffsFileSystem spiffsFileSystem;
 Wifi wifi;
 Config config;
+DnsSrv dnsServer;
 
 // Wav* wav = NULL;
 Esp32Gong::Esp32Gong() {
@@ -58,8 +60,13 @@ void task_function_webserver(void *pvParameter) {
 	vTaskDelete(NULL);
 }
 
-void task_function_display(void *pvParameter) {
-	((Esp32Gong*) pvParameter)->TaskDisplay();
+void task_function_resetbutton(void *pvParameter) {
+	((Esp32Gong*) pvParameter)->TaskResetButton();
+	vTaskDelete(NULL);
+}
+
+void task_function_dnsserver(void *pvParameter) {
+	((Esp32Gong*) pvParameter)->TaskDnsServer();
 	vTaskDelete(NULL);
 }
 
@@ -84,7 +91,7 @@ void Esp32Gong::Start() {
 	gpio_set_direction((gpio_num_t) ONBOARDLED_GPIO, (gpio_mode_t) GPIO_MODE_OUTPUT);
 
 	xTaskCreate(&task_function_webserver, "Task_WebServer", 4096, this, 5, NULL);
-	xTaskCreate(&task_function_display, "Task_LED", 4096, this, 5, NULL);
+	xTaskCreate(&task_function_resetbutton, "Task_ResetButton", 4096, this, 5, NULL);
 
 	if (config.mbAPMode) {
 		if (config.muLastSTAIpAddress) {
@@ -99,6 +106,7 @@ void Esp32Gong::Start() {
 		else
 			wifi.StartSTAMode(config.msSTASsid, config.msSTAPass);
 	}
+	xTaskCreate(&task_function_dnsserver, "Task_DnsServer", 16000, this, 5, NULL);
 
 	//TODO
 	//wifi.StartMDNS();
@@ -109,7 +117,11 @@ void Esp32Gong::TaskWebServer() {
 	webServer.start();
 }
 
-void Esp32Gong::TaskDisplay() {
+void Esp32Gong::TaskDnsServer() {
+	dnsServer.start();
+}
+
+void Esp32Gong::TaskResetButton() {
 	int level = 0;
 	int ticks = 0;
 

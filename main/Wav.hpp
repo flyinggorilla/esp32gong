@@ -11,6 +11,9 @@
 #ifndef MAIN_WAV_H_
 #define MAIN_WAV_H_
 
+/*
+ * @brief Wav class takes a pointer to a Wav file bytearray in memory or on flash program area.
+ */
 class Wav {
 public:
 	Wav();
@@ -42,7 +45,7 @@ public:
 	/*
 	 * @brief get next sample
 	 *
-	 * @param	sample : pointer to 32bit sample storage
+	 * @param	sample : pointer to 32bit sample storage -- mono audio data sample will be written here
 	 *
 	 * @return
 	 * 	- false: end of WAV is reached
@@ -60,6 +63,17 @@ public:
 	 */
 	bool isInitialized() { return initialized; }
 
+	/*
+	 * return   1 for mono
+	 * 			2 for stereo
+	 */
+	unsigned short getChannelCount() { return channels; }
+
+	/*
+	 * return bytes of actual wav audio data, without headers
+	 */
+	unsigned int getPayloadSize() { return wavdatasize; }
+
 private:
 	unsigned int wavpointer = 0;
 	unsigned int wavdatapointer = 0;
@@ -67,6 +81,7 @@ private:
 
 	uint16_t audioSample = 0;
 
+	unsigned short channels = 0;
 	unsigned int audioSampleRate = 0;
 	unsigned int bitsPerSample = 0;
 	const char* wavdata = NULL;

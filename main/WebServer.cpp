@@ -255,6 +255,7 @@ void HttpRequestHandler(struct mg_connection *nc, int ev, void *evData) {
 		char *uri = WebServer::mgStrToStr(message->uri);
 		char* query = WebServer::mgStrToStr(message->query_string);
 
+
 		UrlParser up;
 		up.parseQuery(query);
 
@@ -279,7 +280,36 @@ void HttpRequestHandler(struct mg_connection *nc, int ev, void *evData) {
 		} else if (strcmp(uri, "/fonts/material-design-icons.eot") == 0) {   // woff
 			mg_send_head(nc, 200, sizeof(fonteot_h), http_font_hdr);
 			mg_send(nc, fonteot_h, sizeof(fonteot_h));
+		} else if (strcmp(uri, "/connecttest.txt") ==0) {
+			const char* response = "Microsoft Connect Test";
+			const static char http_msft_hdr[] = "Content-type: text/plain";
+			mg_send_head(nc, 200, strlen(response), http_msft_hdr);
+			mg_send(nc, response, strlen(response));
+			ESP_LOGI(LOGTAG, "microsoft connecttest captive");
+		} else if (strcmp(uri, "/ncsi.txt") ==0) {
+			const char* response = "Microsoft NCSI";
+			response = "<html> <head> <title>Network Authentication Required</title> "
+								"<meta http-equiv=\"refresh\" content=\"5; url=http://192.168.4.1/captive\"> "
+								"</head> <body> <p>You need to <a href=\"http://192.168.4.1/captive\">"
+								"authenticate with the local network</a> in order to gain access.</p> </body> </html>";
+			const static char http_msft_hdr[] = "Content-type: text/plain";
+			mg_send_head(nc, 511, strlen(response), http_msft_hdr);
+			mg_send(nc, response, strlen(response));
+			ESP_LOGI(LOGTAG, "microsoft captive");
+		/*} else if (strcmp(uri, "/") == 0) {
+			const char* response = "<html> <head> <title>Network Authentication Required</title> "
+					"<meta http-equiv=\"refresh\" content=\"5; url=http://192.168.4.1/captive\"> "
+					"</head> <body> <p>You need to <a href=\"http://192.168.4.1/captive\">"
+					"authenticate with the local network</a> in order to gain access.</p> </body> </html>";
+			const static char http_captive_hdr[] = "Content-type: text/html";
+			mg_send_head(nc, 511, strlen(response), http_captive_hdr);
+			mg_send(nc, response, strlen(response));
+			ESP_LOGI(LOGTAG, "captive redirect");*/
 		} else if (strcmp(uri, "/") == 0) {
+			mg_send_head(nc, 200, sizeof(indexhtml_h), http_htmlgzip_hdr);
+			mg_send(nc, indexhtml_h, sizeof(indexhtml_h));
+			ESP_LOGI(LOGTAG, "homepage");
+		} else if (strcmp(uri, "/captive") == 0) {
 			mg_send_head(nc, 200, sizeof(indexhtml_h), http_htmlgzip_hdr);
 			mg_send(nc, indexhtml_h, sizeof(indexhtml_h));
 			ESP_LOGI(LOGTAG, "homepage");
@@ -338,6 +368,13 @@ void HttpRequestHandler(struct mg_connection *nc, int ev, void *evData) {
 			mg_send(nc, response, strlen(response));
 
 		} else {
+			const char* response = "<html> <head> <title>Network Authentication Required</title> "
+								"<meta http-equiv=\"refresh\" content=\"5; url=http://192.168.4.1/captive\"> "
+								"</head> <body> <p>You need to <a href=\"http://192.168.4.1/captive\">"
+								"authenticate with the local network</a> in order to gain access.</p> </body> </html>";
+			const static char http_msft_hdr[] = "Content-type: text/plain\r\nLocation: http://192.168.4.1/captive";
+			mg_send_head(nc, 511, strlen(response), http_msft_hdr);
+			mg_send(nc, response, strlen(response));
 			ESP_LOGI(LOGTAG, "unknown URI");
 		}
 

@@ -12,6 +12,7 @@ main/fonteot.h
 main/indexhtml.h
 main/wavdata.h
 sdkconfig.old
+parked
 
 
 
@@ -62,3 +63,4 @@ $RECYCLE.BIN/
 Network Trash Folder
 Temporary Items
 .apdisk
+.settings/language.settings.xml

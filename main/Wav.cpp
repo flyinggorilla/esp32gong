@@ -22,12 +22,7 @@
 
 
 
-/*
- * @brief Wav class takes a pointer to a Wav file bytearray in memory or on flash.
- *
- * @param const char wavdata[] input data
- * @param size of wavdata[] array
- */
+
 Wav::Wav() {
 
 
@@ -91,10 +86,11 @@ bool Wav::init(const char* wavdata, unsigned int size) {
       return false;
     }
 
-    // read NumChannels
+    // read NumChannels --- accept only mono files for now
     uint16buf = (uint16_t*)&wavdata[wavpointer];
     wavpointer+=sizeof(uint16_t);
-    if (*uint16buf != 1  ) {
+    channels = *uint16buf;
+    if (channels != 1  ) {
       ESP_LOGE(LOGTAG, "Too many channels. Only MONO files accepted. No Stereo.");
       return false;
     }
