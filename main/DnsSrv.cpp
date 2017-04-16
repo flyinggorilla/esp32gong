@@ -42,29 +42,14 @@ void DnsSrv::EventHandler(struct mg_connection *nc, int ev, void *ev_data) {
 			char rname[512];
 			rr = &msg->questions[i];
 			mg_dns_uncompress_name(msg, &rr->name, rname, sizeof(rname) - 1);
-			ESP_LOGI(LOGTAG, "Q type %d name %s", rr->rtype, rname);
+			ESP_LOGI(LOGTAG, "DNS Query type %d name %s", rr->rtype, rname);
 			in_addr_t iaddr;
-			if (strcmp(rname, " www.msftconnecttest.com") == 0) {
-				//iaddr = inet_addr("131.107.255.255");
-				ESP_LOGI(LOGTAG, "detected microsoft DNS request - returning 131.107.255.255")
-			} else if (strcmp(rname, "dns.msftncsi.com") == 0) {
-				//iaddr = inet_addr("131.107.255.255");
-				ESP_LOGI(LOGTAG, "detected microsoft DNS request - returning 131.107.255.255")
-			} else {
-				iaddr = inet_addr("192.168.4.1");
-				if (rr->rtype == MG_DNS_A_RECORD) {
-					mg_dns_reply_record(&reply, rr, NULL, rr->rtype, 10, &iaddr, sizeof(in_addr_t));
-				}
+
+			iaddr = inet_addr("192.168.4.1");
+			if (rr->rtype == MG_DNS_A_RECORD) {
+				mg_dns_reply_record(&reply, rr, NULL, rr->rtype, 10, &iaddr, sizeof(in_addr_t));
 			}
-
 		}
-
-		/*
-		 * We don't set the error flag even if there were no answers
-		 * matching the MG_DNS_A_RECORD query type.
-		 * This indicates that we have (synthetic) answers for MG_DNS_A_RECORD.
-		 * See http://goo.gl/QWvufr for a distinction between NXDOMAIN and NODATA.
-		 */
 
 		mg_dns_send_reply(nc, &reply);
 		nc->flags |= MG_F_SEND_AND_CLOSE;

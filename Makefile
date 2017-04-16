@@ -5,24 +5,26 @@
 
 PROJECT_NAME := esp32gong
 
+flash: all
+
 all: main/indexhtml.h main/fontttf.h main/fontsvg.h main/fonteot.h main/fontwoff.h main/wavdata.h 
 
-main/indexhtml.h: 
+main/indexhtml.h: data/index.html
 	python data2h.py data/index.html main/indexhtml.h
 
-main/fontttf.h: 
+main/fontttf.h: data/material-design-icons.ttf
 	python data2h.py data/material-design-icons.ttf main/fontttf.h
 	
-main/fontwoff.h: 
+main/fontwoff.h: data/material-design-icons.woff
 	python data2h.py data/material-design-icons.woff main/fontwoff.h
 	
-main/fontsvg.h: 
+main/fontsvg.h: data/material-design-icons.svg
 	python data2h.py data/material-design-icons.svg main/fontsvg.h
 
-main/fonteot.h: 
+main/fonteot.h: data/material-design-icons.eot
 	python data2h.py data/material-design-icons.eot main/fonteot.h
 
-main/wavdata.h: 
+main/wavdata.h: data/gong.wav
 	python data2h.py data/gong.wav main/wavdata.h
 
 include $(IDF_PATH)/make/project.mk

@@ -76,9 +76,9 @@ void Esp32Gong::Start() {
 
 	ESP_LOGI(LOGTAG, "Welcome to Bernd's ESP32 Gong");
 
-	/*musicPlayer.init();
-	 musicPlayer.prepareWav(wavdata_h, sizeof(wavdata_h));
-	 musicPlayer.playAsync();*/
+	musicPlayer.init();
+	musicPlayer.prepareWav(wavdata_h, sizeof(wavdata_h));
+	//musicPlayer.playAsync();
 
 	mbButtonPressed = !gpio_get_level(GPIO_NUM_0);
 	config.Read();
@@ -100,13 +100,16 @@ void Esp32Gong::Start() {
 			ESP_LOGD(LOGTAG, "Last IP when connected to AP: %d : %s", config.muLastSTAIpAddress, sBuf);
 		}
 		wifi.StartAPMode(config.msAPSsid, config.msAPPass);
+
+		// start DNS server to always redirect any domain to 192.168.4.1
+		xTaskCreate(&task_function_dnsserver, "Task_DnsServer", 16000, this, 5, NULL);
 	} else {
 		if (config.msSTAENTUser.length())
 			wifi.StartSTAModeEnterprise(config.msSTASsid, config.msSTAENTUser, config.msSTAPass, config.msSTAENTCA);
 		else
 			wifi.StartSTAMode(config.msSTASsid, config.msSTAPass);
 	}
-	xTaskCreate(&task_function_dnsserver, "Task_DnsServer", 16000, this, 5, NULL);
+
 
 	//TODO
 	//wifi.StartMDNS();
