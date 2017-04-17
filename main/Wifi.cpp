@@ -15,7 +15,7 @@
 #include <string.h>
 #include <tcpip_adapter.h>
 #include <cstdio>
-#include <sys/socket.h>
+//#include <sys/socket.h>
 #include "../../esp-idf/components/lwip/include/lwip/lwip/dns.h" //ODD INCLUSION DUE TO ECLIPSE
 #include "../../esp-idf/components/lwip/include/lwip/lwip/netdb.h" //ODD INCLUSION DUE TO ECLIPSE
 #include "../../esp-idf/components/lwip/include/lwip/lwip/sockets.h" //ODD INCLUSION DUE TO ECLIPSE
@@ -23,7 +23,7 @@
 
 struct in_addr;
 
-static char LOGTAG[] = "Wifi";
+static const char LOGTAG[] = "Wifi";
 
 Wifi::Wifi() {
 	muConnectedClients = 0;
@@ -56,23 +56,26 @@ void Wifi::GetMac(__uint8_t uMac[6]) {
 	esp_wifi_get_mac(ESP_IF_WIFI_STA, uMac);
 }
 
-void Wifi::StartAPMode(std::string& rsSsid, std::string& rsPass) {
+void Wifi::StartAPMode(std::string& rsSsid, std::string& rsPass, std::string& rsHostname) {
 	msSsid = rsSsid;
 	msPass = rsPass;
+	msHostname = rsHostname;
 	StartAP();
 }
 
-void Wifi::StartSTAMode(std::string& rsSsid, std::string& rsPass) {
+void Wifi::StartSTAMode(std::string& rsSsid, std::string& rsPass, std::string& rsHostname) {
 	msSsid = rsSsid;
 	msPass = rsPass;
+	msHostname = rsHostname;
 	Connect();
 }
 
-void Wifi::StartSTAModeEnterprise(std::string& rsSsid, std::string& rsUser, std::string& rsPass, std::string& rsCA) {
+void Wifi::StartSTAModeEnterprise(std::string& rsSsid, std::string& rsUser, std::string& rsPass, std::string& rsCA, std::string& rsHostname) {
 	msSsid = rsSsid;
 	msUser = rsUser;
 	msPass = rsPass;
 	msCA = rsCA;
+	msHostname = rsHostname;
 	Connect();
 }
 
@@ -111,6 +114,8 @@ void Wifi::Connect() {
 	}
 
 	esp_wifi_start();
+	ESP_LOGI(LOGTAG, "SETTING HOSTNAME: %s", msHostname.c_str() == NULL ? "NULL" : msHostname.c_str());
+	ESP_ERROR_CHECK(tcpip_adapter_set_hostname(TCPIP_ADAPTER_IF_STA, msHostname.c_str()));
 	esp_wifi_connect();
 }
 
@@ -124,9 +129,10 @@ bool Wifi::waitForConnection(unsigned int timeoutSecs) {
 }
 
 void Wifi::StartAP() {
-	ESP_LOGD(LOGTAG, "  StartAP(<%s>)", msSsid.data());
+	ESP_LOGI(LOGTAG, "Starting AP: SSID=%s", msSsid.data());
 	nvs_flash_init();
 	tcpip_adapter_init();
+
 	esp_event_loop_init(eventHandler, this);
 	wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT()
 	;
@@ -254,7 +260,7 @@ void task_function_mdns(void *pvParameter) {
 }
 
 bool Wifi::StartMDNS() {
-	xTaskCreate(&task_function_mdns, "mdns_task", 2048, this, 5, NULL);
+	xTaskCreate(&task_function_mdns, "mdns_task", 4096, this, 5, NULL);
 	return true;
 }
 
@@ -279,9 +285,10 @@ void Wifi::TaskMDNS() {
 	const char * testTxtData[4] = { "board=esp32", "tcp_check=dummy-test", "ssh_upload=no", "auth_upload=no" };
 
 	//service types http://agnat.github.io/node_mdns/user_guide.html
-	ESP_ERROR_CHECK(mdns_service_instance_set(mdns, "_http", "_tcp", "ESP32 WebServer"));
-	ESP_ERROR_CHECK(mdns_service_txt_set(mdns, "_esp32gong", "_txt", 4, testTxtData));
 	ESP_ERROR_CHECK(mdns_service_add(mdns, "_http", "_tcp", 80));
 	ESP_ERROR_CHECK(mdns_service_add(mdns, "_https", "_tcp", 443));
+	ESP_ERROR_CHECK(mdns_service_instance_set(mdns, "_http", "_tcp", "ESP32 WebServer"));
+	ESP_ERROR_CHECK(mdns_service_txt_set(mdns, "_esp32gong", "_txt", 4, testTxtData));
+
 }
 

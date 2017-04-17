@@ -12,6 +12,7 @@
 Config::Config() {
 	mbAPMode = true;
 	msAPSsid = "ESP32GONG";
+	msHostname = "ESP32GONG";
 
 	msSTASsid = "";
 	msSTAPass = "";
@@ -37,6 +38,7 @@ bool Config::Read(){
 	ReadString(h, "STAPass", msSTAPass);
 	ReadString(h, "STAENTUser", msSTAENTUser);
 	ReadString(h, "STAENTCA", msSTAENTCA);
+	ReadString(h, "hostname", msHostname);
 
 	nvs_close(h);
 	return true;
@@ -57,6 +59,8 @@ bool Config::Write()
 	if (!WriteString(h, "APSsid", msAPSsid))
 		return nvs_close(h), false;
 	if (!WriteString(h, "APPass", msAPPass))
+		return nvs_close(h), false;
+	if (!WriteString(h, "hostname", msHostname))
 		return nvs_close(h), false;
 	if (!WriteString(h, "STASsid", msSTASsid))
 		return nvs_close(h), false;

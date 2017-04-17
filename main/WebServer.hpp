@@ -22,6 +22,10 @@ public:
 	static char* createInfoJson();
 	static const char* mgEventToString(int ev);
 	static char* mgStrToStr(struct mg_str mgStr);
+	void Restart(int seconds);
+
+private:
+
 };
 
 #endif /* MAIN_WEBSERVER_HPP_ */

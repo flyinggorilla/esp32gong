@@ -45,7 +45,7 @@ void DnsSrv::EventHandler(struct mg_connection *nc, int ev, void *ev_data) {
 			ESP_LOGI(LOGTAG, "DNS Query type %d name %s", rr->rtype, rname);
 			in_addr_t iaddr;
 
-			iaddr = inet_addr("192.168.4.1");
+			iaddr = inet_addr("192.168.4.1"); //default ESP32 AP IP Address
 			if (rr->rtype == MG_DNS_A_RECORD) {
 				mg_dns_reply_record(&reply, rr, NULL, rr->rtype, 10, &iaddr, sizeof(in_addr_t));
 			}
@@ -62,8 +62,6 @@ void DnsSrv::EventHandler(struct mg_connection *nc, int ev, void *ev_data) {
 void DnsSrv::start() {
 	struct mg_mgr mgr;
 	struct mg_connection *nc;
-
-	s_our_ip_addr = inet_addr("127.0.0.1");
 
 	mg_mgr_init(&mgr, this);
 	ESP_LOGI(LOGTAG, "binding DNS server");

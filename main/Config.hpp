@@ -29,6 +29,7 @@ public:
 	std::string msSTAPass;
 	std::string msSTAENTUser;
 	std::string msSTAENTCA;
+	std::string msHostname;
 	__uint32_t muLastSTAIpAddress;
 };
 

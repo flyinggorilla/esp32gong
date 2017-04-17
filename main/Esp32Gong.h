@@ -8,6 +8,7 @@
 #ifndef MAIN_ESP32GONG_H_
 #define MAIN_ESP32GONG_H_
 
+#define FIRMWARE_VERSION __DATE__ " " __TIME__
 
 class Esp32Gong {
 public:

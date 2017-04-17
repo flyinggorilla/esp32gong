@@ -134,21 +134,28 @@
 				<ul style="color:dimgrey">
 					<b>Welcome to Bernds Gong</b><br/>Firmware version: <span id="firmwareversion">---</span>
 					<p/><br/>
-						<span style="color:dimgrey">Please configure the Wifi settings of your WIFIGONG first. In order to access the WIFIGONG AFTER submitting the Wifi settings, you may do the following:</span>
-						<li>Option 1: Open Windows file explorer and click on "Network" to display all devices that are discovered through SSDP.
-						</li>
-						<li>Option 2: by default the WIFIGONG registers with hostname <b id="hostname">---</b> at you access point. so try <span id="wifigongurl">http://hostname</span>:
-							TODO: add auto-redirect to URL.
-						</li>
-						<li>Option 3: Remember your MAC address <b><span id="macaddress">---</span></b>
-						as you may want to lookup the IP address
-							in your Wifi Accesspoint.</li>
+					<span style="color:dimgrey">Please configure the Wifi settings of your WIFIGONG first. In order to access the WIFIGONG AFTER submitting the Wifi settings, you may do the following:</span>
+					<li>Option 1: Open Windows file explorer and click on "Network" to display all devices that are discovered through SSDP.
+					</li>
+					<li>Option 2: by default the WIFIGONG registers with hostname <b id="hostname">---</b> at you access point. so try <span id="wifigongurl">http://hostname</span>:
+						TODO: add auto-redirect to URL.
+					</li>
+					<li>Option 3: Remember your MAC address <b><span id="macaddress">---</span></b> as you may want to lookup the IP address in
+						your Wifi Accesspoint.</li>
+
+					<li>Option 4: After a successful connection to the Wifi switch back to Access Point mode (push the button) and look at the
+						info section for the latest IP adress retrieved by DHCP.
+					</li>
+							<!-- no SSDP available right now  
+												<li>Option 3: Open Windows file explorer and click on "Network" to display all devices that are discovered through SSDP.
+												</li>		-->
 				</ul>
 
-				<form method='GET' action='/api'>
+				<form method='GET' action='/config'>
 					<div class="padded-full">
 						<input type="text" name="ssid" placeholder="SSID" id="ssid" />
 						<input type="password" name="pwd" placeholder="*************" id="wifipwd" />
+						<input type="text" name="hostname" placeholder="default=esp32gong" id="hostname" />
 					</div>
 					<div class="padded-full">
 						<button class="btn btn-submit fit-parent primary" type="submit">Apply WIFI settings and reboot.</button>

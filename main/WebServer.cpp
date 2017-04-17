@@ -8,6 +8,7 @@
 #include "sdkconfig.h"
 
 #include "WebServer.hpp"
+#include "Esp32Gong.h"
 
 #include "esp_event.h"
 #include <esp_event_loop.h>
@@ -51,7 +52,6 @@ WebServer::~WebServer() {
 }
 
 #define LOGTAG "webserver"
-#define FIRMWARE_VERSION __DATE__ " " __TIME__
 
 char* json_unformatted;
 
@@ -78,7 +78,7 @@ char* WebServer::createInfoJson() {
 
 	cJSON_AddStringToObject(json, "esp-idf", esp_get_idf_version());
 	cJSON_AddNumberToObject(json, "heap", esp_get_free_heap_size());
-	cJSON_AddStringToObject(json, "ssid", "n/a");
+	cJSON_AddStringToObject(json, "ssid", config.msSTASsid.c_str());
 
 	tcpip_adapter_ip_info_t ip_info;
 	ESP_ERROR_CHECK(tcpip_adapter_get_ip_info(TCPIP_ADAPTER_IF_STA, &ip_info));
@@ -90,11 +90,26 @@ char* WebServer::createInfoJson() {
 	cJSON_AddStringToObject(json, "ipsubnetmask", sbuf);
 	sprintf(sbuf, IPSTR, IP2STR(&ip_info.gw));
 	cJSON_AddStringToObject(json, "ipdns", sbuf);
-	cJSON_AddStringToObject(json, "hostname", "n/a");
-	cJSON_AddStringToObject(json, "macaddress", "n/a");
-	cJSON_AddStringToObject(json, "apipaddress", "n/a");
-	cJSON_AddStringToObject(json, "apconnectedstations", "n/a");
-	cJSON_AddStringToObject(json, "wifiautoconnect", "n/a");
+	cJSON_AddStringToObject(json, "hostname", config.msHostname.c_str());
+	uint8_t mac[6];
+	ESP_ERROR_CHECK(esp_wifi_get_mac(ESP_IF_WIFI_STA, mac));
+	sprintf(sbuf, "%02X:%02X:%02X:%02X:%02X:%02X", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+	cJSON_AddStringToObject(json, "macaddress", sbuf);
+	ESP_ERROR_CHECK(tcpip_adapter_get_ip_info(TCPIP_ADAPTER_IF_AP, &ip_info));
+	sprintf(sbuf, IPSTR, IP2STR(&ip_info.ip));
+	cJSON_AddStringToObject(json, "apipaddress", sbuf);
+
+	//TODO list only when in AP mode!!!
+	wifi_sta_list_t apstations;
+	if (ESP_OK == esp_wifi_ap_get_sta_list(&apstations)) {
+		sprintf(sbuf, "%i", apstations.num);
+	} else {
+		sprintf(sbuf, "n/a");
+	}
+	cJSON_AddStringToObject(json, "apconnectedstations", sbuf);
+	bool isautoconnect;
+	ESP_ERROR_CHECK(esp_wifi_get_auto_connect(&isautoconnect));
+	cJSON_AddStringToObject(json, "wifiautoconnect", isautoconnect ? "on" : "off");
 	cJSON_AddStringToObject(json, "firmwareversion", FIRMWARE_VERSION);
 
 	return cJSON_PrintUnformatted(json);
@@ -235,10 +250,21 @@ void HttpUploadHandler(struct mg_connection *nc, int event, void *p) {
 	}
 }
 
+void restartTask(void* user_data) {
+	ESP_LOGI(LOGTAG, "Restarting in 2secs....");
+	vTaskDelay(*((int*)user_data)*1000 / portTICK_PERIOD_MS);
+	esp_restart();
+}
+
+void WebServer::Restart(int seconds) {
+	xTaskCreate(&restartTask, "restartTask", 2048, &seconds, 5, NULL);
+}
+
+
 // Mongoose event handler.
 void HttpRequestHandler(struct mg_connection *nc, int ev, void *evData) {
-	int playmusic = 0;
-	bool restart = false;
+
+	WebServer* ws = (WebServer*)nc->user_data;
 
 	switch (ev) {
 	case MG_EV_HTTP_PART_BEGIN:
@@ -248,6 +274,7 @@ void HttpRequestHandler(struct mg_connection *nc, int ev, void *evData) {
 		mg_file_upload_handler(nc, ev, evData, fileUploadHandler);
 		break;
 	case MG_EV_HTTP_REQUEST: {
+
 		struct http_message *message = (struct http_message *) evData;
 
 		char *uri = WebServer::mgStrToStr(message->uri);
@@ -281,19 +308,23 @@ void HttpRequestHandler(struct mg_connection *nc, int ev, void *evData) {
 			mg_send_head(nc, 200, sizeof(indexhtml_h), http_htmlgzip_hdr);
 			mg_send(nc, indexhtml_h, sizeof(indexhtml_h));
 			ESP_LOGI(LOGTAG, "homepage");
-		} else if (strcmp(uri, "/api") == 0) {
+		} else if (strcmp(uri, "/config") == 0) {
 			ESP_LOGI(LOGTAG, "entering api evaluation");
 
 			if (up.isKey("ssid") && up.isKey("pwd")) {
 				std::string ssid(up.getValueOf("ssid"));
 				std::string pwd(up.getValueOf("pwd"));
 				std::string ca(up.isKey("ca") ? up.getValueOf("ca") : "");
-				std::string user(up.isKey("ca") ? up.getValueOf("user") : ""); //
+				std::string user(up.isKey("user") ? up.getValueOf("user") : "");
+				std::string hostname(up.isKey("hostname") ? up.getValueOf("hostname") : "");//
 				ESP_LOGI(LOGTAG, "Setting Wifi credentials user='%s' pass='%s' user='%s' ca='%s'", ssid.c_str(),
 						pwd.c_str(), user.c_str(), ca.c_str());
 				if (!ssid.empty() && !pwd.empty()) {
 					config.msSTASsid = ssid;
 					config.msSTAPass = pwd;
+					if (!hostname.empty()) {
+						config.msHostname = hostname;
+					}
 					if (!user.empty()) {
 						config.msSTAENTUser = user;
 					} else {
@@ -309,18 +340,22 @@ void HttpRequestHandler(struct mg_connection *nc, int ev, void *evData) {
 					config.mbAPMode = false;
 					config.Write();
 					//ESP_LOGI(LOGTAG, "after writing config - apmode %i", (int )config.mbAPMode);
-					restart = true;
-
-					const char* response =
-							"<html><body>New Wifi credentials successfully set! rebooting now.......</html></body>";
-					mg_send_head(nc, 200, strlen(response), http_default_hdr);
+					ws->Restart(2);
+					char header[256];
+					snprintf(header, sizeof(header)-1, "Content-type: text/html\r\nRefresh:10; url=http://%s", config.msHostname.c_str());
+					char response[512];
+					snprintf(response, sizeof(response)-1,
+							"<html><body>New Wifi credentials successfully set! rebooting now....... browser refreshs in 10 seconds to http://%s</html></body>",
+							config.msHostname.c_str());
+					mg_send_head(nc, 200, strlen(response), header);
 					mg_send(nc, response, strlen(response));
+					ESP_LOGI(LOGTAG, "%s", header);
 
 				}
 
 			} else if (up.isKey("gong")) {
+				musicPlayer.playAsync(); // attenuation 0=maxvolume .. 16=maxattenuation
 				const char* response = "<html><body>api call - lets play music</html></body>";
-				playmusic = 1;
 				mg_send_head(nc, 200, strlen(response), http_default_hdr);
 				mg_send(nc, response, strlen(response));
 			} else {
@@ -357,14 +392,7 @@ void HttpRequestHandler(struct mg_connection *nc, int ev, void *evData) {
 	}
 	} // End of switch
 
-	if (restart) {
-		ESP_LOGI(LOGTAG, "Restarting in 2secs....");
-		vTaskDelay(2000 / portTICK_PERIOD_MS);
-		esp_restart();
-	}
-	if (playmusic) {
-		musicPlayer.playAsync(); // attenuation 0=maxvolume .. 16=maxattenuation
-	}
+
 
 } // End of mongoose_event_handler
 
@@ -376,17 +404,17 @@ void webserverTask(void* user_data) {
 	ESP_LOGI(LOGTAG, "Mongoose: Starting setup");
 	mg_mgr_init(&mgr, ws);
 	ESP_LOGI(LOGTAG, "Mongoose: Successfully inited");
-	/*struct mg_bind_opts opts;
+	struct mg_bind_opts opts;
 	 opts.error_string = NULL;
 	 opts.flags = 0;
 	 opts.iface = NULL;
 	 opts.user_data = user_data;
-	 struct mg_connection *nc = mg_bind_opt(&mgr, ":80", HttpRequestHandler, opts);*/
+
 	while (true) {
 		struct mg_connection *nc = NULL;
 		ESP_LOGI(LOGTAG, "Binding Webserver to port 80");
 		while (!nc) {
-			nc = mg_bind(&mgr, ":80", HttpRequestHandler);
+			nc = mg_bind_opt(&mgr, ":80", HttpRequestHandler, opts);
 			if (!nc) {
 				ESP_LOGW(LOGTAG, "Binding Webserver failed, retrying in 5 seconds....");
 				vTaskDelay(5000 / portTICK_PERIOD_MS);
