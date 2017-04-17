@@ -1,12 +1,7 @@
-/*
- * Esp32Gong.h
- *
- *  Created on: 05.04.2017
- *      Author: bernd
- */
+#ifndef MAIN_ESP32GONG_HPP_
+#define MAIN_ESP32GONG_HPP_
 
-#ifndef MAIN_ESP32GONG_H_
-#define MAIN_ESP32GONG_H_
+#include "Config.hpp"
 
 #define FIRMWARE_VERSION __DATE__ " " __TIME__
 
@@ -22,10 +17,13 @@ public:
 	void TaskDnsServer();
 
 	void IndicateApiCall() 	{ mbApiCallReceived = true; };
+	void Restart(int seconds);
+	Config& GetConfig() { return mConfig; }
 
 private:
 	bool mbButtonPressed;
 	bool mbApiCallReceived;
+	Config mConfig;
 
 private:
 
@@ -35,4 +33,4 @@ private:
 
 
 
-#endif /* MAIN_ESP32GONG_H_ */
+#endif /* MAIN_ESP32GONG_HPP_ */

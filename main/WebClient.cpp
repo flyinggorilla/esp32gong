@@ -7,32 +7,44 @@
 
 #include "WebClient.hpp"
 
-#include "esp_log.h"
+#include <esp_log.h>
 #include "sdkconfig.h"
+#include <string.h>
+#include <stdio.h>
+#include <string.h>
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#include "freertos/event_groups.h"
+#include "esp_system.h"
+#include "esp_wifi.h"
+#include "esp_event_loop.h"
+#include "esp_log.h"
+#include "nvs_flash.h"
+#include <netdb.h>
 
-#define LOGTAG "WebClient"
+#include "lwip/err.h"
+#include "lwip/sockets.h"
+#include "lwip/sys.h"
+#include "lwip/netdb.h"
+#include "lwip/dns.h"
+#include "UriParser.hpp"
+
+static const char LOGTAG[] = "WebClient";
 
 WebClient::WebClient() {
-
-	mg_mgr_init(&mgr, this);
 
 }
 
 WebClient::~WebClient() {
-	mg_mgr_free(&mgr);
+
 }
 
 void WebClient::ConnectEvent(int errorcode) {
-	if (errorcode != 0) {
-		ESP_LOGE(LOGTAG, "connect() failed: %s",
-				strerror(errorcode));
-		exit_flag = 1;
-	} else {
-		if (!downloadHandler) {
-			return;
-		}
-		downloadHandler->OnReceiveBegin();
+
+	if (!downloadHandler) {
+		return;
 	}
+	downloadHandler->OnReceiveBegin();
 }
 
 void WebClient::ReceiveEvent(char* data, size_t len) {
@@ -46,19 +58,7 @@ void WebClient::ReceiveEvent(char* data, size_t len) {
 		return;
 	}
 
-	//int received = * ((int*)(ev_data));
-
-
 	downloadHandler->OnReceiveData(data, len); //OR received???
-	/*
-	 MG_EV_RECV: New data is received and appended to the end of recv_mbuf. void *ev_data is int *num_received_bytes. Typically, event handler should check received data in nc->recv_mbuf, discard processed data by calling mbuf_remove(), set connection flags nc->flags if necessary (see struct mg_connection) and write data the remote peer by output functions like mg_send().
-	 WARNING: Mongoose uses realloc() to expand the receive buffer. It is the user's responsibility to discard processed data from the beginning of the receive buffer, note the mbuf_remove() call in the example above.
-
-	 struct mg_connection::recv_mbuf respectively. When data arrives, Mongoose appends received data to the recv_mbuf and triggers an MG_EV_RECV event. The user may send data back by calling one of the output functions, like mg_send() or mg_printf(). Output functions append data to the send_mbuf. When Mongoose successfully writes data to the socket, it discards data from struct mg_connection::send_mbuf and sends an MG_EV_SEND event. When the connection is closed, an MG_EV_CLOSE event is sent.
-
-	 */
-
-
 
 }
 
@@ -75,68 +75,107 @@ void WebClient::CloseEvent() {
 
 void WebClient::ReplyEvent() {
 
-
-}
-
-static void webclientEventHandler(struct mg_connection *nc, int event_id, void *ev_data) {
-	struct http_message *hm = (struct http_message *) ev_data;
-
-	WebClient* wc = (WebClient*) nc->user_data;
-
-	ESP_LOGI(LOGTAG, "event handler: %i", event_id);
-
-	switch (event_id) {
-	case MG_EV_CONNECT:
-		ESP_LOGI(LOGTAG, "event handler: connect");
-		wc->ConnectEvent(*(int *) ev_data);
-		break;
-	case MG_EV_RECV:
-		wc->ReceiveEvent(nc->recv_mbuf.buf, nc->recv_mbuf.len);
-		mbuf_remove(&nc->recv_mbuf, nc->recv_mbuf.len);
-		ESP_LOGI(LOGTAG, "event handler: receive");
-	case MG_EV_HTTP_REPLY:
-		ESP_LOGI(LOGTAG, "event handler: reply");
-		wc->ReplyEvent();
-		nc->flags |= MG_F_CLOSE_IMMEDIATELY;
-		//ESP_LOGI(LOGTAG, "http message: %s", hm->message.p);
-		//ESP_LOGI(LOGTAG, "http body: %s", hm->body.p);
-		break;
-	case MG_EV_CLOSE:
-		ESP_LOGI(LOGTAG, "event handler: close");
-		wc->CloseEvent();
-		break;
-	default:
-		ESP_LOGI(LOGTAG, "event handler: unknown");
-		break;
-	}
 }
 
 bool WebClient::request(const char* url, DownloadHandler* downloadHandler) {
 
-	struct mg_connect_opts opts;
-	memset(&opts, 0, sizeof(opts));
-	opts.user_data = this;
-
-	exit_flag = 0;
 	ESP_LOGI(LOGTAG, "Requesting %s", url);
 	this->downloadHandler = downloadHandler;
-	struct mg_connection* nc = mg_connect_http_opt(&mgr,
-												webclientEventHandler,
-												opts,
-												url,
-												NULL, // extra headers
-												NULL); // post data
 
-	if (nc == NULL) {
-		ESP_LOGE(LOGTAG, "Error connecting!");
+	return HttpGetRequest(url);
+
+	//ESP_LOGE(LOGTAG, "Error connecting - HTTP status code %i", status);
+	//return false;
+}
+
+bool WebClient::HttpGetRequest(const char* url) {
+	struct addrinfo hints;
+    memset( &hints, 0, sizeof( hints ) );
+    hints.ai_family = AF_INET;
+	hints.ai_socktype = SOCK_STREAM;
+
+
+	struct addrinfo *res;
+	struct in_addr *addr;
+	int s, r;
+	char recv_buf[64];
+
+	ESP_LOGI(LOGTAG, "HttpGetRequest: %s", url);
+
+	UriParser uri;
+	if (!uri.parseUrl(url)) {
+		ESP_LOGE(LOGTAG, "Invalid URI %s", url);
 		return false;
 	}
-	ESP_LOGI(LOGTAG, "Polling eventloop!");
+	ESP_LOGI(LOGTAG, "after url parsing: hostname=<%s> path=<%s>", uri.GetHost(), uri.GetPath());
 
-	while (exit_flag == 0) {
-		mg_mgr_poll(&mgr, 1000);
+	char service[6];
+	sprintf(service, "%i", uri.GetPort());
+	int err = getaddrinfo(uri.GetHost(), "80", &hints, &res);
+
+	if (err != 0 || res == NULL) {
+		ESP_LOGE(LOGTAG, "DNS lookup failed err=%d res=%p", err, res);
+		return false;
 	}
 
-	return true; //TODO
+	/* Code to print the resolved IP.
 
+	 Note: inet_ntoa is non-reentrant, look at ipaddr_ntoa_r for "real" code */
+	addr = &((struct sockaddr_in *) res->ai_addr)->sin_addr;
+	ESP_LOGI(LOGTAG, "DNS lookup succeeded. IP=%s", inet_ntoa(*addr));
+
+	s = socket(res->ai_family, res->ai_socktype, 0);
+	if (s < 0) {
+		ESP_LOGE(LOGTAG, "... Failed to allocate socket.");
+		freeaddrinfo(res);
+		return false;
+	}
+	ESP_LOGI(LOGTAG, "... allocated socket\r\n");
+
+	if (connect(s, res->ai_addr, res->ai_addrlen) != 0) {
+		ESP_LOGE(LOGTAG, "... socket connect failed errno=%d", errno);
+		close(s);
+		freeaddrinfo(res);
+		return false;
+	}
+
+	ESP_LOGI(LOGTAG, "... connected");
+	freeaddrinfo(res);
+
+	std::string request;
+	request = "GET ";
+	request += "/";
+	request += uri.GetPath();
+	request += uri.GetQuery();
+	request += " HTTP/1.0\r\nHost: ";
+	request += uri.GetHost();
+	request += "\r\nUser-Agent: esp32webclient/1.0 esp32\r\n\r\n";
+	ESP_LOGI(LOGTAG, "request: %s", request.c_str());
+	if (write(s, request.c_str(), request.length()) < 0) {
+		ESP_LOGE(LOGTAG, "... socket send failed");
+		close(s);
+		return false;
+	}
+	ESP_LOGI(LOGTAG, "... socket send success");
+
+	/* Read HTTP response */
+	int bytes = 0;
+	std::string data;
+	do {
+		bzero(recv_buf, sizeof(recv_buf));
+		r = read(s, recv_buf, sizeof(recv_buf) - 1);
+		if (r > 0) {
+			bytes += r;
+			if (bytes < 1024) {
+				data.append(recv_buf, 0, r);
+			}
+		}
+	} while (r > 0);
+	ESP_LOGI(LOGTAG, "data %i bytes: %s", bytes, data.c_str());
+
+	ESP_LOGI(LOGTAG, "... done reading from socket. Last read return=%d errno=%d\r\n", r, errno);
+	close(s);
+
+	return true;
 }
+

@@ -1,51 +1,45 @@
-/*
- * UrlParser.hpp
- *
- *  Created on: 14.04.2017
- *      Author: bernd
- */
+#ifndef MAIN_URL_PARSER_H_
+#define MAIN_URL_PARSER_H_
 
-#ifndef MAIN_URLPARSER_HPP_
-#define MAIN_URLPARSER_HPP_
+#include "freertos/FreeRTOS.h"
+#include <string>
 
-#include "yuarel.h"
+
+#define MAX_Params		10
+
+#define STATE_ParseUrl			1
+#define STATE_UrlComplete		2
+#define STATE_ParseParamName	3
+#define STATE_ParseParamValue	4
+#define STATE_ParamComplete		5
+
+
+struct TParam{
+	std::string paramName;
+	std::string paramValue;
+};
 
 class UrlParser {
 public:
 	UrlParser();
 	virtual ~UrlParser();
 
-	/*
-	 * @brief 	parses querystring into max 10 key/value pairs
-	 * 			parser does not perform any string memory allocations, only pointers to existing strings
-	 * @param	querystring
-	 * @return	number of key/value pairs parsed
-	 */
-	int parseQuery(char* querystring);
+	void Init();
 
-	/*
-	 * @brief	gets the URL-decoded query string value of a key
-	 * 			Note: calling this twice on the same key could result in wrong results due to URL decoding of already decoded strings
-	 * @return 	value string or NULL if key does not exist, or key does not have any value
-	 *
-	 */
-	const char* getValueOf(const char* key);
+	void ConsumeChar(char c, std::string& url, TParam* pParam);
+	void SignalEnd();
 
-	/*
-	 * @brief	tests the existence of a key in the querystring
-	 * @return 	true if key exists
-	 *
-	 */
-	bool isKey(const char* key);
-
-//	std::string UriDecode(const std::string & sSrc);
-//
-//	std::string UriEncode(const std::string & sSrc);
+	__uint8_t GetState() { return muState; };
 
 private:
-	struct yuarel_param params[10];
-	int queryValuepairs = 0;
+	bool ProcessHash(char c);
+
+private:
+	__uint8_t muState;
+
+	__uint8_t muInDecode;
+	__uint8_t muDecodedValue;
 
 };
 
-#endif /* MAIN_URLPARSER_HPP_ */
+#endif

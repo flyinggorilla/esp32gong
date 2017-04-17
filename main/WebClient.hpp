@@ -8,7 +8,7 @@
 #ifndef MAIN_WEBCLIENT_HPP_
 #define MAIN_WEBCLIENT_HPP_
 
-#include "mongoose.h"
+#include <stdio.h>
 
 class DownloadHandler;
 
@@ -18,6 +18,8 @@ public:
 	virtual ~WebClient();
 	bool request(const char* url, DownloadHandler* downloadHandler = NULL);
 
+
+
 	int exit_flag = 0;
 
 	void ConnectEvent(int errorcode);
@@ -26,7 +28,7 @@ public:
 	void ReplyEvent();
 
 private:
-	struct mg_mgr mgr;
+	bool HttpGetRequest(const char* url);
 	DownloadHandler* downloadHandler;
 
 

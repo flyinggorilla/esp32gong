@@ -6,7 +6,8 @@ ESP32 based Gong with embedded webserver, Audio/Sound player, OTA and more - e.g
 * Wifi AP/STA mode (GPIO0 button will toggle mode)
 * Stores config in NVS
 * Basic SPIFFS read/write access for storing uploaded files on flash on dedicated data partition
-* Webserver & Webclient based on Mongoose
+* Webserver & Webclient
+* Captive webserver in Access Point mode
 * Responsive Web UI based on Phonon 1.4.5
 * Data embedding (such as HTML, CSS, font files, audio...)
 * Url/Querystring parser based on Yuarel
@@ -14,9 +15,9 @@ ESP32 based Gong with embedded webserver, Audio/Sound player, OTA and more - e.g
 * Audio player to I2S devices (e.g. Adafruit MAX98357A) 
 
 todo:
+* rip out mongoose webclient and dns server
 * OTA
 * TLS
-* captive webpage
 * mp3 support
 
 ## build

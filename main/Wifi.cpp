@@ -215,8 +215,6 @@ esp_err_t Wifi::OnEvent(system_event_t *event) {
 		;
 		/* enable ipv6 -- NEEDED for MDNS ???*/
 		tcpip_adapter_create_ip6_linklocal(TCPIP_ADAPTER_IF_STA);
-
-		mbConnected = true;
 		break;
 	case SYSTEM_EVENT_STA_DISCONNECTED:
 		ESP_LOGD(LOGTAG, "--- SYSTEM_EVENT_STA_DISCONNECTED")
@@ -233,6 +231,8 @@ esp_err_t Wifi::OnEvent(system_event_t *event) {
 	case SYSTEM_EVENT_STA_GOT_IP:
 		ESP_LOGD(LOGTAG, "--- SYSTEM_EVENT_STA_GOT_IP")
 		;
+		mbConnected = true;
+
 		tcpip_adapter_ip_info_t ip;
 		tcpip_adapter_get_ip_info(TCPIP_ADAPTER_IF_STA, &ip);
 		if (mpConfig)

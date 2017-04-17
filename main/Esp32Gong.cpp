@@ -1,3 +1,5 @@
+#include "Esp32Gong.hpp"
+
 #include "sdkconfig.h"
 //#define _GLIBCXX_USE_C99
 
@@ -14,7 +16,6 @@
 #include <string>
 #include "math.h"
 #include "string.h"
-#include "Esp32Gong.h"
 #include "wavdata.h"
 #include "I2SPlayer.hpp"
 #include "SpiffsFileSystem.hpp"
@@ -32,7 +33,6 @@ WebServer webServer;
 Esp32Gong esp32gong;
 SpiffsFileSystem spiffsFileSystem;
 Wifi wifi;
-Config config;
 DnsSrv dnsServer;
 
 // Wav* wav = NULL;
@@ -71,6 +71,16 @@ void task_function_dnsserver(void *pvParameter) {
 	vTaskDelete(NULL);
 }
 
+void task_function_restart(void* user_data) {
+	ESP_LOGI(LOGTAG, "Restarting in 2secs....");
+	vTaskDelay(*((int*)user_data)*1000 / portTICK_PERIOD_MS);
+	esp_restart();
+}
+
+void Esp32Gong::Restart(int seconds) {
+	xTaskCreate(&task_function_restart, "restartTask", 2048, &seconds, 5, NULL);
+}
+
 //----------------------------------------------------------------------------------------
 
 void Esp32Gong::Start() {
@@ -83,7 +93,7 @@ void Esp32Gong::Start() {
 	//musicPlayer.playAsync();
 
 	mbButtonPressed = !gpio_get_level(GPIO_NUM_0);
-	config.Read();
+	mConfig.Read();
 
 	gpio_pad_select_gpio(10);
 	gpio_set_direction(GPIO_NUM_0, GPIO_MODE_INPUT);
@@ -95,22 +105,22 @@ void Esp32Gong::Start() {
 	xTaskCreate(&task_function_webserver, "Task_WebServer", 4096, this, 5, NULL);
 	xTaskCreate(&task_function_resetbutton, "Task_ResetButton", 4096, this, 5, NULL);
 
-	ESP_LOGI(LOGTAG, "CONFIG HOSTNAME: %s", config.msHostname.c_str() == NULL ? "NULL" : config.msHostname.c_str());
+	ESP_LOGI(LOGTAG, "CONFIG HOSTNAME: %s", mConfig.msHostname.c_str() == NULL ? "NULL" : mConfig.msHostname.c_str());
 
-	if (config.mbAPMode) {
-		if (config.muLastSTAIpAddress) {
+	if (mConfig.mbAPMode) {
+		if (mConfig.muLastSTAIpAddress) {
 			char sBuf[16];
-			sprintf(sBuf, "%d.%d.%d.%d", IP2STR((ip4_addr* )&config.muLastSTAIpAddress));
-			ESP_LOGD(LOGTAG, "Last IP when connected to AP: %d : %s", config.muLastSTAIpAddress, sBuf);
+			sprintf(sBuf, "%d.%d.%d.%d", IP2STR((ip4_addr* )&mConfig.muLastSTAIpAddress));
+			ESP_LOGD(LOGTAG, "Last IP when connected to AP: %d : %s", mConfig.muLastSTAIpAddress, sBuf);
 		}
-		wifi.StartAPMode(config.msAPSsid, config.msAPPass, config.msHostname);
+		wifi.StartAPMode(mConfig.msAPSsid, mConfig.msAPPass, mConfig.msHostname);
 		// start DNS server to always redirect any domain to 192.168.4.1
 		xTaskCreate(&task_function_dnsserver, "Task_DnsServer", 16000, this, 5, NULL);
 	} else {
-		if (config.msSTAENTUser.length())
-			wifi.StartSTAModeEnterprise(config.msSTASsid, config.msSTAENTUser, config.msSTAPass, config.msSTAENTCA, config.msHostname);
+		if (mConfig.msSTAENTUser.length())
+			wifi.StartSTAModeEnterprise(mConfig.msSTASsid, mConfig.msSTAENTUser, mConfig.msSTAPass, mConfig.msSTAENTCA, mConfig.msHostname);
 		else
-			wifi.StartSTAMode(config.msSTASsid, config.msSTAPass, config.msHostname);
+			wifi.StartSTAMode(mConfig.msSTASsid, mConfig.msSTAPass, mConfig.msHostname);
 		const char* hostname;
 		tcpip_adapter_get_hostname(TCPIP_ADAPTER_IF_STA, &hostname);
 		ESP_LOGI(LOGTAG, "Station hostname: %s", hostname);
@@ -120,14 +130,17 @@ void Esp32Gong::Start() {
 		//wifi.StartMDNS();
 	}
 
+	while(!wifi.IsConnected()) {
+		vTaskDelay(100/portTICK_PERIOD_MS);
+	}
 	Ota ota;
 	ota.update("http://www.msftconnecttest.com/connecttest.txt");
-	ota.update("https://github.com/flyinggorilla/esp32gong/blob/master/README.md");
+	//ota.update("https://github.com/flyinggorilla/esp32gong/blob/master/README.md");
 
 }
 
 void Esp32Gong::TaskWebServer() {
-	webServer.start();
+	webServer.Start(80);
 }
 
 void Esp32Gong::TaskDnsServer() {
@@ -159,8 +172,8 @@ void Esp32Gong::TaskResetButton() {
 		if (!gpio_get_level(GPIO_NUM_0)) {
 			if (!mbButtonPressed) {
 				ESP_LOGI(LOGTAG, "Factory settings button pressed... rebooting into Access Point mode.");
-				config.ToggleAPMode();
-				config.Write();
+				mConfig.ToggleAPMode();
+				mConfig.Write();
 				esp_restart();
 			}
 		} else {
