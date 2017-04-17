@@ -20,8 +20,16 @@ public:
 
 	int exit_flag = 0;
 
+	void ConnectEvent(int errorcode);
+	void ReceiveEvent(char* data, size_t len);
+	void CloseEvent();
+	void ReplyEvent();
+
 private:
 	struct mg_mgr mgr;
+	DownloadHandler* downloadHandler;
+
+
 
 };
 

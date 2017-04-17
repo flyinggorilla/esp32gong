@@ -22,6 +22,7 @@
 #include "Wifi.hpp"
 #include "Config.hpp"
 #include "DnsSrv.hpp"
+#include "Ota.hpp"
 
 #define ONBOARDLED_GPIO GPIO_NUM_5  // GPIO5 on Sparkfun ESP32 Thing
 #define LOGTAG "main"
@@ -119,8 +120,9 @@ void Esp32Gong::Start() {
 		//wifi.StartMDNS();
 	}
 
-  //tcpip_adapter_set_hostname;
-
+	Ota ota;
+	ota.update("http://www.msftconnecttest.com/connecttest.txt");
+	ota.update("https://github.com/flyinggorilla/esp32gong/blob/master/README.md");
 
 }
 
@@ -135,6 +137,8 @@ void Esp32Gong::TaskDnsServer() {
 void Esp32Gong::TaskResetButton() {
 	int level = 0;
 	int ticks = 0;
+
+
 
 	while (1) {
 		if (wifi.IsConnected() && mbApiCallReceived) {
