@@ -1,10 +1,3 @@
-/*
- * WebClient.cpp
- *
- *  Created on: 09.04.2017
- *      Author: bernd
- */
-
 #include "WebClient.hpp"
 
 #include <esp_log.h>
@@ -28,8 +21,10 @@
 #include "lwip/netdb.h"
 #include "lwip/dns.h"
 #include "UriParser.hpp"
+#include "HttpResponseParser.hpp"
 
 static const char LOGTAG[] = "WebClient";
+
 
 WebClient::WebClient() {
 
@@ -39,142 +34,116 @@ WebClient::~WebClient() {
 
 }
 
-void WebClient::ConnectEvent(int errorcode) {
 
-	if (!downloadHandler) {
-		return;
+bool WebClient::HttpPrepareGet(std::string url, DownloadHandler* pOptionalDownloadHandler) {
+	mpDownloadHandler = pOptionalDownloadHandler;
+	mlRequestHeaders.clear();
+
+	ESP_LOGI(LOGTAG, "HttpPrepareGet: %s", url.c_str());
+
+	if (!mUri.parseUrl(url)) {
+		ESP_LOGE(LOGTAG, "Invalid URI %s", url.c_str());
+		return false;
 	}
-	downloadHandler->OnReceiveBegin();
+	ESP_LOGI(LOGTAG, "after url parsing: hostname=<%s> path=<%s>", mUri.GetHost().c_str(), mUri.GetPath().c_str());
+	return true;
 }
 
-void WebClient::ReceiveEvent(char* data, size_t len) {
-	char sbuf[128];
-	memset(sbuf, 0, sizeof(sbuf));
-	int copylen = len < sizeof(sbuf) ? len : sizeof(sbuf) - 1;
-	memcpy(sbuf, data, copylen);
-	ESP_LOGI(LOGTAG, "data: %s", sbuf);
-
-	if (!downloadHandler) {
-		return;
-	}
-
-	downloadHandler->OnReceiveData(data, len); //OR received???
-
+bool WebClient::HttpAddHeader(std::string& sHeader) {
+	mlRequestHeaders.push_back(sHeader); //TODO IS THIS COPYING THE STRING?? YES = SAFE NO = NEED TO COPY BEFOREHAND
+	return true;
 }
 
-void WebClient::CloseEvent() {
-	if (exit_flag == 0) {
-		ESP_LOGI(LOGTAG, "server closed connection");
-		exit_flag = 1;
-	}
-	if (!downloadHandler) {
-		return;
-	}
-	downloadHandler->OnReceiveEnd();
-}
+bool WebClient::HttpExecute() {
+	struct addrinfo *res;
+	char service[6];
 
-void WebClient::ReplyEvent() {
+	sprintf(service, "%i", mUri.GetPort());
 
-}
-
-bool WebClient::request(const char* url, DownloadHandler* downloadHandler) {
-
-	ESP_LOGI(LOGTAG, "Requesting %s", url);
-	this->downloadHandler = downloadHandler;
-
-	return HttpGetRequest(url);
-
-	//ESP_LOGE(LOGTAG, "Error connecting - HTTP status code %i", status);
-	//return false;
-}
-
-bool WebClient::HttpGetRequest(const char* url) {
 	struct addrinfo hints;
     memset( &hints, 0, sizeof( hints ) );
     hints.ai_family = AF_INET;
 	hints.ai_socktype = SOCK_STREAM;
 
-
-	struct addrinfo *res;
-	struct in_addr *addr;
-	int s, r;
-	char recv_buf[64];
-
-	ESP_LOGI(LOGTAG, "HttpGetRequest: %s", url);
-
-	UriParser uri;
-	if (!uri.parseUrl(url)) {
-		ESP_LOGE(LOGTAG, "Invalid URI %s", url);
-		return false;
-	}
-	ESP_LOGI(LOGTAG, "after url parsing: hostname=<%s> path=<%s>", uri.GetHost(), uri.GetPath());
-
-	char service[6];
-	sprintf(service, "%i", uri.GetPort());
-	int err = getaddrinfo(uri.GetHost(), "80", &hints, &res);
+	int err = getaddrinfo(mUri.GetHost().c_str(), service, &hints, &res);
 
 	if (err != 0 || res == NULL) {
 		ESP_LOGE(LOGTAG, "DNS lookup failed err=%d res=%p", err, res);
 		return false;
 	}
 
-	/* Code to print the resolved IP.
-
-	 Note: inet_ntoa is non-reentrant, look at ipaddr_ntoa_r for "real" code */
-	addr = &((struct sockaddr_in *) res->ai_addr)->sin_addr;
+	// Code to print the resolved IP.
+	// Note: inet_ntoa is non-reentrant, look at ipaddr_ntoa_r for "real" code
+	struct in_addr *addr = &((struct sockaddr_in *) res->ai_addr)->sin_addr;
 	ESP_LOGI(LOGTAG, "DNS lookup succeeded. IP=%s", inet_ntoa(*addr));
 
-	s = socket(res->ai_family, res->ai_socktype, 0);
-	if (s < 0) {
+	// Socket
+	int socket = socket(res->ai_family, res->ai_socktype, 0);
+	if (socket < 0) {
 		ESP_LOGE(LOGTAG, "... Failed to allocate socket.");
 		freeaddrinfo(res);
 		return false;
 	}
 	ESP_LOGI(LOGTAG, "... allocated socket\r\n");
 
-	if (connect(s, res->ai_addr, res->ai_addrlen) != 0) {
+	// CONNECT
+	if (connect(socket, res->ai_addr, res->ai_addrlen) != 0) {
 		ESP_LOGE(LOGTAG, "... socket connect failed errno=%d", errno);
-		close(s);
+		close(socket);
 		freeaddrinfo(res);
 		return false;
 	}
-
 	ESP_LOGI(LOGTAG, "... connected");
 	freeaddrinfo(res);
 
-	std::string request;
-	request = "GET ";
-	request += "/";
-	request += uri.GetPath();
-	request += uri.GetQuery();
-	request += " HTTP/1.0\r\nHost: ";
-	request += uri.GetHost();
-	request += "\r\nUser-Agent: esp32webclient/1.0 esp32\r\n\r\n";
-	ESP_LOGI(LOGTAG, "request: %s", request.c_str());
-	if (write(s, request.c_str(), request.length()) < 0) {
+	// Build HTTP Request
+	std::string sRequest;
+	sRequest.reserve(512);
+	sRequest = "GET ";
+	sRequest += "/";
+	sRequest += mUri.GetPath();
+	sRequest += mUri.GetQuery();
+	sRequest += " HTTP/1.0\r\nHost: ";
+	sRequest += mUri.GetHost();
+	sRequest += "\r\n";
+	for (std::list<std::string>::iterator it = mlRequestHeaders.begin(); it != mlRequestHeaders.end(); ++it) {
+		sRequest += *it;
+		sRequest += "\r\n";
+	}
+	sRequest+= "User-Agent: esp32webclient/1.0 esp32\r\n\r\n";
+
+	// send HTTP request
+	ESP_LOGI(LOGTAG, "sRequest: %s", sRequest.c_str());
+	if (write(socket, sRequest.c_str(), sRequest.length()) < 0) {
 		ESP_LOGE(LOGTAG, "... socket send failed");
-		close(s);
+		close(socket);
 		return false;
 	}
+	sRequest.clear(); // free memory
 	ESP_LOGI(LOGTAG, "... socket send success");
 
-	/* Read HTTP response */
-	int bytes = 0;
-	std::string data;
-	do {
-		bzero(recv_buf, sizeof(recv_buf));
-		r = read(s, recv_buf, sizeof(recv_buf) - 1);
-		if (r > 0) {
-			bytes += r;
-			if (bytes < 1024) {
-				data.append(recv_buf, 0, r);
-			}
-		}
-	} while (r > 0);
-	ESP_LOGI(LOGTAG, "data %i bytes: %s", bytes, data.c_str());
+	// Read HTTP response
+	HttpResponseParser httpParser;
+	httpParser.Init(mpDownloadHandler);
 
-	ESP_LOGI(LOGTAG, "... done reading from socket. Last read return=%d errno=%d\r\n", r, errno);
-	close(s);
+	char recv_buf[256];
+	while (!httpParser.ResponseFinished()) {
+		size_t sizeRead = read(socket, recv_buf, sizeof(recv_buf) - 1);
+		if (sizeRead <= 0) {
+			ESP_LOGE(LOGTAG, "Connection closed during parsing");
+			close(socket);
+			break;
+		}
+		if (!httpParser.ParseResponse(recv_buf, sizeRead)) {
+			ESP_LOGE(LOGTAG, "HTTP Parsing error: %d", httpParser.GetError());
+			close(socket);
+			return false;
+		}
+	}
+
+	ESP_LOGI(LOGTAG, "data %i bytes: %s", httpParser.GetContentLength(), httpParser.GetBody().c_str());
+
+	close(socket);
 
 	return true;
 }

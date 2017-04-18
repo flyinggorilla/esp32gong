@@ -51,7 +51,7 @@ static void __attribute__((noreturn)) task_fatal_error()
 }
 
 
-void Ota::OnReceiveBegin() {
+bool Ota::OnReceiveBegin() {
     esp_err_t err;
     /* update handle : set by esp_ota_begin(), must be freed via esp_ota_end() */
 
@@ -78,6 +78,7 @@ void Ota::OnReceiveBegin() {
     }
     ESP_LOGI(LOGTAG, "esp_ota_begin succeeded");
 
+    return true;
 }
 
 void Ota::OnReceiveEnd() {
@@ -106,9 +107,11 @@ bool Ota::OnReceiveData(char* buf, int len) {
 }
 
 
-bool Ota::update(std::string url)
+bool Ota::UpdateFirmware(std::string url)
 {
-    return webClient.request(url.c_str());
+    webClient.HttpPrepareGet(url);
+    return webClient.HttpExecute();
+
 }
 
 

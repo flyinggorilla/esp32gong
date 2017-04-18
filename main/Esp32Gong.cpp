@@ -134,7 +134,7 @@ void Esp32Gong::Start() {
 		vTaskDelay(100/portTICK_PERIOD_MS);
 	}
 	Ota ota;
-	ota.update("http://www.msftconnecttest.com/connecttest.txt");
+	ota.UpdateFirmware("http://www.msftconnecttest.com/connecttest.txt");
 	//ota.update("https://github.com/flyinggorilla/esp32gong/blob/master/README.md");
 
 }

@@ -353,7 +353,7 @@ void HttpRequestHandler(struct mg_connection *nc, int ev, void *evData) {
 			}
 		} else if (strcmp(uri, "/firmwareupdate") == 0) {
 			Ota ota;
-			ota.update("http://" EXAMPLE_SERVER_IP ":" EXAMPLE_SERVER_PORT "/esp32gong/esp32gong.bin");
+			ota.UpdateFirmware("http://" EXAMPLE_SERVER_IP ":" EXAMPLE_SERVER_PORT "/esp32gong/esp32gong.bin");
 			// successful ota.update will reboot!
 			const char* response = "<html><body>error - could not update firmware -- wrong URL? </html></body>";
 			mg_send_head(nc, 400, strlen(response), http_default_hdr);

@@ -17,7 +17,13 @@ public:
 	UriParser();
 	virtual ~UriParser();
 
-	bool parseUrl(const char* url);
+	/*
+	 * @brief takes a complete URL in the form of https://www.mysite.com:8080/path?query=val?query2=val2#fragment
+	 * @return true if the URL could be parsed properly or false if URL is invalid/notsupported
+	 *
+	 * results are available via GetPath(), GetQuery(), GetHost(), GetFragment(), GetSecure(), GetPort()
+	 */
+	bool parseUrl(std::string url);
 
 	/*
 	 * @brief 	parses querystring into max 10 key/value pairs
@@ -43,10 +49,10 @@ public:
 	bool isKey(const char* key);
 
 
-	const char* GetPath() { return msPath.c_str(); }
-	const char* GetQuery() { return msQuery.c_str(); }
-	const char* GetFragment() { return msFragment.c_str(); }
-	const char* GetHost() { return msHost.c_str(); }
+	std::string& GetPath() { return msPath; }
+	std::string& GetQuery() { return msQuery; }
+	std::string& GetFragment() { return msFragment; }
+	std::string& GetHost() { return msHost; }
 	bool GetSecure() { return mbSecure; }
 	unsigned short GetPort() { return muPort; }
 

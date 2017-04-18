@@ -9,6 +9,7 @@
 #define MAIN_OTA_HPP_
 
 #include "WebClient.hpp"
+#include "DownloadHandler.hpp"
 #include <esp_ota_ops.h>
 #include <string>
 
@@ -16,12 +17,12 @@ class Ota : public DownloadHandler {
 public:
 	Ota();
 	virtual ~Ota();
-	bool update(std::string url);
+	bool UpdateFirmware(std::string url);
 
 public:
-	virtual void OnReceiveBegin();
-	virtual void OnReceiveEnd();
-	virtual bool OnReceiveData(char* buf, int len); // override DownloadHandler virtual method
+	bool OnReceiveBegin();
+	void OnReceiveEnd();
+	bool OnReceiveData(char* buf, int len); // override DownloadHandler virtual method
 
 private:
 	WebClient webClient;

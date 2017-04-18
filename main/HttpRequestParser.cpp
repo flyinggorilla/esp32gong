@@ -1,19 +1,25 @@
-#include "HttpParser.hpp"
+#include "HttpRequestParser.hpp"
 
 #include "freertos/FreeRTOS.h"
 
+#define STATE_Method				0
+#define STATE_ParseUrl				1
+#define STATE_HttpType				2
+#define STATE_SearchEndOfHeaderLine 3
+#define STATE_SkipHeader			4
+#define STATE_CheckHeaderName		5
+#define STATE_CheckHeaderValue		6
+#define STATE_ReadContentLength		7
+#define STATE_CopyBody				8
 
-
-HttpParser::HttpParser(int socket) {
-	mSocket = socket;
-
+HttpRequestParser::HttpRequestParser() {
 	Init();
 }
 
-HttpParser::~HttpParser() {
+HttpRequestParser::~HttpRequestParser() {
 }
 
-void HttpParser::Init(){
+void HttpRequestParser::Init(){
 	Clear();
 
 	muError = 0;
@@ -28,13 +34,13 @@ void HttpParser::Init(){
 	mStringParser.AddStringToParse("post");
 }
 
-void HttpParser::Clear(){
+void HttpRequestParser::Clear(){
 	mUrl.clear();
 	mParams.clear();
 	mBody.clear();
 }
 
-bool HttpParser::ParseRequest(char* sBuffer, __uint16_t uLen){
+bool HttpRequestParser::ParseRequest(char* sBuffer, __uint16_t uLen){
 
 	__uint16_t uPos = 0;
 	while (uPos < uLen){

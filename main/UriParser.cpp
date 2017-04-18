@@ -75,11 +75,10 @@ bool UriParser::isKey(const char* key) {
 	return false;
 }
 
-bool UriParser::parseUrl(const char* url) {
+bool UriParser::parseUrl(std::string url) {
 	struct yuarel uri;
 
-	std::string u(url);
-	if (yuarel_parse(&uri, (char*)u.data() )) {
+	if (yuarel_parse(&uri, (char*)url.data() )) {
 		return false; //error
 	}
 

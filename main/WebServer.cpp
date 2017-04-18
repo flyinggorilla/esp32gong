@@ -30,7 +30,7 @@
 #include "Wifi.hpp"
 #include "Config.hpp"
 #include "Esp32Gong.hpp"
-#include "HttpParser.hpp"
+#include "HttpRequestParser.hpp"
 #include "HttpResponse.hpp"
 
 extern Esp32Gong esp32gong;
@@ -113,7 +113,7 @@ void WebServer::WebRequestHandler(int socket) {
 	// We now have a new client ...
 	int total = 1024;
 	char *data = (char*) malloc(total);
-	HttpParser httpParser(socket);
+	HttpRequestParser httpParser;
 	HttpResponse httpResponse;
 	DynamicRequestHandler requestHandler;
 
