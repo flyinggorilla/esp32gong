@@ -1,10 +1,3 @@
-/*
- * WebClient.h
- *
- *  Created on: 09.04.2017
- *      Author: bernd
- */
-
 #ifndef MAIN_WEBCLIENT_HPP_
 #define MAIN_WEBCLIENT_HPP_
 

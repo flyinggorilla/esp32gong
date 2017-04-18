@@ -1,10 +1,3 @@
-/*
- * Wav.h
- *
- *  Created on: 11.03.2017
- *      Author: bernd
- */
-
 #include <stdint.h>
 #include <stdio.h>
 
