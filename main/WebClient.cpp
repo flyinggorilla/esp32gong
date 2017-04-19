@@ -1,10 +1,16 @@
 #include "WebClient.hpp"
 
+#include "Url.hpp"
+#include "HttpResponseParser.hpp"
+
 #include <esp_log.h>
 #include "sdkconfig.h"
 #include <string.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+#include <list>
+#include <string>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/event_groups.h"
@@ -14,21 +20,12 @@
 #include "esp_log.h"
 #include "nvs_flash.h"
 #include <netdb.h>
-#include <stdlib.h>
-#include <list>
-#include <string>
-#include <sstream>
-#include <cctype>
-#include <iomanip>
 
 #include "lwip/err.h"
 #include "lwip/sockets.h"
 #include "lwip/sys.h"
 #include "lwip/netdb.h"
 #include "lwip/dns.h"
-#include "UriParser.hpp"
-#include "HttpResponseParser.hpp"
-#include "Url.hpp"
 
 static const char LOGTAG[] = "WebClient";
 
@@ -42,10 +39,12 @@ WebClient::~WebClient() {
 }
 
 
-bool WebClient::HttpPrepareGet(Url& url, DownloadHandler* pOptionalDownloadHandler) {
+bool WebClient::HttpPrepareGet(Url* pUrl, DownloadHandler* pOptionalDownloadHandler) {
 	mpDownloadHandler = pOptionalDownloadHandler;
 	mlRequestHeaders.clear();
-	mUrl = url;
+	if (!pUrl)
+		return false;
+	mpUrl = pUrl;
 	return true;
 }
 
@@ -55,17 +54,22 @@ bool WebClient::HttpAddHeader(std::string& sHeader) {
 }
 
 bool WebClient::HttpExecute() {
+	if (!mpUrl)
+		return false;
+
+	if (mpUrl->GetHost().empty()) {
+		return false;
+	}
+
 	struct addrinfo *res;
 	char service[6];
-
-	sprintf(service, "%i", mUrl.GetPort());
-
+	sprintf(service, "%i", mpUrl->GetPort());
 	struct addrinfo hints;
     memset( &hints, 0, sizeof( hints ) );
     hints.ai_family = AF_INET;
 	hints.ai_socktype = SOCK_STREAM;
 
-	int err = getaddrinfo(mUri.GetHost().c_str(), service, &hints, &res);
+	int err = getaddrinfo(mpUrl->GetHost().c_str(), service, &hints, &res);
 
 	if (err != 0 || res == NULL) {
 		ESP_LOGE(LOGTAG, "DNS lookup failed err=%d res=%p", err, res);
@@ -102,10 +106,10 @@ bool WebClient::HttpExecute() {
 	sRequest.reserve(512);
 	sRequest = "GET ";
 	sRequest += "/";
-	sRequest += msPath;
-	sRequest += GetQuery();
+	sRequest += mpUrl->GetPath();
+	sRequest += mpUrl->GetQuery();
 	sRequest += " HTTP/1.0\r\nHost: ";
-	sRequest += msHost;
+	sRequest += mpUrl->GetHost();
 	sRequest += "\r\n";
 	for (std::list<std::string>::iterator it = mlRequestHeaders.begin(); it != mlRequestHeaders.end(); ++it) {
 		sRequest += *it; //TODO *it or it????
@@ -148,5 +152,6 @@ bool WebClient::HttpExecute() {
 
 	return true;
 }
+
 
 

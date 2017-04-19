@@ -1,6 +1,7 @@
 #include "HttpRequestParser.hpp"
 
 #include "freertos/FreeRTOS.h"
+#include <list>
 
 #define STATE_Method				0
 #define STATE_ParseUrl				1

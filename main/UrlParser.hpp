@@ -3,6 +3,7 @@
 
 #include "freertos/FreeRTOS.h"
 #include <string>
+#include "Url.hpp"
 
 
 #define MAX_Params		10
@@ -12,12 +13,6 @@
 #define STATE_ParseParamName	3
 #define STATE_ParseParamValue	4
 #define STATE_ParamComplete		5
-
-
-struct TParam{
-	std::string paramName;
-	std::string paramValue;
-};
 
 class UrlParser {
 public:

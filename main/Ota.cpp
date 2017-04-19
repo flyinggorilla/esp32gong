@@ -4,7 +4,7 @@
  *  Created on: 11.04.2017
  *      Author: bernd
  */
-
+#include "sdkconfig.h"
 #include "Ota.hpp"
 
 
@@ -107,10 +107,24 @@ bool Ota::OnReceiveData(char* buf, int len) {
 }
 
 
-bool Ota::UpdateFirmware(std::string url)
+bool Ota::UpdateFirmware(std::string sUrl)
 {
-    webClient.HttpPrepareGet(url);
-    return webClient.HttpExecute();
+	Url urltest(sUrl);
+	urltest.Selftest();
+	Url url(sUrl);
+	ESP_LOGI(LOGTAG, "input URL: %s", sUrl.c_str());
+	ESP_LOGI(LOGTAG, "Url(): %s:%i/%s?%s", url.GetHost().c_str(), (int)url.GetPort(), url.GetPath().c_str(), url.GetQuery().c_str());
+    if (!webClient.HttpPrepareGet(&url)) {
+    	ESP_LOGE(LOGTAG, "Error in HttpPrepareGet()")
+    			return false;
+    }
+
+    if (!webClient.HttpExecute()) {
+
+      	ESP_LOGE(LOGTAG, "Error in HttpExecute()")
+      			return false;
+    }
+    return true;
 
 }
 

@@ -4,26 +4,21 @@
 #include <stdio.h>
 #include <list>
 #include <string>
-#include "UriParser.hpp"
 #include "DownloadHandler.hpp"
-
-struct TParam{
-	std::string paramName;
-	std::string paramValue;
-};
+#include "Url.hpp"
 
 class WebClient {
 public:
 	WebClient();
 	virtual ~WebClient();
 
-	bool HttpPrepareGet(Url& url, DownloadHandler* pOptionalDownloadHandler = NULL);
+	bool HttpPrepareGet(Url* pUrl, DownloadHandler* pOptionalDownloadHandler = NULL);
 	bool HttpAddHeader(std::string& sHeader);
 	bool HttpExecute();
 
 private:
 	DownloadHandler* mpDownloadHandler;
-	Url& mUrl;
+	Url* mpUrl = NULL;
 	std::list<std::string> mlRequestHeaders;
 };
 

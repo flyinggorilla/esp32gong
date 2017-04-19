@@ -1,17 +1,10 @@
-/*
- * Url.hpp
- *
- *  Created on: 19.04.2017
- *      Author: bernd
- */
-
 #ifndef MAIN_URL_HPP_
 #define MAIN_URL_HPP_
 
+#include "sdkconfig.h"
 #include <stdio.h>
 #include <list>
 #include <string>
-#include "UriParser.hpp"
 
 struct TParam{
 	std::string paramName;
@@ -41,6 +34,8 @@ public:
 
 	short int GetPort() { return miPort; }
 
+	bool Selftest();
+
 public:
 	std::string UrlEncode(std::string& str);
 
@@ -60,6 +55,9 @@ private:
 	std::list<TParam> mlQueryParams;
 
 	bool ParseUrl(std::string url);
+
+	//TODO remove
+	int ParseQuery(char* querystring) ;
 
 };
 

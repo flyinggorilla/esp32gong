@@ -1,7 +1,14 @@
 #include "HttpResponseParser.hpp"
 
+#include "sdkconfig.h"
 #include "freertos/FreeRTOS.h"
 #include <algorithm>
+#include <esp_log.h>
+
+//TEMP
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 #define STATE_HttpType				0
 #define STATE_StatusCode			1
@@ -17,6 +24,8 @@
 #define ERROR_HTTPRESPONSE_NOVALIDHTTP 1
 
 #define HTTPRESPONSEBUFFER_MAX_BYTESRECEIVE 32*1024
+
+static const char LOGTAG[] = "HttpResponseParser";
 
 HttpResponseParser::HttpResponseParser() {
 	Init();
@@ -199,6 +208,9 @@ bool HttpResponseParser::ParseResponse(char* sBuffer, unsigned int uLen){
 				break;
 
 			case STATE_CopyBody:
+				//fixup uPos which was already incremented at the beginning of this method
+				uPos--;
+
 				if (mbContentLength && !muContentLength)
 					return SetError(7), false;
 				if (uPos < uLen){
@@ -216,7 +228,8 @@ bool HttpResponseParser::ParseResponse(char* sBuffer, unsigned int uLen){
 						if (appendSize < 0) {
 							return  SetError(8), false;
 						}
-						mBody.append(sBuffer[uPos], appendSize);
+						mBody.append(&sBuffer[uPos], appendSize);
+						ESP_LOGI(LOGTAG, "BODY:<%s>", mBody.c_str());
 					}
 					mbFinished = muActualContentLength >= muContentLength;
 					if (mpDownloadHandler && mbFinished) {
@@ -224,7 +237,7 @@ bool HttpResponseParser::ParseResponse(char* sBuffer, unsigned int uLen){
 					}
 					return true;
 				}
-				break;
+				return true;
 
 		}
 	}
