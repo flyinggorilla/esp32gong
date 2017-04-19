@@ -14,6 +14,12 @@
 #include "esp_log.h"
 #include "nvs_flash.h"
 #include <netdb.h>
+#include <stdlib.h>
+#include <list>
+#include <string>
+#include <sstream>
+#include <cctype>
+#include <iomanip>
 
 #include "lwip/err.h"
 #include "lwip/sockets.h"
@@ -22,6 +28,7 @@
 #include "lwip/dns.h"
 #include "UriParser.hpp"
 #include "HttpResponseParser.hpp"
+#include "Url.hpp"
 
 static const char LOGTAG[] = "WebClient";
 
@@ -35,17 +42,10 @@ WebClient::~WebClient() {
 }
 
 
-bool WebClient::HttpPrepareGet(std::string url, DownloadHandler* pOptionalDownloadHandler) {
+bool WebClient::HttpPrepareGet(Url& url, DownloadHandler* pOptionalDownloadHandler) {
 	mpDownloadHandler = pOptionalDownloadHandler;
 	mlRequestHeaders.clear();
-
-	ESP_LOGI(LOGTAG, "HttpPrepareGet: %s", url.c_str());
-
-	if (!mUri.parseUrl(url)) {
-		ESP_LOGE(LOGTAG, "Invalid URI %s", url.c_str());
-		return false;
-	}
-	ESP_LOGI(LOGTAG, "after url parsing: hostname=<%s> path=<%s>", mUri.GetHost().c_str(), mUri.GetPath().c_str());
+	mUrl = url;
 	return true;
 }
 
@@ -58,7 +58,7 @@ bool WebClient::HttpExecute() {
 	struct addrinfo *res;
 	char service[6];
 
-	sprintf(service, "%i", mUri.GetPort());
+	sprintf(service, "%i", mUrl.GetPort());
 
 	struct addrinfo hints;
     memset( &hints, 0, sizeof( hints ) );
@@ -98,16 +98,17 @@ bool WebClient::HttpExecute() {
 
 	// Build HTTP Request
 	std::string sRequest;
+
 	sRequest.reserve(512);
 	sRequest = "GET ";
 	sRequest += "/";
-	sRequest += mUri.GetPath();
-	sRequest += mUri.GetQuery();
+	sRequest += msPath;
+	sRequest += GetQuery();
 	sRequest += " HTTP/1.0\r\nHost: ";
-	sRequest += mUri.GetHost();
+	sRequest += msHost;
 	sRequest += "\r\n";
 	for (std::list<std::string>::iterator it = mlRequestHeaders.begin(); it != mlRequestHeaders.end(); ++it) {
-		sRequest += *it;
+		sRequest += *it; //TODO *it or it????
 		sRequest += "\r\n";
 	}
 	sRequest+= "User-Agent: esp32webclient/1.0 esp32\r\n\r\n";
@@ -147,4 +148,5 @@ bool WebClient::HttpExecute() {
 
 	return true;
 }
+
 

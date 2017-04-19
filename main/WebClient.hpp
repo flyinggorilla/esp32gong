@@ -7,30 +7,24 @@
 #include "UriParser.hpp"
 #include "DownloadHandler.hpp"
 
+struct TParam{
+	std::string paramName;
+	std::string paramValue;
+};
 
 class WebClient {
 public:
 	WebClient();
 	virtual ~WebClient();
 
-	bool HttpPrepareGet(std::string url, DownloadHandler* pOptionalDownloadHandler = NULL);
+	bool HttpPrepareGet(Url& url, DownloadHandler* pOptionalDownloadHandler = NULL);
 	bool HttpAddHeader(std::string& sHeader);
 	bool HttpExecute();
 
-	int exit_flag = 0;
-
-	//void ConnectEvent(int errorcode);
-	//void ReceiveEvent(char* data, size_t len);
-	//void CloseEvent();
-	//void ReplyEvent();
-	UriParser& GetUri() { return mUri; }
-
 private:
 	DownloadHandler* mpDownloadHandler;
-
-	UriParser mUri;
+	Url& mUrl;
 	std::list<std::string> mlRequestHeaders;
-
 };
 
 

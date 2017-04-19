@@ -36,6 +36,7 @@
 									<listOptionValue builtIn="false" value="&quot;../build\include&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${IDF_PATH}/components/lwip/include/lwip/lwip&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${IDF_PATH}/compontents/app_update/include&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;C:\msys32\opt\xtensa-esp32-elf\xtensa-esp32-elf\include\c++\5.2.0\bits&quot;"/>
 								</option>
 								<inputType id="cdt.managedbuild.tool.gnu.assembler.input.1505445067" superClass="cdt.managedbuild.tool.gnu.assembler.input"/>
 							</tool>
@@ -58,6 +59,7 @@
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/esp32gong/build/include}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${IDF_PATH}/components/lwip/include/lwip/lwip&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${IDF_PATH}/components/app_update/include&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;C:\msys32\opt\xtensa-esp32-elf\xtensa-esp32-elf\include\c++\5.2.0\bits&quot;"/>
 								</option>
 								<inputType id="cdt.managedbuild.tool.gnu.cpp.compiler.input.cygwin.375401072" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.input.cygwin"/>
 							</tool>
@@ -78,6 +80,7 @@
 									<listOptionValue builtIn="false" value="&quot;../build\include&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${IDF_PATH}/components/lwip/include/lwip/lwip&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${IDF_PATH}/components/app_update/include&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;C:\msys32\opt\xtensa-esp32-elf\xtensa-esp32-elf\include\c++\5.2.0\bits&quot;"/>
 								</option>
 								<inputType id="cdt.managedbuild.tool.gnu.c.compiler.input.cygwin.1339490223" superClass="cdt.managedbuild.tool.gnu.c.compiler.input.cygwin"/>
 							</tool>
