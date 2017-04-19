@@ -3,6 +3,8 @@
 #include <string>
 #include <sstream>
 #include <iomanip>
+#include <stdlib.h>
+#include <stdio.h>
 #include <list>
 #include "UriParser.hpp"
 
@@ -36,7 +38,9 @@ std::string& Url::GetUrl() {
 		msUrl += msHost;
 		if (miPort) {
 			msUrl += ':';
-			msUrl += miPort;
+			char buf[20];
+			sprintf(buf, "%i", miPort);
+			msUrl += buf;
 		}
 	}
 	msUrl += '/'; //TODO should this be added?
@@ -145,14 +149,11 @@ std::string Url::UrlDecode(std::string str) {
 //TODO replace with own parser
 int Url::ParseQuery(char* querystring) {
 	struct yuarel_param params[10];
-
 	int queryValuepairs = yuarel_parse_query(querystring, '&', params, sizeof(params));
-
 	for (int i = 0; i < queryValuepairs; i++) {
-		TParam param { params[i].key, params[i].val };
+		TParam param { params[i].key ? params[i].key : "", params[i].val ? params[i].val : "" };
 		mlQueryParams.emplace_back(param);
 	}
-
 	return queryValuepairs;
 }
 
@@ -226,6 +227,8 @@ bool Url::ParseUrl(std::string url) {
 
 	if (uri.query) {
 		msQuery = uri.query;
+		int i = ParseQuery(uri.query);
+		ESP_LOGI(LOGTAG, "ParseQuery(%i): %s", i, uri.query);
 	}
 
 	if (uri.path) {
@@ -241,7 +244,7 @@ bool Url::ParseUrl(std::string url) {
 }
 
 bool Url::Selftest() {
-	std::string s = "https://xyz.com:765?name1=param1&name2&name3=&name4=val4&n a m e 5&v%a%l%u%e5#fragment1";
+	std::string s = "https://xyz.com:765?name1=param1&name2&name3=&name4=val4&n a m e 5=v%a%l%u%e5#fragment1";
 	//TODO handle path "/" ---> after url parsing: hostname=<xyz.com> path=<>
 
 //	I (4764) Url: HttpPrepareGet: https://xyz.com:765?name1=param1&name2&name3=&name4=val4&n a m e 5&v%a%l%u%e5#fragment1
