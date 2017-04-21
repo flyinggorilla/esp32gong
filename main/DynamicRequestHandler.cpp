@@ -1,12 +1,12 @@
-#include "DynamicRequestHandler.hpp"
+#include "DynamicRequestHandler.h"
 
-#include "Esp32Gong.hpp"
-#include "I2SPlayer.hpp"
-#include "Wifi.hpp"
-#include "Config.hpp"
 #include "esp_system.h"
 #include <esp_log.h>
 #include <cJSON.h>
+#include "Config.h"
+#include "Esp32Gong.h"
+#include "I2SPlayer.h"
+#include "Wifi.h"
 
 extern Wifi wifi;
 extern Esp32Gong esp32gong;

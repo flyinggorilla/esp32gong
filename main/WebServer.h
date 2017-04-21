@@ -1,5 +1,5 @@
-#ifndef MAIN_WEBSERVER_HPP_
-#define MAIN_WEBSERVER_HPP_
+#ifndef MAIN_WEBSERVER_H_
+#define MAIN_WEBSERVER_H_
 
 #include "freertos/FreeRTOS.h"
 
@@ -19,4 +19,4 @@ private:
 
 };
 
-#endif /* MAIN_WEBSERVER_HPP_ */
+#endif /* MAIN_WEBSERVER_H_ */

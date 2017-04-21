@@ -25,7 +25,8 @@
         {
             "name": "Win32",
             "includePath": [ 
-                "C:/Users/Bernd/Documents/GitHub/esp-idf"
+                "C:/Users/Bernd/Documents/GitHub/esp-idf",
+                "C:/msys32/opt/xtensa-esp32-elf/xtensa-esp32-elf/include"
             ],
             "browse": {
                 "limitSymbolsToIncludedHeaders": true,

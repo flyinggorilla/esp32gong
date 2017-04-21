@@ -1,5 +1,4 @@
-#include "Wifi.hpp"
-#include "Config.hpp"
+#include "Wifi.h"
 
 #include <esp_event.h>
 #include <esp_event_loop.h>
@@ -20,6 +19,7 @@
 #include "../../esp-idf/components/lwip/include/lwip/lwip/netdb.h" //ODD INCLUSION DUE TO ECLIPSE
 #include "../../esp-idf/components/lwip/include/lwip/lwip/sockets.h" //ODD INCLUSION DUE TO ECLIPSE
 #include "../../esp-idf/components/lwip/include/lwip/lwip/ip_addr.h"
+#include "Config.h"
 
 struct in_addr;
 

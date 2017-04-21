@@ -5,13 +5,13 @@
  *      Author: bernd
  */
 
-#ifndef MAIN_OTA_HPP_
-#define MAIN_OTA_HPP_
+#ifndef MAIN_OTA_H_
+#define MAIN_OTA_H_
 
-#include "WebClient.hpp"
-#include "DownloadHandler.hpp"
 #include <esp_ota_ops.h>
 #include <string>
+#include "DownloadHandler.h"
+#include "WebClient.h"
 
 class Ota : public DownloadHandler {
 public:
@@ -33,4 +33,4 @@ private:
 
 };
 
-#endif /* MAIN_OTA_HPP_ */
+#endif /* MAIN_OTA_H_ */

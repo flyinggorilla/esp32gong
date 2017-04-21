@@ -6,29 +6,54 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <list>
-#include "UriParser.hpp"
 
 static const char LOGTAG[] = "Url";
 
-Url::Url(std::string& sHost, short int iPort, bool bSecure, std::string& sPath) {
+Url::Url() {
+	Clear();
+}
+
+void Url::Build(bool bSecure, std::string& sHost, unsigned short uPort, std::string& sPath) {
 	msHost = sHost;
 	msPath = sPath;
 	mbSecure = bSecure;
-	miPort = iPort;
+	muPort = uPort;
 }
 
-Url::Url(std::string& sUrl) {
-	ESP_LOGI(LOGTAG, "HttpPrepareGet: %s", sUrl.c_str());
-	if (!ParseUrl(sUrl.c_str())) {
-		ESP_LOGE(LOGTAG, "Invalid URI %s", sUrl.c_str());
-		return;
-	}
+void Url::Build(bool bSecure, const char* host, unsigned short uPort, const char* path) {
+	msHost = host;
+	msPath = path;
+	mbSecure = bSecure;
+	muPort = uPort;
+}
 
-	ESP_LOGI(LOGTAG, "after url parsing: hostname=<%s> path=<%s>", msHost.c_str(), msPath.c_str());
+bool Url::Parse(std::string& sUrl) {
+	Clear();
+	if (!ParseUrl(sUrl)) {
+		ESP_LOGI(LOGTAG, "Invalid URL: '%s' (parsed: '%s')", sUrl.c_str(), GetUrl().c_str());
+		return false;
+	}
+	return true;
+}
+
+bool Url::Parse(const char* url) {
+	std::string sUrl = url;
+	return Parse(sUrl);
 }
 
 Url::~Url() {
 
+}
+
+void Url::Clear() {
+	muPort = 0;
+	mbSecure = false;
+	msUrl.clear();
+	msHost.clear();
+	msPath.clear();
+	msFragment.clear();
+	msQuery.clear();
+	mlQueryParams.clear();
 }
 
 std::string& Url::GetUrl() {
@@ -36,15 +61,20 @@ std::string& Url::GetUrl() {
 	if (!msHost.empty()) {
 		msUrl += mbSecure ? "https://" : "http://";
 		msUrl += msHost;
-		if (miPort) {
+
+		if (!(muPort == 80 && !mbSecure) && !(muPort == 443 && mbSecure)) {
 			msUrl += ':';
 			char buf[20];
-			sprintf(buf, "%i", miPort);
+			sprintf(buf, "%hu", muPort);
 			msUrl += buf;
 		}
 	}
-	msUrl += '/'; //TODO should this be added?
+
+	if (msPath.empty() || msPath.at(0) != '/') {
+		msUrl += '/';
+	}
 	msUrl += msPath;
+
 	if (mlQueryParams.size()) {
 		msUrl += '?';
 		msUrl += GetQuery();
@@ -59,15 +89,22 @@ std::string& Url::GetUrl() {
 }
 
 void Url::AddQueryParam(std::string& name, std::string& value) {
-	TParam param;
+	TQueryParam param;
 	param.paramName = name;
 	param.paramValue = value;
 	mlQueryParams.push_back(param);
 }
 
+void Url::AddQueryParam(const char* name, const char* value) {
+	TQueryParam param;
+	param.paramName = name ? name : "";
+	param.paramValue = value ? value : "";
+	mlQueryParams.push_back(param);
+}
+
 std::string& Url::GetQuery() {
 	msQuery.clear();
-	for (std::list<TParam>::iterator it = mlQueryParams.begin(); it != mlQueryParams.end(); ++it) {
+	for (std::list<TQueryParam>::iterator it = mlQueryParams.begin(); it != mlQueryParams.end(); ++it) {
 		msQuery += UrlEncode((*it).paramName);
 		msQuery += "=";
 		msQuery += UrlEncode((*it).paramValue);
@@ -79,30 +116,6 @@ std::string& Url::GetQuery() {
 }
 
 std::string Url::UrlEncode(std::string& str) {
-	/*std::string new_str = "";
-	 char c;
-	 int ic;
-	 const char* chars = str.c_str();
-	 char bufHex[10];
-	 int len = strlen(chars);
-
-	 for(int i=0;i<len;i++){
-	 c = chars[i];
-	 ic = c;
-	 // uncomment this if you want to encode spaces with +
-	 //if (c==' ') new_str += '+';
-	 //else
-	 if (isalnum(c) || c == '-' || c == '_' || c == '.' || c == '~') new_str += c;
-	 else {
-	 sprintf(bufHex,"%X",c);
-	 if(ic < 16)
-	 new_str += "%0";
-	 else
-	 new_str += "%";
-	 new_str += bufHex;
-	 }
-	 }
-	 return new_str;*/
 	std::ostringstream escaped;
 	escaped.fill('0');
 	escaped << std::hex;
@@ -146,123 +159,254 @@ std::string Url::UrlDecode(std::string str) {
 	return ret;
 }
 
-//TODO replace with own parser
-int Url::ParseQuery(char* querystring) {
-	struct yuarel_param params[10];
-	int queryValuepairs = yuarel_parse_query(querystring, '&', params, sizeof(params));
-	for (int i = 0; i < queryValuepairs; i++) {
-		TParam param { params[i].key ? params[i].key : "", params[i].val ? params[i].val : "" };
-		mlQueryParams.emplace_back(param);
-	}
-	return queryValuepairs;
-}
-
-inline int ishex(int x) {
-	return (x >= '0' && x <= '9') || (x >= 'a' && x <= 'f') || (x >= 'A' && x <= 'F');
-}
-
-int decode(const char *s, char *dec) {
-	char *o;
-	const char *end = s + strlen(s);
-	int c;
-
-	for (o = dec; s <= end; o++) {
-		c = *s++;
-		if (c == '+')
-			c = ' ';
-		else if (c == '%' && (!ishex(*s++) || !ishex(*s++) || !sscanf(s - 2, "%2x", &c)))
-			return -1;
-
-		if (dec)
-			*o = c;
-	}
-
-	return o - dec;
-}
-
-/*
- const char* Url::GetValueOf(const char* key) {
- for (int i = 0; i < queryValuepairs; i++) {
- if (strcmp(key, params[i].key) == 0) {
- decode(params[i].val, params[i].val); // dont allocate memory, just decode inline
- return params[i].val;
- }
- }
- return NULL;
- }
-
-
-
- bool Url::isKey(const char* key) {
- for (int i = 0; i < queryValuepairs; i++) {
- if (strcmp(key, params[i].key) == 0) {
- return true;
- }
- }
- return false;
- }*/
-
-bool Url::ParseUrl(std::string url) {
-	struct yuarel uri;
-
-	if (yuarel_parse(&uri, (char*) url.data())) {
-		return false; //error
-	}
-
-	if (!uri.host) {
-		return false;
-	}
-	msHost = uri.host;
-
-	mbSecure = false;
-	if (!strcmp(uri.scheme, "https")) {
-		mbSecure = true;
-	} else if (strcmp(uri.scheme, "http")) {
-		return false;
-	}
-
-	if (uri.fragment) {
-		msFragment = uri.fragment;
-	}
-
-	if (uri.query) {
-		msQuery = uri.query;
-		int i = ParseQuery(uri.query);
-		ESP_LOGI(LOGTAG, "ParseQuery(%i): %s", i, uri.query);
-	}
-
-	if (uri.path) {
-		msPath = uri.path;
-	}
-
-	if (uri.port) {
-		miPort = uri.port;
-	} else {
-		miPort = mbSecure ? 443 : 80;
-	}
-	return true;
-}
-
 bool Url::Selftest() {
-	std::string s = "https://xyz.com:765?name1=param1&name2&name3=&name4=val4&n a m e 5=v%a%l%u%e5#fragment1";
-	//TODO handle path "/" ---> after url parsing: hostname=<xyz.com> path=<>
-
-//	I (4764) Url: HttpPrepareGet: https://xyz.com:765?name1=param1&name2&name3=&name4=val4&n a m e 5&v%a%l%u%e5#fragment1
-//	I (4774) Url: step1
-//	I (4774) Url: step2
-//	I (4774) Url: after url parsing: hostname=<xyz.com> path=<>
-//	I (4784) Url: Test input URL: https://xyz.com:765?name1=param1&name2&name3=&name4=val4&n a m e 5&v%a%l%u%e5#fragment1
-//	I (4794) Url: Test output URL: https://xyz.com:/#fragment1
-//	I (4804) Url: Test Url(): xyz.com:765/?#fragment1
-
-
-	Url u(s);
-	ESP_LOGI(LOGTAG, "Test input URL: %s", s.c_str());
+	std::string s = "http://www.xyz.com?name1=param1&name2&name3=&name4=val4&n a m e 5=v%a%l%u%e5#fragment1";
+	Url u;
+	u.Parse(s);
+	ESP_LOGI(LOGTAG, "Test input  URL: %s", s.c_str());
 	ESP_LOGI(LOGTAG, "Test output URL: %s", u.GetUrl().c_str());
-	ESP_LOGI(LOGTAG, "Test Url(): %s:%i/%s?%s#%s", u.GetHost().c_str(), (int )u.GetPort(), u.GetPath().c_str(),
-			u.GetQuery().c_str(), u.GetFragment().c_str());
+	ESP_LOGI(LOGTAG, "Test host<%s:%hu> path<%s> query<%s> fragment<%s>", u.GetHost().c_str(), u.GetPort(),
+			u.GetPath().c_str(), u.GetQuery().c_str(), u.GetFragment().c_str());
 
+	s = u.GetUrl();
+	u.Parse(s);
+	ESP_LOGI(LOGTAG, "Test input  URL: %s", s.c_str());
+	ESP_LOGI(LOGTAG, "Test output URL: %s", u.GetUrl().c_str());
+	ESP_LOGI(LOGTAG, "Test host<%s:%hu> path<%s> query<%s> fragment<%s>", u.GetHost().c_str(), u.GetPort(),
+			u.GetPath().c_str(), u.GetQuery().c_str(), u.GetFragment().c_str());
 
+	const char* cs = "https://xyz.com:765?name1=param1&name2&name3=&name4=val4&n a m e 5=v%a%l%u%e5#fragment1";
+	u.Parse(cs);
+	ESP_LOGI(LOGTAG, "Test input  URL: %s", cs);
+	ESP_LOGI(LOGTAG, "Test output URL: %s", u.GetUrl().c_str());
+	ESP_LOGI(LOGTAG, "Test host<%s:%hu> path<%s> query<%s> fragment<%s>", u.GetHost().c_str(), u.GetPort(),
+			u.GetPath().c_str(), u.GetQuery().c_str(), u.GetFragment().c_str());
+
+	s = "/relativePath?#falsefragment&#=#&?=?=2==&1&&#fragment1";
+	u.Parse(s);
+	ESP_LOGI(LOGTAG, "Test input  URL: %s", s.c_str());
+	ESP_LOGI(LOGTAG, "Test output URL: %s", u.GetUrl().c_str());
+	ESP_LOGI(LOGTAG, "Test host<%s:%hu> path<%s> query<%s> fragment<%s>", u.GetHost().c_str(), u.GetPort(),
+			u.GetPath().c_str(), u.GetQuery().c_str(), u.GetFragment().c_str());
+
+	s = "/relativePath?#falsefragment&#=#&?=?=2==&1&&#fragment1";
+	u.Clear();
+	u.Build(false, "testhost", 0, "mypath");
+	u.AddQueryParam("#falsefragment", NULL);
+	u.AddQueryParam("#", "#");
+	u.AddQueryParam("?=?=2==", "");
+	u.AddQueryParam("1", "");
+	u.AddQueryParam("", "");
+	u.SetFragment("fragment1");
+	ESP_LOGI(LOGTAG, "Test input  URL: %s", s.c_str());
+	ESP_LOGI(LOGTAG, "Test output URL: %s", u.GetUrl().c_str());
+	ESP_LOGI(LOGTAG, "Test host<%s:%hu> path<%s> query<%s> fragment<%s>", u.GetHost().c_str(), u.GetPort(),
+			u.GetPath().c_str(), u.GetQuery().c_str(), u.GetFragment().c_str());
 
 	return true;
 }
+
+#define STATE_RelativeUrl 0
+#define STATE_Http 1
+#define STATE_Host 2
+#define STATE_Port 3
+#define STATE_Path 4
+#define STATE_Query 5
+#define STATE_Fragment 6
+
+bool Match(std::string::iterator& it, std::string& s, std::string match) {
+	std::string::iterator mit = match.begin();
+	while (mit != match.end()) {
+		if (it == s.end()) {
+			return false;
+		}
+		if (tolower(*it) != tolower(*mit)) {
+			return false;
+		}
+		mit++;
+		it++;
+	}
+	return true;
+}
+
+bool Url::ParseUrl(std::string& u) {
+
+	std::string::iterator it;
+	std::string scheme;
+
+	char c;
+	unsigned short state = STATE_RelativeUrl;
+
+	it = u.begin();
+	while (it != u.end()) {
+		c = *it;
+
+		switch (state) {
+		case STATE_RelativeUrl:
+			if (c == '/') {
+				state = STATE_Path;
+				msPath += '/';
+				break;
+			}
+			state = STATE_Http;
+			// dont break here;
+
+		case STATE_Http:
+
+			if (!Match(it, u, "http")) {
+				return false;
+			}
+
+			if (Match(it, u, "s")) {
+				mbSecure = true;
+			}
+
+			if (!Match(it, u, "://")) {
+				return false;
+			}
+			c = *it;
+			state = STATE_Host;
+			// dont break here
+
+		case STATE_Host:
+			if (c == ':') {
+				state = STATE_Port;
+				break;
+			}
+			if (c == '?') {
+				state = STATE_Query;
+				break;
+			}
+			if (c == '#') {
+				state = STATE_Fragment;
+				break;
+			}
+			if (c == '/') {
+				state = STATE_Path;
+				msPath += '/';
+				break;
+			}
+			msHost += c;
+			break;
+
+		case STATE_Port:
+			if (c == '?') {
+				state = STATE_Query;
+				break;
+			}
+			if (c == '#') {
+				state = STATE_Fragment;
+				break;
+			}
+			if (c == '/') {
+				state = STATE_Path;
+				msPath += '/';
+				break;
+
+			}
+			if ((c >= '0') && (c <= '9')) {
+				muPort *= 10;
+				muPort += c - '0';
+				break;
+			}
+			break;
+
+		case STATE_Path:
+			if (c == '?') {
+				state = STATE_Query;
+				break;
+			}
+			if (c == '#') {
+				state = STATE_Fragment;
+				break;
+			}
+			msPath += c;
+			break;
+
+		case STATE_Query:
+			if (c == '#') {
+				state = STATE_Fragment;
+				break;
+			}
+			msQuery += c;
+			break;
+
+		case STATE_Fragment:
+			msFragment += c;
+			break;
+		}
+
+		it++;
+	}
+	if (msPath.empty()) {
+		msPath += '/';
+	}
+
+	if (!muPort) {
+		muPort = mbSecure ? 443 : 80;
+	}
+
+	ParseQuery(msQuery);
+	return true;
+}
+
+#define STATE_QueryName 0
+#define STATE_QueryValue 1
+
+std::list<TQueryParam>& Url::ParseQuery(std::string& u) {
+	mlQueryParams.clear();
+	if (u.empty()) {
+		return mlQueryParams;
+	}
+
+	std::string name;
+	std::string value;
+
+	std::string::iterator it;
+	it = u.begin();
+
+	char c;
+	unsigned short state = STATE_QueryName;
+
+	while (it != u.end()) {
+		c = *it;
+
+		switch (state) {
+		case STATE_QueryName:
+			if (c == '=') {
+				state = STATE_QueryValue;
+				break;
+			}
+			if (c == '&') {
+				mlQueryParams.emplace_back();
+				mlQueryParams.back().paramName = UrlDecode(name);
+				mlQueryParams.back().paramValue = UrlDecode(value);
+				name.clear();
+				value.clear();
+				break;
+			}
+			name += c;
+			break;
+
+		case STATE_QueryValue:
+			if (c == '&') {
+				state = STATE_QueryName;
+				mlQueryParams.emplace_back();
+				mlQueryParams.back().paramName = UrlDecode(name);
+				mlQueryParams.back().paramValue = UrlDecode(value);
+				name.clear();
+				value.clear();
+				break;
+			}
+			value += c;
+			break;
+
+		}
+		it++;
+	}
+	mlQueryParams.emplace_back();
+	mlQueryParams.back().paramName = UrlDecode(name);
+	mlQueryParams.back().paramValue = UrlDecode(value);
+	return mlQueryParams;
+}
+

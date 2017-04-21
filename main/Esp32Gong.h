@@ -1,7 +1,7 @@
-#ifndef MAIN_ESP32GONG_HPP_
-#define MAIN_ESP32GONG_HPP_
+#ifndef MAIN_ESP32GONG_H_
+#define MAIN_ESP32GONG_H_
 
-#include "Config.hpp"
+#include "Config.h"
 
 #define FIRMWARE_VERSION __DATE__ " " __TIME__
 
@@ -33,4 +33,4 @@ private:
 
 
 
-#endif /* MAIN_ESP32GONG_HPP_ */
+#endif /* MAIN_ESP32GONG_H_ */

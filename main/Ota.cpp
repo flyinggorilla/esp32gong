@@ -4,10 +4,9 @@
  *  Created on: 11.04.2017
  *      Author: bernd
  */
+#include "Ota.h"
+
 #include "sdkconfig.h"
-#include "Ota.hpp"
-
-
 #include <string.h>
 #include <sys/socket.h>
 #include <netdb.h>
@@ -24,7 +23,8 @@
 
 #include <nvs.h>
 #include <nvs_flash.h>
-#include "WebClient.hpp"
+
+#include "WebClient.h"
 
 #define BUFFSIZE 1024
 #define TEXT_BUFFSIZE 1024
@@ -109,11 +109,12 @@ bool Ota::OnReceiveData(char* buf, int len) {
 
 bool Ota::UpdateFirmware(std::string sUrl)
 {
-	Url urltest(sUrl);
-	urltest.Selftest();
-	Url url(sUrl);
-	ESP_LOGI(LOGTAG, "input URL: %s", sUrl.c_str());
-	ESP_LOGI(LOGTAG, "Url(): %s:%i/%s?%s", url.GetHost().c_str(), (int)url.GetPort(), url.GetPath().c_str(), url.GetQuery().c_str());
+	Url url;
+	//url.Selftest();
+
+	url.Parse(sUrl);
+	//ESP_LOGI(LOGTAG, "input  URL: %s", sUrl.c_str());
+	ESP_LOGI(LOGTAG, "Retrieve firmware from: %s", url.GetUrl().c_str());
     if (!webClient.HttpPrepareGet(&url)) {
     	ESP_LOGE(LOGTAG, "Error in HttpPrepareGet()")
     			return false;

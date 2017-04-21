@@ -5,7 +5,7 @@
  *      Author: bernd
  */
 
-#include "SpiffsFileSystem.hpp"
+#include "SpiffsFileSystem.h"
 
 #include "sdkconfig.h"
 #include <esp_partition.h>

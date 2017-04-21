@@ -1,8 +1,6 @@
-#include "WebClient.hpp"
+#include "WebClient.h"
 
 #include "Url.hpp"
-#include "HttpResponseParser.hpp"
-
 #include <esp_log.h>
 #include "sdkconfig.h"
 #include <string.h>
@@ -21,6 +19,7 @@
 #include "nvs_flash.h"
 #include <netdb.h>
 
+#include "HttpResponseParser.h"
 #include "lwip/err.h"
 #include "lwip/sockets.h"
 #include "lwip/sys.h"

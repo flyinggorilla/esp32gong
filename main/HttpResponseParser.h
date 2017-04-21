@@ -4,9 +4,9 @@
 #include <string>
 #include <list>
 
-#include "DownloadHandler.hpp"
+#include "DownloadHandler.h"
 #include "StringParser.hpp"
-#include "UrlParser.hpp"
+
 
 
 

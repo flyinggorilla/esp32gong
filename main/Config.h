@@ -1,5 +1,5 @@
-#ifndef MAIN_CONFIG_HPP_
-#define MAIN_CONFIG_HPP_
+#ifndef MAIN_CONFIG_H_
+#define MAIN_CONFIG_H_
 
 #include "nvs.h"
 #include <string>
@@ -33,4 +33,4 @@ public:
 	__uint32_t muLastSTAIpAddress;
 };
 
-#endif /* MAIN_CONFIG_HPP_ */
+#endif /* MAIN_CONFIG_H_ */

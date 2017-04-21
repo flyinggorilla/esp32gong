@@ -1,11 +1,11 @@
-#ifndef MAIN_HTTPREQUESTPARSER_HPP_
-#define MAIN_HTTPREQUESTPARSER_HPP_
+#ifndef MAIN_HTTPREQUESTPARSER_H_
+#define MAIN_HTTPREQUESTPARSER_H_
 
 #include <string>
 #include <list>
 
 #include "StringParser.hpp"
-#include "UrlParser.hpp"
+#include "UrlParser.h"
 
 
 class HttpRequestParser {
@@ -54,4 +54,4 @@ private:
 	__uint8_t muError;
 };
 
-#endif /* MAIN_HTTPREQUESTPARSER_HPP_ */
+#endif /* MAIN_HTTPREQUESTPARSER_H_ */

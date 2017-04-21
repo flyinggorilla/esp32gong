@@ -5,13 +5,14 @@
  *      Author: bernd
  */
 
-#include "SpiffsFile.hpp"
+#include "SpiffsFile.h"
 
 #include <esp_partition.h>
 #include <esp_spiffs.h>
 #include <esp_log.h>
 #include <esp_err.h>
-#include "SpiffsFileSystem.hpp"
+
+#include "SpiffsFileSystem.h"
 
 
 SpiffsFile::SpiffsFile() {

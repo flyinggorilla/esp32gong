@@ -1,5 +1,5 @@
-#ifndef MAIN_DOWNLOADHANDLER_HPP_
-#define MAIN_DOWNLOADHANDLER_HPP_
+#ifndef MAIN_DOWNLOADHANDLER_H_
+#define MAIN_DOWNLOADHANDLER_H_
 
 
 class DownloadHandler {
@@ -10,4 +10,4 @@ public:
 };
 
 
-#endif // MAIN_DOWNLOADHANDLER_HPP_
+#endif // MAIN_DOWNLOADHANDLER_H_

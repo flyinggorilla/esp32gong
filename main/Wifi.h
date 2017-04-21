@@ -5,8 +5,8 @@
  *      Author: kolban
  */
 
-#ifndef MAIN_WIFI_HPP_
-#define MAIN_WIFI_HPP_
+#ifndef MAIN_WIFI_H_
+#define MAIN_WIFI_H_
 #include "sdkconfig.h"
 #include "esp_wifi.h"
 #include "esp_err.h"
@@ -78,4 +78,4 @@ private:
 
 };
 
-#endif /* MAIN_WIFI_HPP_ */
+#endif /* MAIN_WIFI_H_ */

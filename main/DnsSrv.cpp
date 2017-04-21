@@ -5,7 +5,8 @@
  *      Author: bernd
  */
 
-#include "DnsSrv.hpp"
+#include "DnsSrv.h"
+
 #include <esp_log.h>
 #include <stdio.h>
 

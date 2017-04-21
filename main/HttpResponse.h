@@ -1,5 +1,5 @@
-#ifndef MAIN_HTTPRESPONSE_HPP_
-#define MAIN_HTTPRESPONSE_HPP_
+#ifndef MAIN_HTTPRESPONSE_H_
+#define MAIN_HTTPRESPONSE_H_
 
 #include <string>
 #include <list>

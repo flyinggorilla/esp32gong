@@ -5,13 +5,13 @@
  *      Author: bernd
  */
 
-#ifndef MAIN_SPIFFSFILESYSTEM_HPP_
-#define MAIN_SPIFFSFILESYSTEM_HPP_
+#ifndef MAIN_SPIFFSFILESYSTEM_H_
+#define MAIN_SPIFFSFILESYSTEM_H_
 
 #define LOG_PAGE_SIZE       256
 
 #include "esp_spiffs.h"
-#include "SpiffsFile.hpp"
+#include "SpiffsFile.h"
 #include <stdlib.h>
 #include <string>
 #include <vector>
@@ -59,4 +59,4 @@ private:
 
 
 
-#endif /* MAIN_SPIFFSFILESYSTEM_HPP_ */
+#endif /* MAIN_SPIFFSFILESYSTEM_H_ */

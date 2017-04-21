@@ -5,7 +5,7 @@
  *      Author: bernd
  */
 
-#include "I2SPlayer.hpp"
+#include "I2SPlayer.h"
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"

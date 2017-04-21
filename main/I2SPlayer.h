@@ -5,10 +5,10 @@
  *      Author: bernd
  */
 
-#ifndef MAIN_I2SPLAYER_HPP_
-#define MAIN_I2SPLAYER_HPP_
+#ifndef MAIN_I2SPLAYER_H_
+#define MAIN_I2SPLAYER_H_
 
-#include "Wav.hpp"
+#include "Wav.h"
 
 class I2SPlayer {
 public:
@@ -54,4 +54,4 @@ private:
 
 };
 
-#endif /* MAIN_I2SPLAYER_HPP_ */
+#endif /* MAIN_I2SPLAYER_H_ */

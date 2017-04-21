@@ -1,9 +1,10 @@
-#ifndef MAIN_DYNAMICREQUESTHANDLER_HPP_
-#define MAIN_DYNAMICREQUESTHANDLER_HPP_
+#ifndef MAIN_DYNAMICREQUESTHANDLER_H_
+#define MAIN_DYNAMICREQUESTHANDLER_H_
 
 #include <string>
 #include <list>
-#include "UrlParser.hpp"
+
+#include "UrlParser.h"
 
 class Ufo;
 class DisplayCharter;
@@ -23,4 +24,4 @@ private:
 	bool mbRestart;
 };
 
-#endif /* MAIN_DYNAMICREQUESTHANDLER_HPP_ */
+#endif /* MAIN_DYNAMICREQUESTHANDLER_H_ */

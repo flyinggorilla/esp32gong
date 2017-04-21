@@ -5,8 +5,8 @@
  *      Author: bernd
  */
 
-#ifndef MAIN_DNSSRV_HPP_
-#define MAIN_DNSSRV_HPP_
+#ifndef MAIN_DNSSRV_H_
+#define MAIN_DNSSRV_H_
 
 #include <mongoose.h>
 
@@ -21,4 +21,4 @@ private:
 	in_addr_t s_our_ip_addr;
 };
 
-#endif /* MAIN_DNSSRV_HPP_ */
+#endif /* MAIN_DNSSRV_H_ */

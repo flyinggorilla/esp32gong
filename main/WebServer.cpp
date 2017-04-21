@@ -1,5 +1,4 @@
-#include "WebServer.hpp"
-#include "DynamicRequestHandler.hpp"
+#include "WebServer.h"
 
 #include "sdkconfig.h"
 #include <lwip/sockets.h>
@@ -17,21 +16,22 @@
 #include <string>
 #include "time.h"
 #include "cJSON.h"
-#include "UrlParser.hpp"
 
+#include "Config.h"
+#include "DynamicRequestHandler.h"
+#include "Esp32Gong.h"
 #include "fontwoff.h"
 #include "fontttf.h"
 #include "fontsvg.h"
 #include "fonteot.h"
+#include "HttpRequestParser.h"
+#include "HttpResponse.h"
 #include "indexhtml.h"
+#include "Ota.h"
+#include "SpiffsFileSystem.h"
+#include "UrlParser.h"
 
-#include "Ota.hpp"
-#include "SpiffsFileSystem.hpp"
-#include "Wifi.hpp"
-#include "Config.hpp"
-#include "Esp32Gong.hpp"
-#include "HttpRequestParser.hpp"
-#include "HttpResponse.hpp"
+#include "Wifi.h"
 
 extern Esp32Gong esp32gong;
 

@@ -1,4 +1,4 @@
-#include "Wav.hpp"
+#include "Wav.h"
 
 #include "esp_log.h"
 #define LOGTAG "wav"

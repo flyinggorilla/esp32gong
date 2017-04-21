@@ -1,4 +1,4 @@
-#include "Esp32Gong.hpp"
+#include "Esp32Gong.h"
 
 #include "sdkconfig.h"
 //#define _GLIBCXX_USE_C99
@@ -16,14 +16,15 @@
 #include <string>
 #include "math.h"
 #include "string.h"
+
+#include "Config.h"
+#include "DnsSrv.h"
+#include "I2SPlayer.h"
+#include "Ota.h"
+#include "SpiffsFileSystem.h"
 #include "wavdata.h"
-#include "I2SPlayer.hpp"
-#include "SpiffsFileSystem.hpp"
-#include "WebServer.hpp"
-#include "Wifi.hpp"
-#include "Config.hpp"
-#include "DnsSrv.hpp"
-#include "Ota.hpp"
+#include "WebServer.h"
+#include "Wifi.h"
 
 #define ONBOARDLED_GPIO GPIO_NUM_5  // GPIO5 on Sparkfun ESP32 Thing
 #define LOGTAG "main"

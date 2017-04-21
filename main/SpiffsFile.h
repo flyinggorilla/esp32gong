@@ -5,14 +5,14 @@
  *      Author: bernd
  */
 
-#ifndef MAIN_SPIFFSFILE_HPP_
-#define MAIN_SPIFFSFILE_HPP_
+#ifndef MAIN_SPIFFSFILE_H_
+#define MAIN_SPIFFSFILE_H_
 
 #include <stdlib.h>
 #include <string>
 #include <vector>
 
-#include "SpiffsFileSystem.hpp"
+#include "SpiffsFileSystem.h"
 /*
  * Methods are uppercase due to clash with macros "read", "write", ...
  */
@@ -37,4 +37,4 @@ private:
 
 };
 
-#endif /* MAIN_SPIFFSFILE_HPP_ */
+#endif /* MAIN_SPIFFSFILE_H_ */
