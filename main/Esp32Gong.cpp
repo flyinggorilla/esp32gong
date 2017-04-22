@@ -139,9 +139,6 @@ void Esp32Gong::Start() {
 	while(!wifi.IsConnected()) {
 		vTaskDelay(100/portTICK_PERIOD_MS);
 	}
-	Ota ota;
-	ota.UpdateFirmware("http://www.msftconnecttest.com/connecttest.txt");
-	//ota.update("https://github.com/flyinggorilla/esp32gong/blob/master/README.md");
 
 	xTaskCreate(&task_test_webclient, "Task_TestWebClient", 8192, this, 5, NULL);
 
@@ -154,23 +151,37 @@ void Esp32Gong::TaskTestWebClient() {
 	//url.Selftest();
 
 	url.Parse("http://www.msftconnecttest.com/connecttest.txt");
-    if (!webClient.HttpPrepare(&url)) {
-    	ESP_LOGE(LOGTAG, "Error in HttpPrepareGet()")
+    webClient.Prepare(&url);
+    webClient.AddRequestHeader("Connection: close");
+    webClient.AddRequestHeader("Test1: testVal1");
+    webClient.AddRequestHeader("Test2: testVal2; testVal3");
+  	ESP_LOGE(LOGTAG, "Msftconnecttest Execute#1");
+    if (!webClient.Execute()) {
+      	ESP_LOGE(LOGTAG, "Error requesting: %s", url.GetUrl().c_str());
+    }
+  	ESP_LOGE(LOGTAG, "Msftconnecttest Execute#2");
+    if (!webClient.Execute()) {
+      	ESP_LOGE(LOGTAG, "Error requesting: %s", url.GetUrl().c_str());
+    }
+  	ESP_LOGE(LOGTAG, "Msftconnecttest Execute#3");
+    if (!webClient.Execute()) {
+      	ESP_LOGE(LOGTAG, "Error requesting: %s", url.GetUrl().c_str());
     }
 
-    if (!webClient.HttpExecute()) {
-      	ESP_LOGE(LOGTAG, "Error in HttpExecute()")
-    }
+
 
 	url.Parse("https://www.howsmyssl.com/a/check");
-    if (!webClient.HttpPrepare(&url)) {
+    if (!webClient.Prepare(&url)) {
     	ESP_LOGE(LOGTAG, "Error in HttpPrepareGet()")
     }
 
-    if (!webClient.HttpExecute()) {
+    if (!webClient.Execute()) {
       	ESP_LOGE(LOGTAG, "Error in HttpExecute()")
     }
 
+    Ota ota;
+    ota.UpdateFirmware("https://github.com/flyinggorilla/esp32gong/blob/master/README.md");
+    ota.UpdateFirmware("https://www.howsmyssl.com/a/check");
 
 
 }

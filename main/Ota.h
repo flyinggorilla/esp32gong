@@ -25,11 +25,12 @@ public:
 	bool OnReceiveData(char* buf, int len); // override DownloadHandler virtual method
 
 private:
-	WebClient webClient;
-
-
+	WebClient mWebClient;
     esp_ota_handle_t update_handle = 0 ;
     const esp_partition_t *update_partition = NULL;
+    unsigned int muDataLength = 0;
+
+    std::string dummy; //TODO REMOVE
 
 };
 

@@ -47,7 +47,7 @@ WebClient::~WebClient() {
 
 }
 
-bool WebClient::HttpPrepare(Url* pUrl) {
+bool WebClient::Prepare(Url* pUrl) {
 	mlRequestHeaders.clear();
 	if (!pUrl)
 		return false;
@@ -62,16 +62,16 @@ bool WebClient::HttpAddHeader(std::string& sHeader) {
 	return true;
 }
 
-bool WebClient::HttpAddHeader(const char* header) {
+bool WebClient::AddRequestHeader(const char* header) {
 	mlRequestHeaders.push_back(header);
 	return true;
 }
 
-unsigned short WebClient::HttpExecute() {
+unsigned short WebClient::Execute() {
 	return HttpExecute(NULL);
 }
 unsigned short WebClient::HttpExecute(DownloadHandler* pDownloadHandler) {
-	mpDownloadHandler = NULL;
+	mpDownloadHandler = pDownloadHandler;
 	if (!mpUrl)
 		return false;
 
@@ -340,11 +340,6 @@ bool WebClient::HttpExecuteSecure() {
 		if (ret < 0) {
 			//ESP_LOGE(LOGTAG, "Connection closed during parsing");
 			ESP_LOGE(LOGTAG, "mbedtls_ssl_read returned -0x%x", -ret);
-			break;
-		}
-
-		if (ret == 0) {
-			ESP_LOGI(LOGTAG, "connection closed");
 			break;
 		}
 

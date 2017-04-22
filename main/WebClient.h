@@ -17,21 +17,21 @@ public:
 
 	/*
 	 * Prepares a HTTP request.
-	 * Use e.g. HttpAddHeader and Certificate methods to prepare request before actually executing with HttpExecute()
+	 * Use e.g. AddRequestHeader and Certificate methods to prepare request before actually executing with Execute()
 	 * @param pUrl
 	 * 			- if NULL, internal dynamic buffer will be used to store message content, which can be accessed with GetBody()
 	 * 			- if set, the message body data stream will be directly forwarded to the DownloadHandler implementation
 	 * @return false if invalid URL was provided
 	 */
-	bool HttpPrepare(Url* pUrl);
+	bool Prepare(Url* pUrl);
 
 
 	/*
-	 * Adds HTTP headers to the request - you should have called HttpPrepare beforehand
+	 * Adds HTTP headers to the request - you should have called Prepare() beforehand
 	 * @param e.g. a header like "content-type: json/text"
 	 */
 	bool HttpAddHeader(std::string& sHeader);
-	bool HttpAddHeader(const char* header);
+	bool AddRequestHeader(const char* header);
 
 	/*
 	 * executes HTTP(S) request and streams the response data to the provided DownloadHandler.
@@ -49,7 +49,7 @@ public:
 	 * 		- HTTP response status code
 	 * 		- 0 on error
 	 */
-	unsigned short HttpExecute();
+	unsigned short Execute();
 
 	/*
 	 * in case the default max 16kB dynamic buffer limit is too small, you can increase the limit here.

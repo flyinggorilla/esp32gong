@@ -57,6 +57,15 @@ void HttpResponseParser::Init(DownloadHandler* pDownloadHandler, unsigned int ma
 }
 
 bool HttpResponseParser::ParseResponse(char* sBuffer, unsigned int uLen) {
+	// when uLen == 0, then connection is closed
+	if (uLen == 0) {
+		mbFinished = true;
+		if (mpDownloadHandler)
+			mpDownloadHandler->OnReceiveEnd();
+		else
+			ESP_LOGI(LOGTAG, "BODY:<%s>", mBody.c_str());
+		ESP_LOGI(LOGTAG, "CONNECTION CLOSED: RECEIVED: %u", muActualContentLength);
+	}
 
 	unsigned int uPos = 0;
 	while (uPos < uLen) {
@@ -211,7 +220,7 @@ bool HttpResponseParser::ParseResponse(char* sBuffer, unsigned int uLen) {
 				size_t size = uLen - uPos;
 				muActualContentLength += size;
 				if (mpDownloadHandler) {
-					if (!mpDownloadHandler->OnReceiveData((char*) sBuffer[uPos], size)) {
+					if (!mpDownloadHandler->OnReceiveData(&sBuffer[uPos], size)) {
 						mbFinished = true;
 						return false;
 					}
