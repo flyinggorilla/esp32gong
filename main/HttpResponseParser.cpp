@@ -33,8 +33,6 @@ HttpResponseParser::~HttpResponseParser() {
 }
 
 void HttpResponseParser::Init(DownloadHandler* pDownloadHandler, unsigned int maxBodyBufferSize) {
-	Clear();
-
 	mpDownloadHandler = pDownloadHandler;
 	if (mpDownloadHandler) {
 		mBody = "<DOWNLOADHANDLER_IS_SET>";
@@ -56,10 +54,6 @@ void HttpResponseParser::Init(DownloadHandler* pDownloadHandler, unsigned int ma
 	mStringParser.AddStringToParse("http/1.0");
 	mStringParser.AddStringToParse("http/1.1");
 
-}
-
-void HttpResponseParser::Clear() {
-	mBody.clear();
 }
 
 bool HttpResponseParser::ParseResponse(char* sBuffer, unsigned int uLen) {

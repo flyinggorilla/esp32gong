@@ -28,11 +28,6 @@ public:
 
 
 	/*
-	 * clear memory buffers from heap by i.e. clearing response content, in case no DownloadHandler was used
-	 */
-	void Clear();
-
-	/*
 	 * feed parser with stream data, in a loop until ResponseFinised() is true
 	 *
 	 * example:
@@ -52,6 +47,7 @@ public:
 	bool IsHttp11() 		{ return mbHttp11; };
 	bool IsConnectionClose(){ return mbConClose; };
 	std::string& GetBody()  { return mBody; };
+	std::string& GetContentType()  { return msContentType; };
 	unsigned int GetContentLength() { return muActualContentLength; }
 	unsigned short GetStatusCode() { return muStatusCode; }
 

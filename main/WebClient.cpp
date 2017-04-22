@@ -35,21 +35,19 @@
 #include "mbedtls/error.h"
 #include "mbedtls/certs.h"
 
-//TODO remove to test routine
-#define WEB_URL "https://www.howsmyssl.com/a/check"
+#define DEFAULT_MAXRESPONSEDATASIZE 16*1024
 
 static const char LOGTAG[] = "WebClient";
 
 WebClient::WebClient() {
-
+  muMaxResponseDataSize = DEFAULT_MAXRESPONSEDATASIZE;
 }
 
 WebClient::~WebClient() {
 
 }
 
-bool WebClient::HttpPrepareGet(Url* pUrl, DownloadHandler* pOptionalDownloadHandler) {
-	mpDownloadHandler = pOptionalDownloadHandler;
+bool WebClient::HttpPrepare(Url* pUrl) {
 	mlRequestHeaders.clear();
 	if (!pUrl)
 		return false;
@@ -58,12 +56,22 @@ bool WebClient::HttpPrepareGet(Url* pUrl, DownloadHandler* pOptionalDownloadHand
 	return true;
 }
 
+
 bool WebClient::HttpAddHeader(std::string& sHeader) {
-	mlRequestHeaders.push_back(sHeader); //TODO IS THIS COPYING THE STRING?? YES = SAFE NO = NEED TO COPY BEFOREHAND
+	mlRequestHeaders.push_back(sHeader);
 	return true;
 }
 
-bool WebClient::HttpExecute() {
+bool WebClient::HttpAddHeader(const char* header) {
+	mlRequestHeaders.push_back(header);
+	return true;
+}
+
+unsigned short WebClient::HttpExecute() {
+	return HttpExecute(NULL);
+}
+unsigned short WebClient::HttpExecute(DownloadHandler* pDownloadHandler) {
+	mpDownloadHandler = NULL;
 	if (!mpUrl)
 		return false;
 
@@ -144,25 +152,24 @@ bool WebClient::HttpExecute() {
 	ESP_LOGI(LOGTAG, "... socket send success");
 
 	// Read HTTP response
-	HttpResponseParser httpParser;
-	httpParser.Init(mpDownloadHandler);
+	mHttpResponseParser.Init(mpDownloadHandler, muMaxResponseDataSize);
 
 	char recv_buf[256];
-	while (!httpParser.ResponseFinished()) {
+	while (!mHttpResponseParser.ResponseFinished()) {
 		size_t sizeRead = read(socket, recv_buf, sizeof(recv_buf) - 1);
 		if (sizeRead <= 0) {
 			ESP_LOGE(LOGTAG, "Connection closed during parsing");
 			close(socket);
 			break;
 		}
-		if (!httpParser.ParseResponse(recv_buf, sizeRead)) {
-			ESP_LOGE(LOGTAG, "HTTP Parsing error: %d", httpParser.GetError());
+		if (!mHttpResponseParser.ParseResponse(recv_buf, sizeRead)) {
+			ESP_LOGE(LOGTAG, "HTTP Parsing error: %d", mHttpResponseParser.GetError());
 			close(socket);
 			return false;
 		}
 	}
 
-	ESP_LOGI(LOGTAG, "data %i bytes: %s", httpParser.GetContentLength(), httpParser.GetBody().c_str());
+	ESP_LOGI(LOGTAG, "data %i bytes: %s", mHttpResponseParser.GetContentLength(), mHttpResponseParser.GetBody().c_str());
 
 	close(socket);
 
@@ -171,7 +178,6 @@ bool WebClient::HttpExecute() {
 
 bool WebClient::HttpExecuteSecure() {
 
-	HttpResponseParser httpParser;
 	std::string sRequest;
 
 	char buf[512];
@@ -318,9 +324,9 @@ bool WebClient::HttpExecuteSecure() {
 	ESP_LOGI(LOGTAG, "... socket send success");
 
 	// Read HTTP response
-	httpParser.Init(mpDownloadHandler);
+	mHttpResponseParser.Init(mpDownloadHandler, muMaxResponseDataSize);
 
-	while (!httpParser.ResponseFinished()) {
+	while (!mHttpResponseParser.ResponseFinished()) {
 		ret = mbedtls_ssl_read(&ssl, (unsigned char*)buf, sizeof(buf));
 
 		if (ret == MBEDTLS_ERR_SSL_WANT_READ || ret == MBEDTLS_ERR_SSL_WANT_WRITE)
@@ -344,8 +350,8 @@ bool WebClient::HttpExecuteSecure() {
 
 		len = ret;
 
-		if (!httpParser.ParseResponse(buf, len)) {
-			ESP_LOGE(LOGTAG, "HTTP Parsing error: %d", httpParser.GetError());
+		if (!mHttpResponseParser.ParseResponse(buf, len)) {
+			ESP_LOGE(LOGTAG, "HTTP Parsing error: %d", mHttpResponseParser.GetError());
 			goto exit;
 		}
 	}
@@ -355,7 +361,7 @@ bool WebClient::HttpExecuteSecure() {
 	exit: mbedtls_ssl_session_reset(&ssl);
 	mbedtls_net_free(&server_fd);
 
-	if (!httpParser.ResponseFinished() && ret != 0) {
+	if (!mHttpResponseParser.ResponseFinished() && ret != 0) {
 		mbedtls_strerror(ret, buf, 100);
 		ESP_LOGE(LOGTAG, "Last MBEDTLS error was: -0x%x - %s", -ret, buf);
 		return false;

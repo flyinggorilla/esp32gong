@@ -154,7 +154,7 @@ void Esp32Gong::TaskTestWebClient() {
 	//url.Selftest();
 
 	url.Parse("http://www.msftconnecttest.com/connecttest.txt");
-    if (!webClient.HttpPrepareGet(&url)) {
+    if (!webClient.HttpPrepare(&url)) {
     	ESP_LOGE(LOGTAG, "Error in HttpPrepareGet()")
     }
 
@@ -163,13 +163,16 @@ void Esp32Gong::TaskTestWebClient() {
     }
 
 	url.Parse("https://www.howsmyssl.com/a/check");
-    if (!webClient.HttpPrepareGet(&url)) {
+    if (!webClient.HttpPrepare(&url)) {
     	ESP_LOGE(LOGTAG, "Error in HttpPrepareGet()")
     }
 
     if (!webClient.HttpExecute()) {
       	ESP_LOGE(LOGTAG, "Error in HttpExecute()")
     }
+
+
+
 }
 
 void Esp32Gong::TaskWebServer() {
