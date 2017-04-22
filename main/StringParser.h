@@ -1,5 +1,5 @@
-#ifndef MAIN_STRINGPARSER_HPP_
-#define MAIN_STRINGPARSER_HPP_
+#ifndef MAIN_STRINGPARSER_H_
+#define MAIN_STRINGPARSER_H_
 
 #include "freertos/FreeRTOS.h"
 
@@ -23,4 +23,4 @@ private:
 
 };
 
-#endif /* MAIN_STRINGPARSER_HPP_ */
+#endif /* MAIN_STRINGPARSER_H_ */

@@ -5,7 +5,7 @@
 #include <list>
 
 #include "DownloadHandler.h"
-#include "StringParser.hpp"
+#include "StringParser.h"
 
 
 class HttpResponseParser {
