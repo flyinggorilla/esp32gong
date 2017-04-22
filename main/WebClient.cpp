@@ -1,6 +1,6 @@
 #include "WebClient.h"
 
-#include "Url.hpp"
+#include "Url.h"
 #include <esp_log.h>
 #include "sdkconfig.h"
 #include <string.h>
@@ -26,8 +26,19 @@
 #include "lwip/netdb.h"
 #include "lwip/dns.h"
 
-static const char LOGTAG[] = "WebClient";
+#include "mbedtls/platform.h"
+#include "mbedtls/net.h"
+#include "mbedtls/esp_debug.h"
+#include "mbedtls/ssl.h"
+#include "mbedtls/entropy.h"
+#include "mbedtls/ctr_drbg.h"
+#include "mbedtls/error.h"
+#include "mbedtls/certs.h"
 
+//TODO remove to test routine
+#define WEB_URL "https://www.howsmyssl.com/a/check"
+
+static const char LOGTAG[] = "WebClient";
 
 WebClient::WebClient() {
 
@@ -37,13 +48,13 @@ WebClient::~WebClient() {
 
 }
 
-
 bool WebClient::HttpPrepareGet(Url* pUrl, DownloadHandler* pOptionalDownloadHandler) {
 	mpDownloadHandler = pOptionalDownloadHandler;
 	mlRequestHeaders.clear();
 	if (!pUrl)
 		return false;
 	mpUrl = pUrl;
+
 	return true;
 }
 
@@ -60,12 +71,16 @@ bool WebClient::HttpExecute() {
 		return false;
 	}
 
+	if (mpUrl->GetSecure()) {
+		return HttpExecuteSecure();
+	}
+
 	struct addrinfo *res;
 	char service[6];
 	sprintf(service, "%i", mpUrl->GetPort());
 	struct addrinfo hints;
-    memset( &hints, 0, sizeof( hints ) );
-    hints.ai_family = AF_INET;
+	memset(&hints, 0, sizeof(hints));
+	hints.ai_family = AF_INET;
 	hints.ai_socktype = SOCK_STREAM;
 
 	int err = getaddrinfo(mpUrl->GetHost().c_str(), service, &hints, &res);
@@ -104,9 +119,11 @@ bool WebClient::HttpExecute() {
 
 	sRequest.reserve(512);
 	sRequest = "GET ";
-	sRequest += "/";
 	sRequest += mpUrl->GetPath();
-	sRequest += mpUrl->GetQuery();
+	if (mpUrl->GetQueryParams().size()) {
+		sRequest += '?';
+		sRequest += mpUrl->GetQuery();
+	}
 	sRequest += " HTTP/1.0\r\nHost: ";
 	sRequest += mpUrl->GetHost();
 	sRequest += "\r\n";
@@ -114,7 +131,7 @@ bool WebClient::HttpExecute() {
 		sRequest += *it; //TODO *it or it????
 		sRequest += "\r\n";
 	}
-	sRequest+= "User-Agent: esp32webclient/1.0 esp32\r\n\r\n";
+	sRequest += "User-Agent: esp32webclient/1.0 esp32\r\n\r\n";
 
 	// send HTTP request
 	ESP_LOGI(LOGTAG, "sRequest: %s", sRequest.c_str());
@@ -152,5 +169,201 @@ bool WebClient::HttpExecute() {
 	return true;
 }
 
+bool WebClient::HttpExecuteSecure() {
+
+	HttpResponseParser httpParser;
+	std::string sRequest;
+
+	char buf[512];
+	int ret, flags, len;
+
+	mbedtls_entropy_context entropy;
+	mbedtls_ctr_drbg_context ctr_drbg;
+	mbedtls_ssl_context ssl;
+	mbedtls_x509_crt cacert;
+	mbedtls_ssl_config conf;
+	mbedtls_net_context server_fd;
+
+	mbedtls_ssl_init(&ssl);
+	mbedtls_x509_crt_init(&cacert);
+	mbedtls_ctr_drbg_init(&ctr_drbg);
+	ESP_LOGI(LOGTAG, "Seeding the random number generator");
+
+	mbedtls_ssl_config_init(&conf);
+
+	mbedtls_entropy_init(&entropy);
+	if ((ret = mbedtls_ctr_drbg_seed(&ctr_drbg, mbedtls_entropy_func, &entropy,
+	NULL, 0)) != 0) {
+		ESP_LOGE(LOGTAG, "mbedtls_ctr_drbg_seed returned %d", ret);
+		abort();
+	}
+
+	/*   ESP_LOGI(LOGTAG, "Loading the CA root certificate...");
+
+	 ret = mbedtls_x509_crt_parse(&cacert, server_root_cert_pem_start,
+	 server_root_cert_pem_end-server_root_cert_pem_start);
+
+	 if(ret < 0)
+	 {
+	 ESP_LOGE(LOGTAG, "mbedtls_x509_crt_parse returned -0x%x\n\n", -ret);
+	 abort();
+	 } */
+
+	ESP_LOGI(LOGTAG, "Setting hostname for TLS session...");
+
+	/* Hostname set here should match CN in server certificate */
+	if ((ret = mbedtls_ssl_set_hostname(&ssl, mpUrl->GetPortAsString().c_str())) != 0) {
+		ESP_LOGE(LOGTAG, "mbedtls_ssl_set_hostname returned -0x%x", -ret);
+		abort();
+	}
+
+	ESP_LOGI(LOGTAG, "Setting up the SSL/TLS structure...");
+
+	if ((ret = mbedtls_ssl_config_defaults(&conf,
+	MBEDTLS_SSL_IS_CLIENT,
+	MBEDTLS_SSL_TRANSPORT_STREAM,
+	MBEDTLS_SSL_PRESET_DEFAULT)) != 0) {
+		ESP_LOGE(LOGTAG, "mbedtls_ssl_config_defaults returned %d", ret);
+		goto exit;
+	}
+
+	/* MBEDTLS_SSL_VERIFY_OPTIONAL is bad for security, in this example it will print
+	 a warning if CA verification fails but it will continue to connect.
+
+	 You should consider using MBEDTLS_SSL_VERIFY_REQUIRED in your own code.
+	 */
+	mbedtls_ssl_conf_authmode(&conf, MBEDTLS_SSL_VERIFY_OPTIONAL);
+	mbedtls_ssl_conf_ca_chain(&conf, &cacert, NULL);
+	mbedtls_ssl_conf_rng(&conf, mbedtls_ctr_drbg_random, &ctr_drbg);
+#ifdef CONFIG_MBEDTLS_DEBUG
+	mbedtls_esp_enable_debug_log(&conf, 4);
+#endif
+
+	if ((ret = mbedtls_ssl_setup(&ssl, &conf)) != 0) {
+		ESP_LOGE(LOGTAG, "mbedtls_ssl_setup returned -0x%x\n\n", -ret);
+		goto exit;
+	}
+
+	// the following onwards needs working WIFI and IP address
+	mbedtls_net_init(&server_fd);
+
+	ESP_LOGI(LOGTAG, "Connecting to %s:%hu...", mpUrl->GetHost().c_str(), mpUrl->GetPort());
+	ESP_LOGI(LOGTAG, "Port as string '%s'", mpUrl->GetPortAsString().c_str());
+	if ((ret = mbedtls_net_connect(&server_fd, mpUrl->GetHost().c_str(), "443", MBEDTLS_NET_PROTO_TCP))
+			!= 0) {
+		ESP_LOGE(LOGTAG, "mbedtls_net_connect returned -%x", -ret);
+		goto exit;
+	}
+
+	ESP_LOGI(LOGTAG, "Connected.");
+
+	mbedtls_ssl_set_bio(&ssl, &server_fd, mbedtls_net_send, mbedtls_net_recv, NULL);
+
+	ESP_LOGI(LOGTAG, "Performing the SSL/TLS handshake...");
+
+	while ((ret = mbedtls_ssl_handshake(&ssl)) != 0) {
+		if (ret != MBEDTLS_ERR_SSL_WANT_READ && ret != MBEDTLS_ERR_SSL_WANT_WRITE) {
+			ESP_LOGE(LOGTAG, "mbedtls_ssl_handshake returned -0x%x", -ret);
+			goto exit;
+		}
+	}
+
+	ESP_LOGI(LOGTAG, "Verifying peer X.509 certificate...");
+
+	if ((flags = mbedtls_ssl_get_verify_result(&ssl)) != 0) {
+		/* In real life, we probably want to close connection if ret != 0 */
+		ESP_LOGW(LOGTAG, "Failed to verify peer certificate!");
+		bzero(buf, sizeof(buf));
+		mbedtls_x509_crt_verify_info(buf, sizeof(buf), "  ! ", flags);
+		ESP_LOGW(LOGTAG, "verification info: %s", buf);
+	} else {
+		ESP_LOGI(LOGTAG, "Certificate verified.");
+	}
+
+	// Build HTTP Request
 
 
+	sRequest.reserve(512);
+	sRequest = "GET ";
+	sRequest += mpUrl->GetPath();
+	if (mpUrl->GetQueryParams().size()) {
+		sRequest += '?';
+		sRequest += mpUrl->GetQuery();
+	}
+	sRequest += " HTTP/1.0\r\nHost: ";
+	sRequest += mpUrl->GetHost();
+	sRequest += "\r\n";
+	for (std::list<std::string>::iterator it = mlRequestHeaders.begin(); it != mlRequestHeaders.end(); ++it) {
+		sRequest += *it; //TODO *it or it????
+		sRequest += "\r\n";
+	}
+	sRequest += "User-Agent: esp32webclient/1.0 esp32\r\n\r\n";
+
+
+
+	ESP_LOGI(LOGTAG, "Writing HTTP request... <%s>", sRequest.c_str());
+
+	while ((ret = mbedtls_ssl_write(&ssl, (const unsigned char*)sRequest.data(), sRequest.size())) <= 0) {
+		if (ret != MBEDTLS_ERR_SSL_WANT_READ && ret != MBEDTLS_ERR_SSL_WANT_WRITE) {
+			ESP_LOGE(LOGTAG, "mbedtls_ssl_write returned -0x%x", -ret);
+			goto exit;
+		}
+	}
+
+	ESP_LOGI(LOGTAG, "%d bytes written", ret);
+	ESP_LOGI(LOGTAG, "Reading HTTP response...");
+
+	sRequest.clear(); // free memory
+
+	ESP_LOGI(LOGTAG, "... socket send success");
+
+	// Read HTTP response
+	httpParser.Init(mpDownloadHandler);
+
+	char recv_buf[256];
+	while (!httpParser.ResponseFinished()) {
+		ESP_LOGI(LOGTAG, "Before mbedtls read");
+		ret = mbedtls_ssl_read(&ssl, (unsigned char*)recv_buf, sizeof(recv_buf));
+
+		if (ret == MBEDTLS_ERR_SSL_WANT_READ || ret == MBEDTLS_ERR_SSL_WANT_WRITE)
+			continue;
+
+		if (ret == MBEDTLS_ERR_SSL_PEER_CLOSE_NOTIFY) {
+			ret = 0;
+			break;
+		}
+
+		if (ret < 0) {
+			//ESP_LOGE(LOGTAG, "Connection closed during parsing");
+			ESP_LOGE(LOGTAG, "mbedtls_ssl_read returned -0x%x", -ret);
+			break;
+		}
+
+		if (ret == 0) {
+			ESP_LOGI(LOGTAG, "connection closed");
+			break;
+		}
+
+		len = ret;
+		ESP_LOGI(LOGTAG, "%d bytes read", len);
+
+		if (!httpParser.ParseResponse(recv_buf, len)) {
+			ESP_LOGE(LOGTAG, "HTTP Parsing error: %d", httpParser.GetError());
+			goto exit;
+		}
+		ESP_LOGI(LOGTAG, "End of LOOOP");
+	}
+
+	mbedtls_ssl_close_notify(&ssl);
+
+	exit: mbedtls_ssl_session_reset(&ssl);
+	mbedtls_net_free(&server_fd);
+
+	if (ret != 0) {
+		mbedtls_strerror(ret, buf, 100);
+		ESP_LOGE(LOGTAG, "Last error was: -0x%x - %s", -ret, buf);
+		return false;
+	}
+	return true;
+
+}

@@ -50,6 +50,7 @@ public:
 	 */
 	void Clear();
 
+	bool GetSecure() { return mbSecure; }
 
 	std::string& GetHost() { return msHost; }
 
@@ -68,6 +69,7 @@ public:
 	void SetFragment(const char* fragment) { msFragment = fragment; }
 
 	unsigned short GetPort() { return muPort; }
+	std::string& GetPortAsString();
 
 	bool Selftest();
 
@@ -96,6 +98,7 @@ private:
 	std::string msFragment;
 	std::string msQuery;
 	std::list<TQueryParam> mlQueryParams;
+	std::string msPort;
 
 	bool ParseUrl(std::string& u);
 

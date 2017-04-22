@@ -24,6 +24,7 @@ public:
 	bool IsConnectionClose(){ return mbConClose; };
 	std::string& GetBody()  { return mBody; };
 	unsigned int GetContentLength() { return muActualContentLength; }
+	unsigned short GetStatusCode() { return muStatusCode; }
 	void SetError(short u) { muError = u; };
 	short GetError()  	{ return muError; };
 

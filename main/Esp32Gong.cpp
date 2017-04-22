@@ -72,6 +72,11 @@ void task_function_dnsserver(void *pvParameter) {
 	vTaskDelete(NULL);
 }
 
+void task_test_webclient(void *pvParameter) {
+	((Esp32Gong*) pvParameter)->TaskTestWebClient();
+	vTaskDelete(NULL);
+}
+
 void task_function_restart(void* user_data) {
 	ESP_LOGI(LOGTAG, "Restarting in 2secs....");
 	vTaskDelay(*((int*)user_data)*1000 / portTICK_PERIOD_MS);
@@ -138,6 +143,33 @@ void Esp32Gong::Start() {
 	ota.UpdateFirmware("http://www.msftconnecttest.com/connecttest.txt");
 	//ota.update("https://github.com/flyinggorilla/esp32gong/blob/master/README.md");
 
+	xTaskCreate(&task_test_webclient, "Task_TestWebClient", 8192, this, 5, NULL);
+
+
+}
+
+void Esp32Gong::TaskTestWebClient() {
+	Url url;
+	WebClient webClient;
+	//url.Selftest();
+
+	url.Parse("http://www.msftconnecttest.com/connecttest.txt");
+    if (!webClient.HttpPrepareGet(&url)) {
+    	ESP_LOGE(LOGTAG, "Error in HttpPrepareGet()")
+    }
+
+    if (!webClient.HttpExecute()) {
+      	ESP_LOGE(LOGTAG, "Error in HttpExecute()")
+    }
+
+	url.Parse("https://www.howsmyssl.com/a/check");
+    if (!webClient.HttpPrepareGet(&url)) {
+    	ESP_LOGE(LOGTAG, "Error in HttpPrepareGet()")
+    }
+
+    if (!webClient.HttpExecute()) {
+      	ESP_LOGE(LOGTAG, "Error in HttpExecute()")
+    }
 }
 
 void Esp32Gong::TaskWebServer() {

@@ -6,7 +6,7 @@
 #include <string>
 
 #include "DownloadHandler.h"
-#include "Url.hpp"
+#include "Url.h"
 
 class WebClient {
 public:
@@ -21,6 +21,7 @@ private:
 	DownloadHandler* mpDownloadHandler;
 	Url* mpUrl = NULL;
 	std::list<std::string> mlRequestHeaders;
+	bool HttpExecuteSecure();
 };
 
 

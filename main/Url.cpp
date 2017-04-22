@@ -1,4 +1,4 @@
-#include "Url.hpp"
+#include "Url.h"
 #include <esp_log.h>
 #include <string>
 #include <sstream>
@@ -54,6 +54,13 @@ void Url::Clear() {
 	msFragment.clear();
 	msQuery.clear();
 	mlQueryParams.clear();
+}
+
+std::string& Url::GetPortAsString() {
+	char buf[20];
+	sprintf(buf, "%hu", muPort);
+	msPort = buf;
+	return msPort;
 }
 
 std::string& Url::GetUrl() {

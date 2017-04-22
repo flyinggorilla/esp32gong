@@ -109,7 +109,7 @@ bool Ota::OnReceiveData(char* buf, int len) {
 
 bool Ota::UpdateFirmware(std::string sUrl)
 {
-	Url url;
+/*	Url url;
 	//url.Selftest();
 
 	url.Parse(sUrl);
@@ -124,7 +124,7 @@ bool Ota::UpdateFirmware(std::string sUrl)
 
       	ESP_LOGE(LOGTAG, "Error in HttpExecute()")
       			return false;
-    }
+    }*/
     return true;
 
 }

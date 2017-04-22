@@ -76,6 +76,7 @@ bool HttpResponseParser::ParseResponse(char* sBuffer, unsigned int uLen){
 					if (!mStringParser.Found(uFound))
 						return SetError(1), false;
 					mbHttp11 = uFound ? true : false;
+					ESP_LOGI(LOGTAG, "HTTPVERSION('%s')", mbHttp11 ? "HTTP/1.1" : "HTTP/1.0");
 					muParseState = STATE_StatusCode;
 				}
 				else{
@@ -85,9 +86,11 @@ bool HttpResponseParser::ParseResponse(char* sBuffer, unsigned int uLen){
 				break;
 
 			case STATE_StatusCode:
+				ESP_LOGI(LOGTAG, "     STATUSCODE('%c' / %02x)", c, c);
 				if (c == ' ') {
 					mStringParser.Init();
 					muParseState = STATE_StatusMessage;
+					ESP_LOGI(LOGTAG, "STATUSCODE('%u')", muStatusCode);
 				}
 				else{
 					if ((c >= '0') && (c<= '9')){
@@ -99,18 +102,22 @@ bool HttpResponseParser::ParseResponse(char* sBuffer, unsigned int uLen){
 
 
 			case STATE_StatusMessage:
+				ESP_LOGI(LOGTAG, "     STATUSMESSAGE('%c' / %02x)", c, c);
 				if ((c == 10) || (c == 13)){
 					muCrlfCount = 1;
 					muParseState = STATE_SearchEndOfHeaderLine;
 				}
+				break;
 
 			case STATE_SearchEndOfHeaderLine:
+				ESP_LOGI(LOGTAG, "     SEARCHOFENDOFHEADERLINE('%c' / %02x)", c, c);
 				if ((c != 10) && (c != 13)){
 					muParseState = STATE_CheckHeaderName;
 					mStringParser.Init();
 					mStringParser.AddStringToParse("connection");
 					mStringParser.AddStringToParse("content-length");
 					mStringParser.AddStringToParse("content-type");
+					ESP_LOGI(LOGTAG, "STATE->CHECKHEADER");
 				}
 				else{
 					if (++muCrlfCount == 4){
@@ -128,7 +135,7 @@ bool HttpResponseParser::ParseResponse(char* sBuffer, unsigned int uLen){
 							}
 					}
 				}
-				break;
+				//break;
 
 			case STATE_SkipHeader:
 				if ((c == 10) || (c == 13)){
@@ -138,22 +145,26 @@ bool HttpResponseParser::ParseResponse(char* sBuffer, unsigned int uLen){
 				break;
 
 			case STATE_CheckHeaderName:
+				ESP_LOGI(LOGTAG, "     CHECKHEADERNAME('%c')", c);
 				if (c == ':'){
 					uint8_t uFound;
 					if (mStringParser.Found(uFound)){
-						if (!uFound){
+						if (uFound == 0){
 							muParseState = STATE_CheckHeaderValue;
 							mStringParser.Init();
 							mStringParser.AddStringToParse("close");
 							mStringParser.AddStringToParse("keep-alive");
+							ESP_LOGI(LOGTAG, "FOUND ---> CHECK HEADER VALUE (%c)", c);
 						}
 						else if (uFound == 1) {
 							muParseState = STATE_ReadContentLength;
 							muContentLength = 0;
 							mbContentLength = true;
+							ESP_LOGI(LOGTAG, "FOUND ---> CONTENT-LENGTH HEADER (%c)", c);
 						} else {
 							muParseState = STATE_ReadContentType;
 							msContentType.clear();
+							ESP_LOGI(LOGTAG, "FOUND ---> CONTENT-TYPE HEADER (%c)", c);
 						}
 					}
 					else
@@ -170,6 +181,7 @@ bool HttpResponseParser::ParseResponse(char* sBuffer, unsigned int uLen){
 				break;
 
 			case STATE_CheckHeaderValue:
+				ESP_LOGI(LOGTAG, "     CHECKHEADERVALUE('%c')", c);
 				if ((c == 10) || (c == 13)){
 					muCrlfCount = 1;
 					uint8_t u;
@@ -185,6 +197,7 @@ bool HttpResponseParser::ParseResponse(char* sBuffer, unsigned int uLen){
 				break;
 
 			case STATE_ReadContentLength:
+				ESP_LOGI(LOGTAG, "     READCONTENTLENGTH('%c')", c);
 				if ((c == 10) || (c == 13)){
 					muCrlfCount = 1;
 					muParseState = STATE_SearchEndOfHeaderLine;
@@ -229,9 +242,12 @@ bool HttpResponseParser::ParseResponse(char* sBuffer, unsigned int uLen){
 							return  SetError(8), false;
 						}
 						mBody.append(&sBuffer[uPos], appendSize);
-						ESP_LOGI(LOGTAG, "BODY:<%s>", mBody.c_str());
+						//ESP_LOGI(LOGTAG, "BODY:<%s>", mBody.c_str());
 					}
-					mbFinished = muActualContentLength >= muContentLength;
+					if (mbContentLength) {
+						mbFinished = muActualContentLength >= muContentLength;
+					}
+					ESP_LOGI(LOGTAG, "mbFinished? actual(%u) vs. header(%u)", muActualContentLength, muContentLength);
 					if (mpDownloadHandler && mbFinished) {
 						mpDownloadHandler->OnReceiveEnd();
 					}
