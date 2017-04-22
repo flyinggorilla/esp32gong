@@ -23,237 +23,230 @@
 
 #define ERROR_HTTPRESPONSE_NOVALIDHTTP 1
 
-#define HTTPRESPONSEBUFFER_MAX_BYTESRECEIVE 32*1024
-
 static const char LOGTAG[] = "HttpResponseParser";
 
 HttpResponseParser::HttpResponseParser() {
-	Init();
+
 }
 
 HttpResponseParser::~HttpResponseParser() {
 }
 
-void HttpResponseParser::Init(DownloadHandler* pOptionalDownloadHandler){
+void HttpResponseParser::Init(DownloadHandler* pDownloadHandler, unsigned int maxBodyBufferSize) {
 	Clear();
 
-	muError = 0;
-	mbFinished = false;
-	mbConClose = true;
-	mbContentLength = false;
-	mpDownloadHandler = pOptionalDownloadHandler;
+	mpDownloadHandler = pDownloadHandler;
 	if (mpDownloadHandler) {
 		mBody = "<DOWNLOADHANDLER_IS_SET>";
 	}
 	muContentLength = 0;
 	muActualContentLength = 0;
+	muMaxBodyBufferSize = maxBodyBufferSize;
 	muStatusCode = 0;
+	mbHttp11 = false;
+
+	mbContentLength = false;
+	mbFinished = false;
+	mbConClose = true;
+	msContentType.clear();
+	muCrlfCount = 0;
+	muError = 0;
 	muParseState = STATE_HttpType;
 	mStringParser.Init();
 	mStringParser.AddStringToParse("http/1.0");
 	mStringParser.AddStringToParse("http/1.1");
+
 }
 
-void HttpResponseParser::Clear(){
-	//mUrl.clear();
-	//mParams.clear();
+void HttpResponseParser::Clear() {
 	mBody.clear();
 }
 
-
-bool HttpResponseParser::ParseResponse(char* sBuffer, unsigned int uLen){
+bool HttpResponseParser::ParseResponse(char* sBuffer, unsigned int uLen) {
 
 	unsigned int uPos = 0;
-	while (uPos < uLen){
+	while (uPos < uLen) {
 		char c = sBuffer[uPos];
 		uPos++;
 
-		switch (muParseState){
+		switch (muParseState) {
 
-			case STATE_HttpType:
-				if (c == ' '){
-					uint8_t uFound;
-					if (!mStringParser.Found(uFound))
-						return SetError(1), false;
-					mbHttp11 = uFound ? true : false;
-					ESP_LOGI(LOGTAG, "HTTPVERSION('%s')", mbHttp11 ? "HTTP/1.1" : "HTTP/1.0");
-					muParseState = STATE_StatusCode;
-				}
-				else{
-					if (!mStringParser.ConsumeChar(c))
-						return SetError(2), false;
-				}
-				break;
+		case STATE_HttpType:
+			if (c == ' ') {
+				uint8_t uFound;
+				if (!mStringParser.Found(uFound))
+					return SetError(1), false;
+				mbHttp11 = uFound ? true : false;
+				muParseState = STATE_StatusCode;
+			} else {
+				if (!mStringParser.ConsumeChar(c))
+					return SetError(2), false;
+			}
+			break;
 
-			case STATE_StatusCode:
-				ESP_LOGI(LOGTAG, "     STATUSCODE('%c' / %02x)", c, c);
-				if (c == ' ') {
-					mStringParser.Init();
-					muParseState = STATE_StatusMessage;
-					ESP_LOGI(LOGTAG, "STATUSCODE('%u')", muStatusCode);
+		case STATE_StatusCode:
+			if (c == ' ') {
+				mStringParser.Init();
+				muParseState = STATE_StatusMessage;
+			} else {
+				if ((c >= '0') && (c <= '9')) {
+					muStatusCode *= 10;
+					muStatusCode += c - '0';
 				}
-				else{
-					if ((c >= '0') && (c<= '9')){
-						muStatusCode *= 10;
-						muStatusCode += c - '0';
-					}
-				}
-				break;
+			}
+			break;
 
+		case STATE_StatusMessage:
+			if ((c == 10) || (c == 13)) {
+				muCrlfCount = 1;
+				muParseState = STATE_SearchEndOfHeaderLine;
+			}
+			break;
 
-			case STATE_StatusMessage:
-				ESP_LOGI(LOGTAG, "     STATUSMESSAGE('%c' / %02x)", c, c);
-				if ((c == 10) || (c == 13)){
-					muCrlfCount = 1;
-					muParseState = STATE_SearchEndOfHeaderLine;
-				}
-				break;
+		case STATE_SearchEndOfHeaderLine:
+			if ((c != 10) && (c != 13)) {
+				muParseState = STATE_CheckHeaderName;
+				mStringParser.Init();
+				mStringParser.AddStringToParse("connection");
+				mStringParser.AddStringToParse("content-length");
+				mStringParser.AddStringToParse("content-type");
+			} else {
+				if (++muCrlfCount == 4) {
+					if (mbContentLength && !muContentLength) {
+						mbFinished = true;
+						return true;
+					} else
+					ESP_LOGI(LOGTAG, "HTTP: http/%s, status=%hu", mbHttp11 ? "1.1" : "1.0", muStatusCode);
+					ESP_LOGI(LOGTAG, "HEADER: connection: %s",
+							mbConClose ? "<close-connection header set>" : "<dont close connection>");
+					ESP_LOGI(LOGTAG, "HEADER: content-type: %s", msContentType.c_str());
+					ESP_LOGI(LOGTAG, "HEADER: content-length: %u %s", muContentLength,
+							mbContentLength ? "" : "<no header set>");
 
-			case STATE_SearchEndOfHeaderLine:
-				ESP_LOGI(LOGTAG, "     SEARCHOFENDOFHEADERLINE('%c' / %02x)", c, c);
-				if ((c != 10) && (c != 13)){
-					muParseState = STATE_CheckHeaderName;
-					mStringParser.Init();
-					mStringParser.AddStringToParse("connection");
-					mStringParser.AddStringToParse("content-length");
-					mStringParser.AddStringToParse("content-type");
-					ESP_LOGI(LOGTAG, "STATE->CHECKHEADER");
-				}
-				else{
-					if (++muCrlfCount == 4){
-						if (mbContentLength && !muContentLength) {
-							mbFinished = true;
-							return true;
-						}
-						else
-							muParseState = STATE_CopyBody;
-							if (mpDownloadHandler && mbFinished) {
-								if(!mpDownloadHandler->OnReceiveBegin()) {
-									mbFinished = true;
-									return false;
-								}
-							}
-					}
-				}
-				//break;
-
-			case STATE_SkipHeader:
-				if ((c == 10) || (c == 13)){
-					muCrlfCount = 1;
-					muParseState = STATE_SearchEndOfHeaderLine;
-				}
-				break;
-
-			case STATE_CheckHeaderName:
-				ESP_LOGI(LOGTAG, "     CHECKHEADERNAME('%c')", c);
-				if (c == ':'){
-					uint8_t uFound;
-					if (mStringParser.Found(uFound)){
-						if (uFound == 0){
-							muParseState = STATE_CheckHeaderValue;
-							mStringParser.Init();
-							mStringParser.AddStringToParse("close");
-							mStringParser.AddStringToParse("keep-alive");
-							ESP_LOGI(LOGTAG, "FOUND ---> CHECK HEADER VALUE (%c)", c);
-						}
-						else if (uFound == 1) {
-							muParseState = STATE_ReadContentLength;
-							muContentLength = 0;
-							mbContentLength = true;
-							ESP_LOGI(LOGTAG, "FOUND ---> CONTENT-LENGTH HEADER (%c)", c);
-						} else {
-							muParseState = STATE_ReadContentType;
-							msContentType.clear();
-							ESP_LOGI(LOGTAG, "FOUND ---> CONTENT-TYPE HEADER (%c)", c);
-						}
-					}
-					else
-						muParseState = STATE_SkipHeader;
-				}
-				else{
-					if (!mStringParser.ConsumeChar(c)){
-						if ((c == 10) || (c == 13))
-							muParseState = STATE_SearchEndOfHeaderLine;
-						else
-							muParseState = STATE_SkipHeader;
-					}
-				}
-				break;
-
-			case STATE_CheckHeaderValue:
-				ESP_LOGI(LOGTAG, "     CHECKHEADERVALUE('%c')", c);
-				if ((c == 10) || (c == 13)){
-					muCrlfCount = 1;
-					uint8_t u;
-					if (mStringParser.Found(u)){
-						mbConClose = u ? false : true;
-					}
-					muParseState = STATE_SearchEndOfHeaderLine;
-				}
-				else{
-					if (!mStringParser.ConsumeChar(c))
-						muParseState = STATE_SkipHeader;
-				}
-				break;
-
-			case STATE_ReadContentLength:
-				ESP_LOGI(LOGTAG, "     READCONTENTLENGTH('%c')", c);
-				if ((c == 10) || (c == 13)){
-					muCrlfCount = 1;
-					muParseState = STATE_SearchEndOfHeaderLine;
-				}
-				else{
-					if ((c >= '0') && (c<= '9')){
-						muContentLength *= 10;
-						muContentLength += c - '0';
-					}
-				}
-				break;
-
-			case STATE_ReadContentType:
-				if ((c == 10) || (c == 13)){
-					muCrlfCount = 1;
-					muParseState = STATE_SearchEndOfHeaderLine;
-				}
-				else{
-					msContentType += c;
-				}
-				break;
-
-			case STATE_CopyBody:
-				//fixup uPos which was already incremented at the beginning of this method
-				uPos--;
-
-				if (mbContentLength && !muContentLength)
-					return SetError(7), false;
-				if (uPos < uLen){
-					size_t size = uLen - uPos;
-					muActualContentLength += size;
-					if (mpDownloadHandler) {
-						if(!mpDownloadHandler->OnReceiveData((char*)sBuffer[uPos], size)) {
+					muParseState = STATE_CopyBody;
+					if (mpDownloadHandler && mbFinished) {
+						if (!mpDownloadHandler->OnReceiveBegin()) {
 							mbFinished = true;
 							return false;
 						}
-					} else {
-						// skip data if there is more than HTTPRESPONSEBUFFER_MAX_BYTESRECEIVE bytes
-						int appendSize = HTTPRESPONSEBUFFER_MAX_BYTESRECEIVE - mBody.length();
-						appendSize = appendSize < size ? appendSize : size;
-						if (appendSize < 0) {
-							return  SetError(8), false;
-						}
-						mBody.append(&sBuffer[uPos], appendSize);
-						//ESP_LOGI(LOGTAG, "BODY:<%s>", mBody.c_str());
 					}
-					if (mbContentLength) {
-						mbFinished = muActualContentLength >= muContentLength;
-					}
-					ESP_LOGI(LOGTAG, "mbFinished? actual(%u) vs. header(%u)", muActualContentLength, muContentLength);
-					if (mpDownloadHandler && mbFinished) {
-						mpDownloadHandler->OnReceiveEnd();
-					}
-					return true;
 				}
+				break;
+			}
+			//No break here, fall through to STATE_CheckHeaderName!;
+
+		case STATE_CheckHeaderName:
+			if (c == ':') {
+				uint8_t uFound;
+				if (mStringParser.Found(uFound)) {
+					if (uFound == 0) {
+						muParseState = STATE_CheckHeaderValue;
+						mStringParser.Init();
+						mStringParser.AddStringToParse("close");
+						mStringParser.AddStringToParse("keep-alive");
+					} else if (uFound == 1) {
+						muParseState = STATE_ReadContentLength;
+						muContentLength = 0;
+						mbContentLength = true;
+					} else {
+						muParseState = STATE_ReadContentType;
+						msContentType.clear();
+					}
+				} else
+					muParseState = STATE_SkipHeader;
+			} else {
+				if (!mStringParser.ConsumeChar(c)) {
+					if ((c == 10) || (c == 13))
+						muParseState = STATE_SearchEndOfHeaderLine;
+					else
+						muParseState = STATE_SkipHeader;
+				}
+			}
+			break;
+
+		case STATE_SkipHeader:
+			if ((c == 10) || (c == 13)) {
+				muCrlfCount = 1;
+				muParseState = STATE_SearchEndOfHeaderLine;
+			}
+			break;
+
+		case STATE_CheckHeaderValue:
+			if ((c == 10) || (c == 13)) {
+				muCrlfCount = 1;
+				uint8_t u;
+				if (mStringParser.Found(u)) {
+					mbConClose = u ? false : true;
+				}
+				muParseState = STATE_SearchEndOfHeaderLine;
+			} else {
+				if (!mStringParser.ConsumeChar(c))
+					muParseState = STATE_SkipHeader;
+			}
+			break;
+
+		case STATE_ReadContentLength:
+			if ((c == 10) || (c == 13)) {
+				muCrlfCount = 1;
+				muParseState = STATE_SearchEndOfHeaderLine;
+			} else {
+				if ((c >= '0') && (c <= '9')) {
+					muContentLength *= 10;
+					muContentLength += c - '0';
+				}
+			}
+			break;
+
+		case STATE_ReadContentType:
+			if ((c == 10) || (c == 13)) {
+				muCrlfCount = 1;
+				muParseState = STATE_SearchEndOfHeaderLine;
+			} else {
+				msContentType += c;
+			}
+			break;
+
+		case STATE_CopyBody:
+			//fixup uPos which was already incremented at the beginning of this method
+			uPos--;
+
+			if (mbContentLength && !muContentLength)
+				return SetError(3), false;
+
+			if (uPos < uLen) {
+				size_t size = uLen - uPos;
+				muActualContentLength += size;
+				if (mpDownloadHandler) {
+					if (!mpDownloadHandler->OnReceiveData((char*) sBuffer[uPos], size)) {
+						mbFinished = true;
+						return false;
+					}
+				} else {
+					// skip data if there is more than muMaxBodyBufferSize bytes
+					int appendSize = muMaxBodyBufferSize - mBody.length();
+					appendSize = appendSize < size ? appendSize : size;
+					if (appendSize < 0) {
+						return SetError(4), false;
+					}
+					mBody.append(&sBuffer[uPos], appendSize);
+				}
+				if (mbContentLength) {
+					mbFinished = muActualContentLength >= muContentLength;
+				}
+
+				if (mpDownloadHandler && mbFinished) {
+					mpDownloadHandler->OnReceiveEnd();
+				}
+
+				if (mbFinished) {
+					ESP_LOGI(LOGTAG, "RECEIVED: %u", muActualContentLength);
+					if (!mpDownloadHandler)
+						ESP_LOGI(LOGTAG, "BODY:<%s>", mBody.c_str());
+				}
+
 				return true;
+			}
+			return true;
 
 		}
 	}

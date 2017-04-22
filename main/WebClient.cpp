@@ -320,10 +320,8 @@ bool WebClient::HttpExecuteSecure() {
 	// Read HTTP response
 	httpParser.Init(mpDownloadHandler);
 
-	char recv_buf[256];
 	while (!httpParser.ResponseFinished()) {
-		ESP_LOGI(LOGTAG, "Before mbedtls read");
-		ret = mbedtls_ssl_read(&ssl, (unsigned char*)recv_buf, sizeof(recv_buf));
+		ret = mbedtls_ssl_read(&ssl, (unsigned char*)buf, sizeof(buf));
 
 		if (ret == MBEDTLS_ERR_SSL_WANT_READ || ret == MBEDTLS_ERR_SSL_WANT_WRITE)
 			continue;
@@ -345,13 +343,11 @@ bool WebClient::HttpExecuteSecure() {
 		}
 
 		len = ret;
-		ESP_LOGI(LOGTAG, "%d bytes read", len);
 
-		if (!httpParser.ParseResponse(recv_buf, len)) {
+		if (!httpParser.ParseResponse(buf, len)) {
 			ESP_LOGE(LOGTAG, "HTTP Parsing error: %d", httpParser.GetError());
 			goto exit;
 		}
-		ESP_LOGI(LOGTAG, "End of LOOOP");
 	}
 
 	mbedtls_ssl_close_notify(&ssl);
@@ -359,9 +355,9 @@ bool WebClient::HttpExecuteSecure() {
 	exit: mbedtls_ssl_session_reset(&ssl);
 	mbedtls_net_free(&server_fd);
 
-	if (ret != 0) {
+	if (!httpParser.ResponseFinished() && ret != 0) {
 		mbedtls_strerror(ret, buf, 100);
-		ESP_LOGE(LOGTAG, "Last error was: -0x%x - %s", -ret, buf);
+		ESP_LOGE(LOGTAG, "Last MBEDTLS error was: -0x%x - %s", -ret, buf);
 		return false;
 	}
 	return true;
