@@ -14,7 +14,12 @@ main/wavdata.h
 sdkconfig.old
 parked
 
-
+#go
+go/pkg
+go/bin
+go/src/go*
+go/src/git*
+go/src/source*
 
 # Windows image file caches
 Thumbs.db

@@ -34,9 +34,7 @@ HttpResponseParser::~HttpResponseParser() {
 
 void HttpResponseParser::Init(DownloadHandler* pDownloadHandler, unsigned int maxBodyBufferSize) {
 	mpDownloadHandler = pDownloadHandler;
-	if (mpDownloadHandler) {
-		mBody = "<DOWNLOADHANDLER_IS_SET>";
-	}
+	mBody.clear();
 	muContentLength = 0;
 	muActualContentLength = 0;
 	muMaxBodyBufferSize = maxBodyBufferSize;

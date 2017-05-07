@@ -30,6 +30,10 @@ public:
 	std::string msSTAENTUser;
 	std::string msSTAENTCA;
 	std::string msHostname;
+
+	bool mbWebServerUseSsl;
+	__uint16_t muWebServerPort;
+
 	__uint32_t muLastSTAIpAddress;
 };
 

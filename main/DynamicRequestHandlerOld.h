@@ -1,5 +1,5 @@
-#ifndef MAIN_DYNAMICREQUESTHANDLER_H_
-#define MAIN_DYNAMICREQUESTHANDLER_H_
+#ifndef MAIN_DYNAMICREQUESTHANDLEROLD_H_
+#define MAIN_DYNAMICREQUESTHANDLEROLD_H_
 
 #include <string>
 #include <list>
@@ -24,4 +24,4 @@ private:
 	bool mbRestart;
 };
 
-#endif /* MAIN_DYNAMICREQUESTHANDLER_H_ */
+#endif /* MAIN_DYNAMICREQUESTHANDLEROLD_H_ */

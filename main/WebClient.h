@@ -30,26 +30,58 @@ public:
 	 * Adds HTTP headers to the request - you should have called Prepare() beforehand
 	 * @param e.g. a header like "content-type: json/text"
 	 */
-	bool HttpAddHeader(std::string& sHeader);
-	bool AddRequestHeader(const char* header);
+	bool AddHttpHeader(std::string& sHeader);
+	bool AddHttpHeaderCStr(const char* header);
+
 
 	/*
-	 * executes HTTP(S) request and streams the response data to the provided DownloadHandler.
+	 * Sets a DownloadHandler for retrieving large responses that do not fit in memory.
+	 * e.g. for retrieving a file to store into Flash memory or for streaming multimedia contents.
+	 * @param pointer to instance of DownloadHandler class; you will need to create your own class and inherit from DownloadHandler
 	 * @return
 	 * 		- HTTP response status code
 	 * 		- 0 on error
 	 */
-	unsigned short HttpExecute(DownloadHandler* pDownloadHandler);
+	void SetDownloadHandler(DownloadHandler* pDownloadHandler);
+
+
 
 	/*
-	 * executes HTTP(S) request and stores response in internal dynamic memory
+	 * executes HTTP(S) GET request
+	 * it stores response in internal dynamic memory in case no DownloadHandler is set
 	 * optionally call SetMaxResponseDataSize() in case the default memory allocation limit of 16kB is too small
 	 * optionally call ClearResponseData() to clear the buffer
 	 * @return
 	 * 		- HTTP response status code
 	 * 		- 0 on error
 	 */
-	unsigned short Execute();
+	unsigned short HttpGet();
+
+
+	/*
+	 * executes HTTP(S) POST request
+	 * it stores response in internal dynamic memory in case no DownloadHandler is set
+	 * optionally call SetMaxResponseDataSize() in case the default memory allocation limit of 16kB is too small
+	 * optionally call ClearResponseData() to clear the buffer
+	 * @param POST data and size
+	 * @return
+	 * 		- HTTP response status code
+	 * 		- 0 on error
+	 */
+	unsigned short HttpPost(const char* data, unsigned int size);
+
+
+	/*
+	 * executes HTTP(S) POST request
+	 * it stores response in internal dynamic memory in case no DownloadHandler is set
+	 * optionally call SetMaxResponseDataSize() in case the default memory allocation limit of 16kB is too small
+	 * optionally call ClearResponseData() to clear the buffer
+	 * @param POST data (can be binary too)
+	 * @return
+	 * 		- HTTP response status code
+	 * 		- 0 on error
+	 */
+	unsigned short HttpPost(std::string& sData);
 
 	/*
 	 * in case the default max 16kB dynamic buffer limit is too small, you can increase the limit here.
@@ -82,15 +114,19 @@ public:
 
 private:
 	HttpResponseParser mHttpResponseParser;
-	DownloadHandler* mpDownloadHandler;
+	DownloadHandler* mpDownloadHandler = NULL;
 	Url* mpUrl = NULL;
 	std::list<std::string> mlRequestHeaders;
+	const char* mpPostData = NULL;
+	unsigned int muPostDataSize = 0;
 
 	/*
 	 * Note: The site "https://www.howsmyssl.com/a/check" is useful to test and experiment with TLS layer and CA Certificates
 	 */
 	bool HttpExecuteSecure();
 	unsigned int muMaxResponseDataSize;
+	unsigned short HttpExecute();
+	void PrepareRequest(std::string& sRequest);
 };
 
 

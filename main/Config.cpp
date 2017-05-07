@@ -1,21 +1,23 @@
-#include "Config.h"
-
-#include "sdkconfig.h"
-
 #include <freertos/FreeRTOS.h>
+#include "Config.h"
 #include "nvs_flash.h"
-#include <esp_err.h>
 #include <esp_log.h>
 
-#define NVSCONFIGNAME "Esp32GongConfig"
+
+//#define WIFI_SSID CONFIG_WIFI_SSID
+//#define WIFI_PASS CONFIG_WIFI_PASSWORD
+
 
 Config::Config() {
 	mbAPMode = true;
-	msAPSsid = "ESP32GONG";
-	msHostname = "ESP32GONG";
+	msAPSsid = "esp32gong";
+	msHostname = "esp32gong";
 
-	msSTASsid = "";
-	msSTAPass = "";
+	msSTASsid = ""; //WIFI_SSID;
+	msSTAPass = ""; //WIFI_PASS;
+
+	mbWebServerUseSsl = false;
+	muWebServerPort = 0;
 
 	muLastSTAIpAddress = 0;
 }
@@ -28,7 +30,7 @@ bool Config::Read(){
 
 	if (nvs_flash_init() != ESP_OK)
 		return false;
-	if (nvs_open(NVSCONFIGNAME, NVS_READONLY, &h) != ESP_OK)
+	if (nvs_open("Ufo Config", NVS_READONLY, &h) != ESP_OK)
 		return false;
 	ReadBool(h, "APMode", mbAPMode);
 	ReadString(h, "APSsid", msAPSsid);
@@ -50,7 +52,7 @@ bool Config::Write()
 
 	if (nvs_flash_init() != ESP_OK)
 		return false;
-	if (nvs_open(NVSCONFIGNAME, NVS_READWRITE, &h) != ESP_OK)
+	if (nvs_open("Ufo Config", NVS_READWRITE, &h) != ESP_OK)
 		return false;
 	nvs_erase_all(h); //otherwise I need double the space
 
@@ -60,11 +62,11 @@ bool Config::Write()
 		return nvs_close(h), false;
 	if (!WriteString(h, "APPass", msAPPass))
 		return nvs_close(h), false;
-	if (!WriteString(h, "hostname", msHostname))
-		return nvs_close(h), false;
 	if (!WriteString(h, "STASsid", msSTASsid))
 		return nvs_close(h), false;
 	if (!WriteString(h, "STAPass", msSTAPass))
+		return nvs_close(h), false;
+	if (!WriteString(h, "hostname", msHostname))
 		return nvs_close(h), false;
 	if (!WriteString(h, "STAENTUser", msSTAENTUser))
 		return nvs_close(h), false;
@@ -73,6 +75,7 @@ bool Config::Write()
 	if (nvs_set_u32(h, "STAIpAddress", muLastSTAIpAddress) != ESP_OK)
 		return nvs_close(h), false;
 
+	nvs_commit(h);
 	nvs_close(h);
 	return true;
 }
@@ -89,9 +92,10 @@ bool Config::ReadString(nvs_handle h, const char* sKey, std::string& rsValue){
 		return false;
 	sBuf = (char*)malloc(u+1);
 	if (nvs_get_str(h, sKey, sBuf, &u) != ESP_OK)
-		return false;
+		return free(sBuf), false;
 	sBuf[u] = 0x00;
 	rsValue = sBuf;
+	free(sBuf);
 	return true;
 }
 

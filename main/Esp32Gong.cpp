@@ -22,6 +22,7 @@
 #include "I2SPlayer.h"
 #include "Ota.h"
 #include "SpiffsFileSystem.h"
+#include "temperature.h"
 #include "wavdata.h"
 #include "WebServer.h"
 #include "Wifi.h"
@@ -152,36 +153,66 @@ void Esp32Gong::TaskTestWebClient() {
 
 	url.Parse("http://www.msftconnecttest.com/connecttest.txt");
     webClient.Prepare(&url);
-    webClient.AddRequestHeader("Connection: close");
-    webClient.AddRequestHeader("Test1: testVal1");
-    webClient.AddRequestHeader("Test2: testVal2; testVal3");
-  	ESP_LOGE(LOGTAG, "Msftconnecttest Execute#1");
-    if (!webClient.Execute()) {
+    webClient.AddHttpHeaderCStr("Connection: close");
+    webClient.AddHttpHeaderCStr("Test1: testVal1");
+    webClient.AddHttpHeaderCStr("Test2: testVal2; testVal3");
+  	ESP_LOGW(LOGTAG, "Msftconnecttest Execute#1");
+    if (!webClient.HttpGet()) {
       	ESP_LOGE(LOGTAG, "Error requesting: %s", url.GetUrl().c_str());
     }
-  	ESP_LOGE(LOGTAG, "Msftconnecttest Execute#2");
-    if (!webClient.Execute()) {
+
+  	ESP_LOGW(LOGTAG, "Msftconnecttest Execute#2");
+    if (!webClient.HttpGet()) {
       	ESP_LOGE(LOGTAG, "Error requesting: %s", url.GetUrl().c_str());
     }
-  	ESP_LOGE(LOGTAG, "Msftconnecttest Execute#3");
-    if (!webClient.Execute()) {
+  	ESP_LOGW(LOGTAG, "Msftconnecttest Execute#3");
+    if (!webClient.HttpGet()) {
       	ESP_LOGE(LOGTAG, "Error requesting: %s", url.GetUrl().c_str());
     }
 
 
-
+  	ESP_LOGW(LOGTAG, "SSL CHECK: https://www.howsmyssl.com/a/check");
 	url.Parse("https://www.howsmyssl.com/a/check");
     if (!webClient.Prepare(&url)) {
     	ESP_LOGE(LOGTAG, "Error in HttpPrepareGet()")
     }
+  	ESP_LOGW(LOGTAG, "SSL CHECK BEFORE HTTPEXECUTE: https://www.howsmyssl.com/a/check");
 
-    if (!webClient.Execute()) {
+    if (!webClient.HttpGet()) {
       	ESP_LOGE(LOGTAG, "Error in HttpExecute()")
     }
 
+  	ESP_LOGW(LOGTAG, "SSL CHECK AFTER  HTTPEXECUTE: https://www.howsmyssl.com/a/check");
+
+  	ESP_LOGW(LOGTAG, "BEGOIN https://httpbin.org/headers");
+	url.Parse("http://httpbin.org/headers");
+    webClient.Prepare(&url);
+    webClient.HttpGet();
+  	ESP_LOGW(LOGTAG, "END https://httpbin.org/headers");
+
+
+
+
+  	ESP_LOGW(LOGTAG, "POST TEST: https://httpbin.org/post");
+    url.Parse("http://httpbin.org/post");
+    if (!webClient.Prepare(&url)) {
+    	ESP_LOGE(LOGTAG, "Error in Preparing POST()")
+    }
+
+    std::string post = "{ example: \"data\" }";
+  	ESP_LOGW(LOGTAG, "BEFORE POSTING");
+    if (!webClient.HttpPost(post)) {
+      	ESP_LOGE(LOGTAG, "Error in executing POST()")
+    }
+  	ESP_LOGW(LOGTAG, "AFTER POSTING");
+
+  	ESP_LOGW(LOGTAG, "STARTING OTA");
     Ota ota;
-    ota.UpdateFirmware("https://github.com/flyinggorilla/esp32gong/blob/master/README.md");
-    ota.UpdateFirmware("https://www.howsmyssl.com/a/check");
+    ota.UpdateFirmware("http://localhost/getfirmware");
+
+  	ESP_LOGW(LOGTAG, "AFTER OTA STUFF---- RESTARTING IN 5 seconds");
+	vTaskDelay(5000 / portTICK_PERIOD_MS);
+    //esp_restart();
 
 
 }
@@ -197,6 +228,7 @@ void Esp32Gong::TaskDnsServer() {
 void Esp32Gong::TaskResetButton() {
 	int level = 0;
 	int ticks = 0;
+	int tempticks = 0;
 
 
 
@@ -212,6 +244,12 @@ void Esp32Gong::TaskResetButton() {
 			}
 		}
 		ticks++;
+		tempticks++;
+		if (tempticks > 1*60) {
+			float t = esp32_temperature();
+			ESP_LOGI(LOGTAG, "Temperature %3.1f", t);
+			tempticks = 0;
+		}
 
 		gpio_set_level((gpio_num_t) ONBOARDLED_GPIO, (gpio_mode_t) level);
 		vTaskDelay(500 / portTICK_PERIOD_MS);

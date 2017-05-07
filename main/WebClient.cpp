@@ -28,7 +28,7 @@
 
 #include "mbedtls/platform.h"
 #include "mbedtls/net.h"
-#include "mbedtls/esp_debug.h"
+//#include "mbedtls/esp_debug.h"
 #include "mbedtls/ssl.h"
 #include "mbedtls/entropy.h"
 #include "mbedtls/ctr_drbg.h"
@@ -57,27 +57,76 @@ bool WebClient::Prepare(Url* pUrl) {
 }
 
 
-bool WebClient::HttpAddHeader(std::string& sHeader) {
+bool WebClient::AddHttpHeader(std::string& sHeader) {
 	mlRequestHeaders.push_back(sHeader);
 	return true;
 }
 
-bool WebClient::AddRequestHeader(const char* header) {
+bool WebClient::AddHttpHeaderCStr(const char* header) {
 	mlRequestHeaders.push_back(header);
 	return true;
 }
 
-unsigned short WebClient::Execute() {
-	return HttpExecute(NULL);
-}
-unsigned short WebClient::HttpExecute(DownloadHandler* pDownloadHandler) {
+void WebClient::SetDownloadHandler(DownloadHandler* pDownloadHandler) {
 	mpDownloadHandler = pDownloadHandler;
+}
+
+unsigned short WebClient::HttpPost(const char* data, unsigned int size) {
+	if (!data) return 0;
+
+	mpPostData = data;
+	muPostDataSize = size;
+	return HttpExecute();
+}
+
+unsigned short WebClient::HttpPost(std::string& sData) {
+	return HttpPost(sData.data(), sData.size());
+}
+
+void WebClient::PrepareRequest(std::string& sRequest) {
+	sRequest.reserve(512);
+	sRequest = mpPostData ? "POST " : "GET ";
+	sRequest += mpUrl->GetPath();
+	if (mpUrl->GetQueryParams().size()) {
+		sRequest += '?';
+		sRequest += mpUrl->GetQuery();
+	}
+	sRequest += " HTTP/1.0\r\nHost: ";
+	sRequest += mpUrl->GetHost();
+	sRequest += "\r\n";
+
+	for (std::list<std::string>::iterator it = mlRequestHeaders.begin(); it != mlRequestHeaders.end(); ++it) {
+		sRequest += *it; //TODO *it or it????
+		sRequest += "\r\n";
+	}
+
+	if (mpPostData) {
+		ESP_LOGI(LOGTAG, "SETTING Content-Length to %u", muPostDataSize);
+		char contentLength[64];
+		sprintf(contentLength, "Content-Length: %u\r\n", muPostDataSize);
+		sRequest += contentLength;
+	}
+
+	sRequest += "User-Agent: esp32webclient/1.0 esp32\r\n\r\n";
+}
+
+unsigned short WebClient::HttpGet() {
+	mpPostData = NULL;
+	muPostDataSize = 0;
+	return HttpExecute();
+}
+
+
+unsigned short WebClient::HttpExecute() {
+
 	if (!mpUrl)
-		return false;
+		return 0;
 
 	if (mpUrl->GetHost().empty()) {
-		return false;
+		return 0;
 	}
+
+
 
 	if (mpUrl->GetSecure()) {
 		return HttpExecuteSecure();
@@ -124,22 +173,8 @@ unsigned short WebClient::HttpExecute(DownloadHandler* pDownloadHandler) {
 
 	// Build HTTP Request
 	std::string sRequest;
+	PrepareRequest(sRequest);
 
-	sRequest.reserve(512);
-	sRequest = "GET ";
-	sRequest += mpUrl->GetPath();
-	if (mpUrl->GetQueryParams().size()) {
-		sRequest += '?';
-		sRequest += mpUrl->GetQuery();
-	}
-	sRequest += " HTTP/1.0\r\nHost: ";
-	sRequest += mpUrl->GetHost();
-	sRequest += "\r\n";
-	for (std::list<std::string>::iterator it = mlRequestHeaders.begin(); it != mlRequestHeaders.end(); ++it) {
-		sRequest += *it; //TODO *it or it????
-		sRequest += "\r\n";
-	}
-	sRequest += "User-Agent: esp32webclient/1.0 esp32\r\n\r\n";
 
 	// send HTTP request
 	ESP_LOGI(LOGTAG, "sRequest: %s", sRequest.c_str());
@@ -149,6 +184,17 @@ unsigned short WebClient::HttpExecute(DownloadHandler* pDownloadHandler) {
 		return false;
 	}
 	sRequest.clear(); // free memory
+
+
+	if (mpPostData) {
+		if (write(socket, mpPostData, muPostDataSize) < 0) {
+			ESP_LOGE(LOGTAG, "... socket send post data failed");
+			close(socket);
+			return false;
+		}
+	}
+
+
 	ESP_LOGI(LOGTAG, "... socket send success");
 
 	// Read HTTP response
@@ -242,7 +288,7 @@ bool WebClient::HttpExecuteSecure() {
 	mbedtls_ssl_conf_ca_chain(&conf, &cacert, NULL);
 	mbedtls_ssl_conf_rng(&conf, mbedtls_ctr_drbg_random, &ctr_drbg);
 #ifdef CONFIG_MBEDTLS_DEBUG
-	mbedtls_esp_enable_debug_log(&conf, 4);
+	//mbedtls_esp_enable_debug_log(&conf, 4);
 #endif
 
 	if ((ret = mbedtls_ssl_setup(&ssl, &conf)) != 0) {
@@ -288,24 +334,7 @@ bool WebClient::HttpExecuteSecure() {
 
 	// Build HTTP Request
 
-
-	sRequest.reserve(512);
-	sRequest = "GET ";
-	sRequest += mpUrl->GetPath();
-	if (mpUrl->GetQueryParams().size()) {
-		sRequest += '?';
-		sRequest += mpUrl->GetQuery();
-	}
-	sRequest += " HTTP/1.0\r\nHost: ";
-	sRequest += mpUrl->GetHost();
-	sRequest += "\r\n";
-	for (std::list<std::string>::iterator it = mlRequestHeaders.begin(); it != mlRequestHeaders.end(); ++it) {
-		sRequest += *it; //TODO *it or it????
-		sRequest += "\r\n";
-	}
-	sRequest += "User-Agent: esp32webclient/1.0 esp32\r\n\r\n";
-
-
+	PrepareRequest(sRequest);
 
 	ESP_LOGI(LOGTAG, "Writing HTTP request... <%s>", sRequest.c_str());
 
@@ -315,6 +344,16 @@ bool WebClient::HttpExecuteSecure() {
 			goto exit;
 		}
 	}
+
+	if (mpPostData) {
+		while ((ret = mbedtls_ssl_write(&ssl, (const unsigned char*)mpPostData, muPostDataSize)) <= 0) {
+			if (ret != MBEDTLS_ERR_SSL_WANT_READ && ret != MBEDTLS_ERR_SSL_WANT_WRITE) {
+				ESP_LOGE(LOGTAG, "mbedtls_ssl_write returned -0x%x during POST", -ret);
+				goto exit;
+			}
+		}
+	}
+
 
 	ESP_LOGI(LOGTAG, "%d bytes written", ret);
 	ESP_LOGI(LOGTAG, "Reading HTTP response...");

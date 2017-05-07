@@ -10,7 +10,6 @@
 
 #include <stdlib.h>
 #include <string>
-#include <vector>
 
 #include "SpiffsFileSystem.h"
 /*
@@ -24,10 +23,10 @@ public:
 	bool Open(std::string s);
 	int Write(char* data, int size);
 	int Read(char* buf, int maxlen);
-	int Write(std::vector<char>);
-	std::vector<char> Read(int maxread);
+	int Read(std::string& readbuffer, int maxread);
+	int Write(std::string& writebuffer);
 	void Close();
-
+	const char* LastError();
 	int getBytesWritten() { return bytesWritten; }
 
 

@@ -54,38 +54,40 @@ static void __attribute__((noreturn)) task_fatal_error()
 bool Ota::OnReceiveBegin() {
     ESP_LOGI(LOGTAG, "Starting OTA example...");
 
-	/*esp_err_t err;
+	esp_err_t err;
     const esp_partition_t *configured = esp_ota_get_boot_partition();
     const esp_partition_t *running = esp_ota_get_running_partition();
 
-    assert(configured == running); // fresh from reset, should be running from configured boot partition
     ESP_LOGI(LOGTAG, "Running partition type %d subtype %d (offset 0x%08x)",
              configured->type, configured->subtype, configured->address);
 
     update_partition = esp_ota_get_next_update_partition(NULL);
+    if (update_partition == NULL) {
+        ESP_LOGE(LOGTAG, "could not get next update partition");
+    	return false;
+    }
 
     ESP_LOGI(LOGTAG, "Writing to partition subtype %d at offset 0x%x",
              update_partition->subtype, update_partition->address);
-    assert(update_partition != NULL);
+
 
     err = esp_ota_begin(update_partition, OTA_SIZE_UNKNOWN, &update_handle);
     if (err != ESP_OK) {
         ESP_LOGE(LOGTAG, "esp_ota_begin failed, error=%d", err);
         task_fatal_error();
+        return false;
     }
-    ESP_LOGI(LOGTAG, "esp_ota_begin succeeded"); */
-    dummy = "";
+    ESP_LOGI(LOGTAG, "esp_ota_begin succeeded");
     return true;
 }
 
 bool Ota::OnReceiveData(char* buf, int len) {
-	//esp_err_t err;
-    //err = esp_ota_write( update_handle, (const void *)buf, len);
+	esp_err_t err;
+    err = esp_ota_write( update_handle, (const void *)buf, len);
     ESP_LOGI(LOGTAG, "Have written image length %d", len);
     muDataLength += len;
-    //return err == ESP_OK;
+    return err == ESP_OK;
 
-    //dummy.append(buf, 0, len);
     //ESP_LOGI(LOGTAG, "DATA: %s", dummy.c_str());
 
 
@@ -95,7 +97,7 @@ bool Ota::OnReceiveData(char* buf, int len) {
 void Ota::OnReceiveEnd() {
     ESP_LOGI(LOGTAG, "Total Write binary data length : %u", muDataLength);
     //ESP_LOGI(LOGTAG, "DATA: %s", dummy.c_str());
-/*
+
     esp_err_t err;
 
     if (esp_ota_end(update_handle) != ESP_OK) {
@@ -108,24 +110,26 @@ void Ota::OnReceiveEnd() {
         task_fatal_error();
     }
     ESP_LOGI(LOGTAG, "Prepare to restart system!");
-    esp_restart(); */
+    //esp_restart();
 }
 
 
 
 bool Ota::UpdateFirmware(std::string sUrl)
 {
-	ESP_LOGI(LOGTAG, "OTA not yet fully implemented --- testing DownloadHandler right now");
 	Url url;
 	url.Parse(sUrl);
 
 	ESP_LOGI(LOGTAG, "Retrieve firmware from: %s", url.GetUrl().c_str());
 	mWebClient.Prepare(&url);
+	mWebClient.SetDownloadHandler(this);
 
-    if (!mWebClient.HttpExecute(this)) {
+    if (!mWebClient.HttpGet()) {
       	ESP_LOGE(LOGTAG, "Error in HttpExecute()")
       			return false;
     }
+
+
     return true;
 
 }
