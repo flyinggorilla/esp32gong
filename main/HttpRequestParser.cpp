@@ -1,19 +1,10 @@
 #include "HttpRequestParser.h"
-
 #include "freertos/FreeRTOS.h"
-#include <list>
 
-#define STATE_Method				0
-#define STATE_ParseUrl				1
-#define STATE_HttpType				2
-#define STATE_SearchEndOfHeaderLine 3
-#define STATE_SkipHeader			4
-#define STATE_CheckHeaderName		5
-#define STATE_CheckHeaderValue		6
-#define STATE_ReadContentLength		7
-#define STATE_CopyBody				8
 
-HttpRequestParser::HttpRequestParser() {
+HttpRequestParser::HttpRequestParser(int socket) {
+	mSocket = socket;
+
 	Init();
 }
 

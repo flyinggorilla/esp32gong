@@ -200,14 +200,9 @@ unsigned short WebClient::HttpExecute() {
 	// Read HTTP response
 	mHttpResponseParser.Init(mpDownloadHandler, muMaxResponseDataSize);
 
-	char recv_buf[256];
+	char recv_buf[1024];
 	while (!mHttpResponseParser.ResponseFinished()) {
-		size_t sizeRead = read(socket, recv_buf, sizeof(recv_buf) - 1);
-		if (sizeRead <= 0) {
-			ESP_LOGE(LOGTAG, "Connection closed during parsing");
-			close(socket);
-			break;
-		}
+		size_t sizeRead = read(socket, recv_buf, sizeof(recv_buf));
 		if (!mHttpResponseParser.ParseResponse(recv_buf, sizeRead)) {
 			ESP_LOGE(LOGTAG, "HTTP Parsing error: %d", mHttpResponseParser.GetError());
 			close(socket);

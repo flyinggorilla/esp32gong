@@ -30,7 +30,6 @@
 	<title>Wifi Gong</title>
 </head>
 
-
 <body>
 	<!-- the home page is the default one. This page does not require to call its content because we define on its tag.-->
 	<home data-page="true">
@@ -99,6 +98,8 @@
 		</div>
 	</pageinfo>
 
+
+
 	<pagefirmwareupdate data-page="true">
 		<header class="header-bar">
 			<button class="btn icon icon-arrow-back pull-left" data-navigation="$previous-page"></button>
@@ -107,17 +108,24 @@
 			</div>
 		</header>
 		<div class="content">
-			<div class="input-wrapper list">
-				<form method='POST' action='/update' enctype='multipart/form-data'>
-					<span class="padded-list">Select firmware file like wifigong.ino.bin or index.html (do not upload the wifigong.spiffs.bin here)</span>
-					<li>
-						<input class="padded-full" type="file" name="update" id="firmwarefilename"/>
-					</li>
-					<li>
-						<button class="btn btn-submit fit-parent primary" type="submit">Update</button>
-					</li>
-				</form>
-			</div>
+			<ul class="list">
+				<li class="divider">from update server</li>
+				<li class="padded-list">
+					<span class="padded-list">download and update</span>
+					<button class="btn btn-flat primary" id="firmwareupdate">update</button>
+				</li>
+				<li class="divider">manual update</li>
+			</ul>
+
+			<form method='POST' action='/update' enctype='multipart/form-data'>
+				<span class="padded-list">Select firmware file like wifigong.ino.bin or index.html (do not upload the wifigong.spiffs.bin here)</span>
+				<li>
+					<input class="padded-full" type="file" name="update" id="firmwarefilename" />
+				</li>
+				<li>
+					<button class="btn btn-submit fit-parent primary" type="submit">Update</button>
+				</li>
+			</form>
 
 		</div>
 	</pagefirmwareupdate>
@@ -137,24 +145,25 @@
 					<span style="color:dimgrey">Please configure the Wifi settings of your WIFIGONG first. In order to access the WIFIGONG AFTER submitting the Wifi settings, you may do the following:</span>
 					<li>Option 1: Open Windows file explorer and click on "Network" to display all devices that are discovered through SSDP.
 					</li>
-					<li>Option 2: by default the WIFIGONG registers with hostname <b id="hostname">---</b> at you access point. so try <span id="wifigongurl">http://hostname</span>:
-						TODO: add auto-redirect to URL.
+					<li>Option 2: by default the WIFIGONG registers with hostname <b id="hostname">---</b> at you access point. so try
+						<span
+						 id="wifigongurl">http://hostname</span>: TODO: add auto-redirect to URL.
 					</li>
-					<li>Option 3: Remember your MAC address <b><span id="macaddress">---</span></b> as you may want to lookup the IP address in
-						your Wifi Accesspoint.</li>
+					<li>Option 3: Remember your MAC address <b><span id="macaddress">---</span></b> as you may want to lookup the IP address
+						in your Wifi Accesspoint.</li>
 
 					<li>Option 4: After a successful connection to the Wifi switch back to Access Point mode (push the button) and look at the
 						info section for the latest IP adress retrieved by DHCP.
 					</li>
-							<!-- no SSDP available right now  
+					<!-- no SSDP available right now  
 												<li>Option 3: Open Windows file explorer and click on "Network" to display all devices that are discovered through SSDP.
 												</li>		-->
 				</ul>
 
 				<form method='GET' action='/config'>
 					<div class="padded-full">
-						<input type="text" name="ssid" placeholder="SSID" id="ssid" />
-						<input type="password" name="pwd" placeholder="*************" id="wifipwd" />
+						<input type="text" name="wifissid" placeholder="SSID" id="wifissid" />
+						<input type="password" name="wifipwd" placeholder="*************" id="wifipwd" />
 						<input type="text" name="hostname" placeholder="default=esp32gong" id="hostname" />
 					</div>
 					<div class="padded-full">
@@ -173,116 +182,138 @@
 	<!-- <script src="app.js"></script> -->
 	<script>
 		phonon.options({
-				navigator: {
-					defaultPage: 'home',
-					animatePages: true,
-					enableBrowserBackButton: true
-					//templateRootDirectory: ''
-				},
-				i18n: null // for this example, we do not use internationalization
-			});
+			navigator: {
+				defaultPage: 'home',
+				animatePages: true,
+				enableBrowserBackButton: true
+				//templateRootDirectory: ''
+			},
+			i18n: null // for this example, we do not use internationalization
+		});
 
 
-			var app = phonon.navigator();
+		var app = phonon.navigator();
 
-			/**
-			 * The activity scope is not mandatory.
-			 * For the home page, we do not need to perform actions during
-			 * page events such as onCreate, onReady, etc
-			*/
-			app.on({page: 'home', preventClose: false, content: null} , function(activity) {
-				var onApi = function(evt) {
-					var target = evt.target;
-					var apicall = target.getAttribute('data-api');
-					console.log(apicall);
+		/**
+		 * The activity scope is not mandatory.
+		 * For the home page, we do not need to perform actions during
+		 * page events such as onCreate, onReady, etc
+		*/
+		app.on({ page: 'home', preventClose: false, content: null }, function (activity) {
+			var onApi = function (evt) {
+				var target = evt.target;
+				var apicall = target.getAttribute('data-api');
+				console.log(apicall);
 
-					var req = phonon.ajax({
-						method: 'GET',
-						url: 'api?'+apicall,
-						dataType: 'json',
-						//contentType: '',
-						//data: {'ssid': document.querySelector('#ssid').value, 'pwd': document.querySelector('#wifipwd').value},
-						//data: { 'key1': 'val1', 'key2': 'val2'},
-						//timeout: 5000,
-						success: function(res, xhr) {
-							console.log(res);
-						},
+				var req = phonon.ajax({
+					method: 'GET',
+					url: 'api?' + apicall,
+					dataType: 'json',
+					//contentType: '',
+					//data: {'ssid': document.querySelector('#ssid').value, 'pwd': document.querySelector('#wifipwd').value},
+					//data: { 'key1': 'val1', 'key2': 'val2'},
+					//timeout: 5000,
+					success: function (res, xhr) {
+						console.log(res);
+					},
 
-						error: function(res, flagError, xhr) {
-							console.error(flagError);
-							console.log(res);
-						}
-					});
+					error: function (res, flagError, xhr) {
+						console.error(flagError);
+						console.log(res);
+					}
+				});
 
-				};
+			};
 
-				activity.onCreate(function() {
-					// document.querySelector('#submitwifisettings').on('tap', onWifiSettingsSubmit);
-					document.querySelector('#gongplay').on('tap', onApi);
-				})
-			});
 
-			document.on('pageopened', function(evt) {
-				console.log(evt.detail.page + ' is opened');
-				if (evt.detail.page == "pageinfo") {
+			var onFirmwareUpdate = function (evt) {
+				var req = phonon.ajax({
+					method: 'GET',
+					url: 'firmware?update',
+					success: function (res, xhr) {
+						console.log(res);
+					},
 
-						var req = phonon.ajax({
-						method: 'GET',
-						url: 'info',
-						//crossDomain: false,
-						dataType: 'text/json',
-						success: function(res, xhr) {
-							console.log(xhr.response);
-							var result = JSON.parse(xhr.response);
-							document.getElementById('infossid').innerHTML = result.ssid;
-							document.getElementById('infoipaddress').innerHTML = result.ipaddress;
-							document.getElementById('infoheap').innerHTML = result.heap;
-							document.getElementById('infoipgateway').innerHTML = result.ipgateway;
-							document.getElementById('infoipdns').innerHTML = result.ipdns;
-							document.getElementById('infoipsubnetmask').innerHTML = result.ipsubnetmask;
-							document.getElementById('infomacaddress').innerHTML = result.macaddress;
-							document.getElementById('infohostname').innerHTML = result.hostname;
-							document.getElementById('infoapipaddress').innerHTML = result.apipaddress;
-							document.getElementById('infoapconnectedstations').innerHTML = result.apconnectedstations;
-							document.getElementById('infowifiautoconnect').innerHTML = result.wifiautoconnect;
-							document.getElementById('infofirmwareversion').innerHTML = result.firmwareversion;
-						},
-						error: function(res, flagError, xhr) {
-							console.error(flagError);
-							console.log(res);
-						}
-					});
-				}
-				if (evt.detail.page == "pagewifisettings") {
-					var req = phonon.ajax({
-						method: 'GET',
-						url: 'info',
-						dataType: 'text/json',
-						success: function(res, xhr) {
-							console.log(xhr.response);
-                            var result = JSON.parse(xhr.response);
-                            document.getElementById('ssid').value = result.ssid;
-							document.getElementById('macaddress').innerHTML = result.macaddress;
-							document.getElementById('hostname').innerHTML = result.hostname;
-							document.getElementById('wifigongurl').href = "http://"+result.hostname;
-							document.getElementById('firmwareversion').innerHTML = result.firmwareversion;
-						},
-						error: function(res, flagError, xhr) {
-							console.error(flagError);
-							console.log(res);
-						}
-					});
-				}
-			});
+					error: function (res, flagError, xhr) {
+						console.error(flagError);
+						console.log(res);
+					}
+				});
 
-			app.on({page: 'pageinfo', preventClose: false, content: null} , function(activity) {
-			});
+			};
+
+			var onRestart = function (evt) {
+				//TODO
+			}
+
+			activity.onCreate(function () {
+				// document.querySelector('#submitwifisettings').on('tap', onWifiSettingsSubmit);
+				document.querySelector('#gongplay').on('tap', onApi);
+				document.querySelector('#firmwareupdate').on('tap', onFirmwareUpdate);
+			})
+		});
+
+		document.on('pageopened', function (evt) {
+			console.log(evt.detail.page + ' is opened');
+			if (evt.detail.page == "pageinfo") {
+
+				var req = phonon.ajax({
+					method: 'GET',
+					url: 'info',
+					//crossDomain: false,
+					dataType: 'text/json',
+					success: function (res, xhr) {
+						console.log(xhr.response);
+						var result = JSON.parse(xhr.response);
+						document.getElementById('infossid').innerHTML = result.ssid;
+						document.getElementById('infoipaddress').innerHTML = result.ipaddress;
+						document.getElementById('infoheap').innerHTML = result.heap;
+						document.getElementById('infoipgateway').innerHTML = result.ipgateway;
+						document.getElementById('infoipdns').innerHTML = result.ipdns;
+						document.getElementById('infoipsubnetmask').innerHTML = result.ipsubnetmask;
+						document.getElementById('infomacaddress').innerHTML = result.macaddress;
+						document.getElementById('infohostname').innerHTML = result.hostname;
+						document.getElementById('infoapipaddress').innerHTML = result.apipaddress;
+						document.getElementById('infoapconnectedstations').innerHTML = result.apconnectedstations;
+						document.getElementById('infowifiautoconnect').innerHTML = result.wifiautoconnect;
+						document.getElementById('infofirmwareversion').innerHTML = result.firmwareversion;
+					},
+					error: function (res, flagError, xhr) {
+						console.error(flagError);
+						console.log(res);
+					}
+				});
+			}
+			if (evt.detail.page == "pagewifisettings") {
+				var req = phonon.ajax({
+					method: 'GET',
+					url: 'info',
+					dataType: 'text/json',
+					success: function (res, xhr) {
+						console.log(xhr.response);
+						var result = JSON.parse(xhr.response);
+						document.getElementById('wifissid').value = result.ssid;
+						document.getElementById('macaddress').innerHTML = result.macaddress;
+						document.getElementById('hostname').innerHTML = result.hostname;
+						document.getElementById('wifigongurl').href = "http://" + result.hostname;
+						document.getElementById('firmwareversion').innerHTML = result.firmwareversion;
+					},
+					error: function (res, flagError, xhr) {
+						console.error(flagError);
+						console.log(res);
+					}
+				});
+			}
+		});
+
+		app.on({ page: 'pageinfo', preventClose: false, content: null }, function (activity) {
+		});
 	</script>
 
 
 	<script>
-		// Let's go!
-		app.start();
+			// Let's go!
+			app.start();
 	</script>
 
 

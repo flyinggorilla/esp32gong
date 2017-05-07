@@ -61,17 +61,17 @@ bool Ota::OnReceiveBegin() {
     ESP_LOGI(LOGTAG, "Running partition type %d subtype %d (offset 0x%08x)",
              configured->type, configured->subtype, configured->address);
 
-    update_partition = esp_ota_get_next_update_partition(NULL);
-    if (update_partition == NULL) {
+    mpUpdatePartition = esp_ota_get_next_update_partition(NULL);
+    if (mpUpdatePartition == NULL) {
         ESP_LOGE(LOGTAG, "could not get next update partition");
     	return false;
     }
 
     ESP_LOGI(LOGTAG, "Writing to partition subtype %d at offset 0x%x",
-             update_partition->subtype, update_partition->address);
+             mpUpdatePartition->subtype, mpUpdatePartition->address);
 
 
-    err = esp_ota_begin(update_partition, OTA_SIZE_UNKNOWN, &update_handle);
+    err = esp_ota_begin(mpUpdatePartition, OTA_SIZE_UNKNOWN, &mOtaHandle);
     if (err != ESP_OK) {
         ESP_LOGE(LOGTAG, "esp_ota_begin failed, error=%d", err);
         task_fatal_error();
@@ -83,15 +83,16 @@ bool Ota::OnReceiveBegin() {
 
 bool Ota::OnReceiveData(char* buf, int len) {
 	esp_err_t err;
-    err = esp_ota_write( update_handle, (const void *)buf, len);
-    ESP_LOGI(LOGTAG, "Have written image length %d", len);
+    err = esp_ota_write( mOtaHandle, (const void *)buf, len);
+    if (err == ESP_ERR_INVALID_SIZE) {
+    	ESP_LOGE(LOGTAG, "Error partition too small for firmware data: %d", muDataLength + len );
+    } else if (err != ESP_OK) {
+    	ESP_LOGE(LOGTAG, "Error writing data: %d", err);
+    	return false;
+    }
     muDataLength += len;
+    ESP_LOGI(LOGTAG, "Have written image length %d, total %d", len, muDataLength);
     return err == ESP_OK;
-
-    //ESP_LOGI(LOGTAG, "DATA: %s", dummy.c_str());
-
-
-    return true;
 }
 
 void Ota::OnReceiveEnd() {
@@ -100,16 +101,17 @@ void Ota::OnReceiveEnd() {
 
     esp_err_t err;
 
-    if (esp_ota_end(update_handle) != ESP_OK) {
+    if (esp_ota_end(mOtaHandle) != ESP_OK) {
         ESP_LOGE(LOGTAG, "esp_ota_end failed!");
         task_fatal_error();
     }
-    err = esp_ota_set_boot_partition(update_partition);
+    err = esp_ota_set_boot_partition(mpUpdatePartition);
     if (err != ESP_OK) {
         ESP_LOGE(LOGTAG, "esp_ota_set_boot_partition failed! err=0x%x", err);
         task_fatal_error();
     }
     ESP_LOGI(LOGTAG, "Prepare to restart system!");
+    mbEndSuccess = true;
     //esp_restart();
 }
 
@@ -129,10 +131,30 @@ bool Ota::UpdateFirmware(std::string sUrl)
       			return false;
     }
 
+	ESP_LOGI(LOGTAG, "UpdateFirmware finished. downloaded %u bytes, success %s" , muDataLength, mbEndSuccess ? "yeah!": "uhhh!");
 
-    return true;
+    return mbEndSuccess;
+
+}
+
+void task_function_firmwareupdate(void* user_data) {
+	ESP_LOGW(LOGTAG, "Starting Firmware Update Task ....");
+
+  	Ota ota;
+    if(ota.UpdateFirmware("http://surpro4:9999/getfirmware")) {
+	  	ESP_LOGI(LOGTAG, "AFTER OTA STUFF---- RESTARTING IN 2 SEC");
+		vTaskDelay(2*1000 / portTICK_PERIOD_MS);
+		esp_restart();
+    } else {
+    	//TODO add ota.GetErrorInfo() to inform end-user of problem
+	  	ESP_LOGE(LOGTAG, "OTA update failed!");
+    }
 
 }
 
 
+
+void Ota::StartUpdateFirmwareTask() {
+	xTaskCreate(&task_function_firmwareupdate, "firmwareupdate", 4096, NULL, 5, NULL);
+}
 

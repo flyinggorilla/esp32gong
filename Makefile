@@ -19,6 +19,11 @@ all: main/fontwoff.h
 
 all: main/wavdata.h 
 
+all: main/certpem.h 
+
+all: main/keypem.h
+
+
 main/indexhtml.h: data/index.html
 	python data2h.py data/index.html main/indexhtml.h
 
@@ -36,6 +41,13 @@ main/fonteot.h: data/material-design-icons.eot
 
 main/wavdata.h: data/gong.wav
 	python data2h.py data/gong.wav main/wavdata.h
+
+main/certpem.h: data/cert.pem
+	python data2h.py data/cert.pem main/certpem.h
+
+main/keypem.h: data/key.pem
+	python data2h.py data/key.pem main/keypem.h
+
 
 include $(IDF_PATH)/make/project.mk
 

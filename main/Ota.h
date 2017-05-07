@@ -13,7 +13,14 @@
 #include "DownloadHandler.h"
 #include "WebClient.h"
 
+
+
+
 class Ota : public DownloadHandler {
+public:
+	static void StartUpdateFirmwareTask();
+	static int  smErrorCode; //TODO this should provide "feedback" from the static class
+
 public:
 	Ota();
 	virtual ~Ota();
@@ -26,12 +33,10 @@ public:
 
 private:
 	WebClient mWebClient;
-    esp_ota_handle_t update_handle = 0 ;
-    const esp_partition_t *update_partition = NULL;
+    esp_ota_handle_t mOtaHandle = 0 ;
+    const esp_partition_t *mpUpdatePartition = NULL;
     unsigned int muDataLength = 0;
-
-    std::string dummy; //TODO REMOVE
-
+    bool mbEndSuccess = false;
 };
 
 #endif /* MAIN_OTA_H_ */

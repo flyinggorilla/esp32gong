@@ -20,12 +20,14 @@
 #include "Config.h"
 #include "DnsSrv.h"
 #include "I2SPlayer.h"
-#include "Ota.h"
-#include "SpiffsFileSystem.h"
 #include "temperature.h"
 #include "wavdata.h"
 #include "WebServer.h"
 #include "Wifi.h"
+#include "FileSystem.h"
+#include "Url.h"
+#include "WebClient.h"
+#include "Ota.h"
 
 #define ONBOARDLED_GPIO GPIO_NUM_5  // GPIO5 on Sparkfun ESP32 Thing
 #define LOGTAG "main"
@@ -33,7 +35,7 @@
 I2SPlayer musicPlayer;
 WebServer webServer;
 Esp32Gong esp32gong;
-SpiffsFileSystem spiffsFileSystem;
+FileSystem fileSystem;
 Wifi wifi;
 DnsSrv dnsServer;
 
@@ -151,7 +153,7 @@ void Esp32Gong::TaskTestWebClient() {
 	WebClient webClient;
 	//url.Selftest();
 
-	url.Parse("http://www.msftconnecttest.com/connecttest.txt");
+	/* url.Parse("http://www.msftconnecttest.com/connecttest.txt");
     webClient.Prepare(&url);
     webClient.AddHttpHeaderCStr("Connection: close");
     webClient.AddHttpHeaderCStr("Test1: testVal1");
@@ -204,21 +206,25 @@ void Esp32Gong::TaskTestWebClient() {
     if (!webClient.HttpPost(post)) {
       	ESP_LOGE(LOGTAG, "Error in executing POST()")
     }
-  	ESP_LOGW(LOGTAG, "AFTER POSTING");
+  	ESP_LOGW(LOGTAG, "AFTER POSTING"); */
 
-  	ESP_LOGW(LOGTAG, "STARTING OTA");
-    Ota ota;
-    ota.UpdateFirmware("http://localhost/getfirmware");
 
-  	ESP_LOGW(LOGTAG, "AFTER OTA STUFF---- RESTARTING IN 5 seconds");
-	vTaskDelay(5000 / portTICK_PERIOD_MS);
-    //esp_restart();
+/*	ESP_LOGW(LOGTAG, "#####Starting Firmware Update Task ....");
 
+  	Ota ota;
+    if(ota.UpdateFirmware("http://surpro4:9999/getfirmware")) {
+	  	ESP_LOGI(LOGTAG, "#####AFTER OTA STUFF---- RESTARTING IN 2 SEC");
+		vTaskDelay(2*1000 / portTICK_PERIOD_MS);
+		esp_restart();
+    } else {
+    	//TODO add ota.GetErrorInfo() to inform end-user of problem
+	  	ESP_LOGE(LOGTAG, "#####OTA update failed!");
+    }*/
 
 }
 
 void Esp32Gong::TaskWebServer() {
-	webServer.Start(80);
+	webServer.Start();
 }
 
 void Esp32Gong::TaskDnsServer() {

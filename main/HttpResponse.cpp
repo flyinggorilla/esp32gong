@@ -1,11 +1,34 @@
-#include "HttpResponse.h"
-
 #include "freertos/FreeRTOS.h"
+#include "httpResponse.h"
+#include <esp_log.h>
 
 
-void HttpResponse::Init(__uint16_t uRetCode, bool bHttp11, bool bConnectionClose){
 
+void HttpResponse::Init(int socket, __uint16_t uRetCode, bool bHttp11, bool bConnectionClose){
+	PrivateInit(bHttp11, bConnectionClose);
+	mSocket = socket;
 	muRetCode = uRetCode;
+}
+
+void HttpResponse::Init(SSL* pSsl, __uint16_t uRetCode, bool bHttp11, bool bConnectionClose){
+	PrivateInit(bHttp11, bConnectionClose);
+	mpSsl = pSsl;
+	muRetCode = uRetCode;
+}
+
+void HttpResponse::Init(int socket, bool bHttp11, bool bConnectionClose){
+	PrivateInit(bHttp11, bConnectionClose);
+	mSocket = socket;
+	muRetCode = 200;
+}
+
+void HttpResponse::Init(SSL* pSsl, bool bHttp11, bool bConnectionClose){
+	PrivateInit(bHttp11, bConnectionClose);
+	mpSsl = pSsl;
+	muRetCode = 200;
+}
+
+void HttpResponse::PrivateInit( bool bHttp11, bool bConnectionClose){
 	mbHttp11 = bHttp11;
 	mbConnectionClose = bConnectionClose;
 	mHeaders.clear();
@@ -15,53 +38,59 @@ void HttpResponse::AddHeader(const char* sHeader){
 	mHeaders.push_back(sHeader);
 }
 
-bool HttpResponse::Send(int socket, const char* sBody, __uint16_t uBodyLen){
+bool HttpResponse::Send(const char* sBody, __uint16_t uBodyLen){
 
 	char sBuf[10];
 
-	if (!SendInternal(socket, mbHttp11 ? "HTTP/1.1 " : "HTTP/1.0 ", 9))
+	if (!SendInternal(mbHttp11 ? "HTTP/1.1 " : "HTTP/1.0 ", 9))
 		return false;
 	__uint8_t len = Number2String(muRetCode, sBuf);
-	if (!SendInternal(socket , sBuf, len))
+	if (!SendInternal(sBuf, len))
 		return false;
 	const char* sData = GetResponseMsg(muRetCode, len);
-	if (!SendInternal(socket , sData, len))
+	if (!SendInternal(sData, len))
 			return false;
 
 	std::list<std::string>::iterator it = mHeaders.begin();
 	while (it != mHeaders.end()){
-		if (!SendInternal(socket, it->data(), it->size()))
+		if (!SendInternal(it->data(), it->size()))
 			return false;
-		if (!SendInternal(socket , "\r\n", 2))
+		if (!SendInternal("\r\n", 2))
 			return false;
 		it++;
 	}
 	if (!mbConnectionClose){
-		if (!SendInternal(socket , "Content-Length: ", 16))
+		if (!SendInternal("Content-Length: ", 16))
 			return false;
 
 		__uint8_t len = Number2String(uBodyLen, sBuf);
-		if (!SendInternal(socket , sBuf, len))
+		if (!SendInternal(sBuf, len))
 			return false;
-		if (!SendInternal(socket , "\r\n\r\n", 4))
+		if (!SendInternal("\r\n\r\n", 4))
 			return false;
 	}
 	else{
-		if (!SendInternal(socket , "\r\n", 2))
+		if (!SendInternal("\r\n", 2))
 			return false;
 	}
 	if (sBody && uBodyLen){
-		if (!SendInternal(socket , sBody, uBodyLen))
+		if (!SendInternal(sBody, uBodyLen))
 			return false;
 	}
 	else{
-		if (!SendInternal(socket , "\r\n", 2))
+		if (!SendInternal("\r\n", 2))
 			return false;
 	}
 	return true;
 }
 
+bool HttpResponse::SendInternal(const char* sData, __uint16_t uLen){
 
+	if (mpSsl){
+		return  SSL_write(mpSsl, sData, uLen) > 0;
+	}
+	return send(mSocket, sData, uLen, 0) == uLen;  //theoretically less bytes could be sent (without error)
+};
 
 const char* HttpResponse::GetResponseMsg(__uint16_t uRetCode, __uint8_t& ruLen){
 

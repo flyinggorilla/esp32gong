@@ -21,7 +21,16 @@
 #define STATE_ReadContentType		8
 #define STATE_CopyBody				9
 
-#define ERROR_HTTPRESPONSE_NOVALIDHTTP 1
+#define ERROR_OK 									0
+#define ERROR_HTTPRESPONSE_NOVALIDHTTP 				1
+#define ERROR_DOWNLOADHANDLER_ONRECEIVEDATA_ABORT 	2
+#define ERROR_DOWNLOADHANDLER_ONRECEIVEBEGIN_ABORT 	3
+#define ERROR_BODYBUFFERTOOSMALL					4
+#define ERROR_ZEROCONTENTLENGTH						5
+#define ERROR_INVALIDHTTPTYPE						6
+#define ERROR_HTTPTYPENOTDETECTED					7
+
+
 
 static const char LOGTAG[] = "HttpResponseParser";
 
@@ -58,10 +67,11 @@ bool HttpResponseParser::ParseResponse(char* sBuffer, unsigned int uLen) {
 	// when uLen == 0, then connection is closed
 	if (uLen == 0) {
 		mbFinished = true;
-		if (mpDownloadHandler)
+		if (mpDownloadHandler) {
 			mpDownloadHandler->OnReceiveEnd();
-		else
+		} else {
 			ESP_LOGI(LOGTAG, "BODY:<%s>", mBody.c_str());
+		}
 		ESP_LOGI(LOGTAG, "CONNECTION CLOSED: RECEIVED: %u", muActualContentLength);
 	}
 
@@ -76,12 +86,12 @@ bool HttpResponseParser::ParseResponse(char* sBuffer, unsigned int uLen) {
 			if (c == ' ') {
 				uint8_t uFound;
 				if (!mStringParser.Found(uFound))
-					return SetError(1), false;
+					return SetError(ERROR_HTTPTYPENOTDETECTED), false;
 				mbHttp11 = uFound ? true : false;
 				muParseState = STATE_StatusCode;
 			} else {
 				if (!mStringParser.ConsumeChar(c))
-					return SetError(2), false;
+					return SetError(ERROR_INVALIDHTTPTYPE), false;
 			}
 			break;
 
@@ -113,10 +123,11 @@ bool HttpResponseParser::ParseResponse(char* sBuffer, unsigned int uLen) {
 				mStringParser.AddStringToParse("content-type");
 			} else {
 				if (++muCrlfCount == 4) {
-					if (mbContentLength && !muContentLength) {
+					if (mbContentLength && muContentLength == 0) {
 						mbFinished = true;
-						return true;
-					} else
+						return SetError(ERROR_OK), true;
+					}
+
 					ESP_LOGI(LOGTAG, "HTTP: http/%s, status=%hu", mbHttp11 ? "1.1" : "1.0", muStatusCode);
 					ESP_LOGI(LOGTAG, "HEADER: connection: %s",
 							mbConClose ? "<close-connection header set>" : "<dont close connection>");
@@ -125,10 +136,11 @@ bool HttpResponseParser::ParseResponse(char* sBuffer, unsigned int uLen) {
 							mbContentLength ? "" : "<no header set>");
 
 					muParseState = STATE_CopyBody;
-					if (mpDownloadHandler && mbFinished) {
+					if (mpDownloadHandler) {
 						if (!mpDownloadHandler->OnReceiveBegin()) {
+							ESP_LOGW(LOGTAG, "DownloadHandler signaled to abort download begin.");
 							mbFinished = true;
-							return false;
+							return SetError(ERROR_DOWNLOADHANDLER_ONRECEIVEBEGIN_ABORT), false;
 						}
 					}
 				}
@@ -211,23 +223,24 @@ bool HttpResponseParser::ParseResponse(char* sBuffer, unsigned int uLen) {
 			//fixup uPos which was already incremented at the beginning of this method
 			uPos--;
 
-			if (mbContentLength && !muContentLength)
-				return SetError(3), false;
+			if (mbContentLength && muContentLength == 0)
+				return SetError(ERROR_ZEROCONTENTLENGTH), false;
 
 			if (uPos < uLen) {
 				size_t size = uLen - uPos;
 				muActualContentLength += size;
 				if (mpDownloadHandler) {
 					if (!mpDownloadHandler->OnReceiveData(&sBuffer[uPos], size)) {
+						ESP_LOGE(LOGTAG, "DownloadHandler aborted receiving data.");
 						mbFinished = true;
-						return false;
+						return SetError(ERROR_DOWNLOADHANDLER_ONRECEIVEDATA_ABORT), false;
 					}
 				} else {
 					// skip data if there is more than muMaxBodyBufferSize bytes
 					int appendSize = muMaxBodyBufferSize - mBody.length();
 					appendSize = appendSize < size ? appendSize : size;
 					if (appendSize < 0) {
-						return SetError(4), false;
+						return SetError(ERROR_BODYBUFFERTOOSMALL), false;
 					}
 					mBody.append(&sBuffer[uPos], appendSize);
 				}
@@ -244,12 +257,11 @@ bool HttpResponseParser::ParseResponse(char* sBuffer, unsigned int uLen) {
 					if (!mpDownloadHandler)
 						ESP_LOGI(LOGTAG, "BODY:<%s>", mBody.c_str());
 				}
-
-				return true;
+				return SetError(ERROR_OK), true;
 			}
-			return true;
+			return SetError(ERROR_OK), true;
 
 		}
 	}
-	return true;
+	return SetError(ERROR_OK), true;
 }
