@@ -38,6 +38,13 @@ private:
 	bool mbConnectionClose;
 	std::list<std::string> mHeaders;
 
+public:
+	constexpr static char HeaderContentTypeJson[] = "content-type: text/json";
+	constexpr static char HeaderContentTypeHtml[] = "content-type: text/html";
+	constexpr static char HeaderContentTypeBinary[] = "content-type: application/octet-stream";
+	constexpr static char HeaderNoCache[] = "cache-control: private, max-age=0, no-cache, no-store";
+
+
 };
 
 #endif

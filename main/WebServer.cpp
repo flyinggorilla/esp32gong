@@ -209,20 +209,24 @@ void WebServer::WebRequestHandler(int socket) {
 			httpResponse.Init(socket, httpParser.IsHttp11(), httpParser.IsConnectionClose());
 
 		if (!httpParser.GetUrl().compare("/") || !httpParser.GetUrl().compare("/index.html")) {
-			httpResponse.AddHeader("Content-Type: text/html");
+			httpResponse.AddHeader(HttpResponse::HeaderContentTypeHtml);
 			httpResponse.AddHeader("Content-Encoding: gzip");
 			if (!httpResponse.Send(indexhtml_h, sizeof(indexhtml_h)))
 				break;
 		} else if (!httpParser.GetUrl().compare("/fonts/material-design-icons.woff")) {
+			httpResponse.AddHeader(HttpResponse::HeaderContentTypeBinary);
 			if (!httpResponse.Send(fontwoff_h, sizeof(fontwoff_h)))
 				break;
 		} else if (!httpParser.GetUrl().compare("/fonts/material-design-icons.ttf")) {
+			httpResponse.AddHeader(HttpResponse::HeaderContentTypeBinary);
 			if (!httpResponse.Send(fontttf_h, sizeof(fontttf_h)))
 				break;
 		} else if (!httpParser.GetUrl().compare("/fonts/material-design-icons.eot")) {
+			httpResponse.AddHeader(HttpResponse::HeaderContentTypeBinary);
 			if (!httpResponse.Send(fonteot_h, sizeof(fonteot_h)))
 				break;
 		} else if (!httpParser.GetUrl().compare("/fonts/material-design-icons.svg")) {
+			httpResponse.AddHeader(HttpResponse::HeaderContentTypeBinary);
 			if (!httpResponse.Send(fontsvg_h, sizeof(fontsvg_h)))
 				break;
 		} /*else if (!httpParser.GetUrl().compare("/api")) {

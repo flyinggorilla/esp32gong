@@ -41,6 +41,7 @@ bool DynamicRequestHandler::HandleApiRequest(std::list<TParam>& params, HttpResp
 		it++;
 	}
 
+	rResponse.AddHeader(HttpResponse::HeaderNoCache);
 	rResponse.SetRetCode(200);
 	return rResponse.Send(sBody.data(), sBody.size());
 }
@@ -49,6 +50,7 @@ bool DynamicRequestHandler::HandleApiRequest(std::list<TParam>& params, HttpResp
 bool DynamicRequestHandler::HandleApiListRequest(std::list<TParam>& params, HttpResponse& rResponse) {
 	std::string sBody;
 	//esp32gong.GetApiStore().GetApisJson(sBody);
+	rResponse.AddHeader(HttpResponse::HeaderNoCache);
 	rResponse.SetRetCode(200);
 	return rResponse.Send(sBody.data(), sBody.size());
 }
@@ -77,6 +79,7 @@ bool DynamicRequestHandler::HandleApiEditRequest(std::list<TParam>& params, Http
 			rResponse.SetRetCode(500);
 	}
 	rResponse.AddHeader("Location: /"); */
+	rResponse.AddHeader(HttpResponse::HeaderNoCache);
 	rResponse.SetRetCode(302);
 	return rResponse.Send();
 }
@@ -110,6 +113,8 @@ bool DynamicRequestHandler::HandleFirmwareRequest(std::list<TParam>& params, Htt
 		}
 		it++;
 	}
+	response.AddHeader(HttpResponse::HeaderNoCache);
+	response.AddHeader(HttpResponse::HeaderContentTypeJson);
 	return response.Send(sBody.data(), sBody.size());
 }
 
@@ -197,6 +202,8 @@ bool DynamicRequestHandler::HandleInfoRequest(std::list<TParam>& params, HttpRes
 
 	sBody = cJSON_PrintUnformatted(json);
 
+	rResponse.AddHeader(HttpResponse::HeaderContentTypeJson);
+	rResponse.AddHeader(HttpResponse::HeaderNoCache);
 	rResponse.SetRetCode(200);
 	return rResponse.Send(sBody.data(), sBody.size());
 }
@@ -270,6 +277,7 @@ bool DynamicRequestHandler::HandleConfigRequest(std::list<TParam>& params, HttpR
 		rResponse.SetRetCode(302);
 	}
 
+	rResponse.AddHeader(HttpResponse::HeaderNoCache);
 	return rResponse.Send(sBody.data(), sBody.size());
 }
 

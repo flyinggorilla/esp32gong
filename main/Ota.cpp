@@ -91,7 +91,7 @@ bool Ota::OnReceiveData(char* buf, int len) {
     	return false;
     }
     muDataLength += len;
-    ESP_LOGI(LOGTAG, "Have written image length %d, total %d", len, muDataLength);
+    ESP_LOGD(LOGTAG, "Have written image length %d, total %d", len, muDataLength);
     return err == ESP_OK;
 }
 

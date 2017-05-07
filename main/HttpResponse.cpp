@@ -2,7 +2,10 @@
 #include "httpResponse.h"
 #include <esp_log.h>
 
-
+constexpr char HttpResponse::HeaderContentTypeJson[];
+constexpr char HttpResponse::HeaderContentTypeHtml[];
+constexpr char HttpResponse::HeaderContentTypeBinary[];
+constexpr char HttpResponse::HeaderNoCache[];
 
 void HttpResponse::Init(int socket, __uint16_t uRetCode, bool bHttp11, bool bConnectionClose){
 	PrivateInit(bHttp11, bConnectionClose);
