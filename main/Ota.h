@@ -18,8 +18,8 @@
 
 class Ota : public DownloadHandler {
 public:
-	static void StartUpdateFirmwareTask();
-	static int  smErrorCode; //TODO this should provide "feedback" from the static class
+	/*static void StartUpdateFirmwareTask();
+	static int  smErrorCode; //TODO this should provide "feedback" from the static class*/
 
 public:
 	Ota();
@@ -27,7 +27,7 @@ public:
 	bool UpdateFirmware(std::string url);
 
 public:
-	bool OnReceiveBegin();
+	bool OnReceiveBegin(unsigned short int httpStatusCode, bool isContentLength, unsigned int contentLength);
 	void OnReceiveEnd();
 	bool OnReceiveData(char* buf, int len); // override DownloadHandler virtual method
 
@@ -36,7 +36,7 @@ private:
     esp_ota_handle_t mOtaHandle = 0 ;
     const esp_partition_t *mpUpdatePartition = NULL;
     unsigned int muDataLength = 0;
-    bool mbEndSuccess = false;
+    bool mbUpdateFailed = true;
 };
 
 #endif /* MAIN_OTA_H_ */

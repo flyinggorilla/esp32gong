@@ -137,7 +137,7 @@ bool HttpResponseParser::ParseResponse(char* sBuffer, unsigned int uLen) {
 
 					muParseState = STATE_CopyBody;
 					if (mpDownloadHandler) {
-						if (!mpDownloadHandler->OnReceiveBegin()) {
+						if (!mpDownloadHandler->OnReceiveBegin(muStatusCode, mbContentLength, muContentLength)) {
 							ESP_LOGW(LOGTAG, "DownloadHandler signaled to abort download begin.");
 							mbFinished = true;
 							return SetError(ERROR_DOWNLOADHANDLER_ONRECEIVEBEGIN_ABORT), false;

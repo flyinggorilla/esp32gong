@@ -145,7 +145,7 @@
 					<span style="color:dimgrey">Please configure the Wifi settings of your WIFIGONG first. In order to access the WIFIGONG AFTER submitting the Wifi settings, you may do the following:</span>
 					<li>Option 1: Open Windows file explorer and click on "Network" to display all devices that are discovered through SSDP.
 					</li>
-					<li>Option 2: by default the WIFIGONG registers with hostname <b id="hostname">---</b> at you access point. so try
+					<li>Option 2: by default the WIFIGONG registers with hostname <b id="wifihostname">---</b> at you access point. so try
 						<span
 						 id="wifigongurl">http://hostname</span>: TODO: add auto-redirect to URL.
 					</li>
@@ -164,7 +164,7 @@
 					<div class="padded-full">
 						<input type="text" name="wifissid" placeholder="SSID" id="wifissid" />
 						<input type="password" name="wifipwd" placeholder="*************" id="wifipwd" />
-						<input type="text" name="hostname" placeholder="default=esp32gong" id="hostname" />
+						<input type="text" name="hostname" placeholder="default=esp32gong" id="wifihostname" />
 					</div>
 					<div class="padded-full">
 						<button class="btn btn-submit fit-parent primary" type="submit">Apply WIFI settings and reboot.</button>
@@ -294,7 +294,7 @@
 						var result = JSON.parse(xhr.response);
 						document.getElementById('wifissid').value = result.ssid;
 						document.getElementById('macaddress').innerHTML = result.macaddress;
-						document.getElementById('hostname').innerHTML = result.hostname;
+						document.getElementById('wifihostname').innerHTML = result.hostname;
 						document.getElementById('wifigongurl').href = "http://" + result.hostname;
 						document.getElementById('firmwareversion').innerHTML = result.firmwareversion;
 					},

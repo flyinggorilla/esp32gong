@@ -51,7 +51,12 @@ static void __attribute__((noreturn)) task_fatal_error()
 }
 
 
-bool Ota::OnReceiveBegin() {
+bool Ota::OnReceiveBegin(unsigned short int httpStatusCode, bool isContentLength, unsigned int contentLength) {
+	if (httpStatusCode != 200) {
+	    ESP_LOGE(LOGTAG, "Server responded with %d HTTP Status code. Aborting download.", httpStatusCode);
+	    return false;
+	}
+
     ESP_LOGI(LOGTAG, "Starting OTA example...");
 
 	esp_err_t err;
@@ -59,6 +64,8 @@ bool Ota::OnReceiveBegin() {
     const esp_partition_t *running = esp_ota_get_running_partition();
 
     ESP_LOGI(LOGTAG, "Running partition type %d subtype %d (offset 0x%08x)",
+             running->type, running->subtype, running->address);
+    ESP_LOGI(LOGTAG, "Configured boot partition type %d subtype %d (offset 0x%08x)",
              configured->type, configured->subtype, configured->address);
 
     mpUpdatePartition = esp_ota_get_next_update_partition(NULL);
@@ -78,10 +85,14 @@ bool Ota::OnReceiveBegin() {
         return false;
     }
     ESP_LOGI(LOGTAG, "esp_ota_begin succeeded");
+    mbUpdateFailed = false;
     return true;
 }
 
 bool Ota::OnReceiveData(char* buf, int len) {
+	if (mbUpdateFailed)
+		return false;
+
 	esp_err_t err;
     err = esp_ota_write( mOtaHandle, (const void *)buf, len);
     if (err == ESP_ERR_INVALID_SIZE) {
@@ -96,6 +107,9 @@ bool Ota::OnReceiveData(char* buf, int len) {
 }
 
 void Ota::OnReceiveEnd() {
+	if (mbUpdateFailed)
+		return;
+
     ESP_LOGI(LOGTAG, "Total Write binary data length : %u", muDataLength);
     //ESP_LOGI(LOGTAG, "DATA: %s", dummy.c_str());
 
@@ -111,8 +125,7 @@ void Ota::OnReceiveEnd() {
         task_fatal_error();
     }
     ESP_LOGI(LOGTAG, "Prepare to restart system!");
-    mbEndSuccess = true;
-    //esp_restart();
+    mbUpdateFailed = false;
 }
 
 
@@ -131,12 +144,13 @@ bool Ota::UpdateFirmware(std::string sUrl)
       			return false;
     }
 
-	ESP_LOGI(LOGTAG, "UpdateFirmware finished. downloaded %u bytes, success %s" , muDataLength, mbEndSuccess ? "yeah!": "uhhh!");
+	ESP_LOGI(LOGTAG, "UpdateFirmware finished. downloaded %u bytes, %s" , muDataLength, mbUpdateFailed ? "uuuuh! failed.": "yeah! success!");
 
-    return mbEndSuccess;
+    return !mbUpdateFailed;
 
 }
 
+/*
 void task_function_firmwareupdate(void* user_data) {
 	ESP_LOGW(LOGTAG, "Starting Firmware Update Task ....");
 
@@ -157,4 +171,4 @@ void task_function_firmwareupdate(void* user_data) {
 void Ota::StartUpdateFirmwareTask() {
 	xTaskCreate(&task_function_firmwareupdate, "firmwareupdate", 4096, NULL, 5, NULL);
 }
-
+*/

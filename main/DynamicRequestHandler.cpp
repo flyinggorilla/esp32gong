@@ -216,6 +216,7 @@ bool DynamicRequestHandler::HandleConfigRequest(std::list<TParam>& params, HttpR
 	const char* sWifiEntPass = NULL;
 	const char* sWifiEntUser = NULL;
 	const char* sWifiEntCA = NULL;
+	const char* sWifiHostName = NULL;
 
 	std::string sBody;
 	ESP_LOGI(LOGTAG, "Config request Handler start");
@@ -236,6 +237,8 @@ bool DynamicRequestHandler::HandleConfigRequest(std::list<TParam>& params, HttpR
 			sWifiEntUser = (*it).paramValue.data();
 		else if ((*it).paramName == "wifientca")
 			sWifiEntCA = (*it).paramValue.data();
+		else if ((*it).paramName == "wifihostname")
+			sWifiHostName = (*it).paramValue.data();
 		it++;
 	}
 
@@ -264,6 +267,11 @@ bool DynamicRequestHandler::HandleConfigRequest(std::list<TParam>& params, HttpR
 			bOk = true;
 		}
 	}
+	if (sWifiHostName && esp32gong.GetConfig().msHostname.compare(sWifiHostName) != 0) {
+		esp32gong.GetConfig().msHostname = sWifiHostName;
+		bOk = true;
+	}
+
 	if (bOk) {
 		esp32gong.GetConfig().mbAPMode = false;
 		esp32gong.GetConfig().Write();
