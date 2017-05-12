@@ -140,7 +140,7 @@ bool HttpResponseParser::ParseResponse(char* sBuffer, unsigned int uLen) {
 					ESP_LOGI(LOGTAG, "HEADER: content-type: %s", msContentType.c_str());
 					ESP_LOGI(LOGTAG, "HEADER: content-length: %u %s", muContentLength,
 							mbContentLength ? "" : "<no header set>");
-					if (msLocation.size()) {
+					if (msLocation.length()) {
 						ESP_LOGI(LOGTAG, "HEADER: location: %s", msLocation.c_str());
 					}
 					muParseState = STATE_CopyBody;
@@ -264,7 +264,7 @@ bool HttpResponseParser::ParseResponse(char* sBuffer, unsigned int uLen) {
 					if (appendSize < 0) {
 						return SetError(ERROR_BODYBUFFERTOOSMALL), false;
 					}
-					mBody.append(&sBuffer[uPos], appendSize);
+					mBody.concat(&sBuffer[uPos], appendSize);
 				}
 				if (mbContentLength) {
 					mbFinished = muActualContentLength >= muContentLength;

@@ -81,7 +81,7 @@ unsigned short WebClient::HttpPost(const char* data, unsigned int size) {
 }
 
 unsigned short WebClient::HttpPost(String& sData) {
-	return HttpPost(sData.data(), sData.size());
+	return HttpPost(sData.c_str(), sData.length());
 }
 
 void WebClient::PrepareRequest(String& sRequest) {
@@ -135,7 +135,7 @@ unsigned short WebClient::HttpExecute() {
 	if (!mpUrl)
 		return 1001;
 
-	if (mpUrl->GetHost().empty()) {
+	if (mpUrl->GetHost().length() == 0) {
 		return 1002;
 	}
 
@@ -217,8 +217,8 @@ unsigned short WebClient::HttpExecute() {
 	String sReceiveBuf;
 	sReceiveBuf.resize(RECEIVE_BUFFER_SIZE);
 	while (!mHttpResponseParser.ResponseFinished()) {
-		size_t sizeRead = read(socket, (char*)sReceiveBuf.data(), sReceiveBuf.size());
-		if (!mHttpResponseParser.ParseResponse((char*)sReceiveBuf.data(), sizeRead)) {
+		size_t sizeRead = read(socket, (char*)sReceiveBuf.c_str(), sReceiveBuf.length());
+		if (!mHttpResponseParser.ParseResponse((char*)sReceiveBuf.c_str(), sizeRead)) {
 			ESP_LOGE(LOGTAG, "HTTP Response error: %d", mHttpResponseParser.GetError());
 			close(socket);
 			return 1008;
@@ -350,7 +350,7 @@ unsigned short WebClient::HttpExecuteSecure() {
 
 	ESP_LOGI(LOGTAG, "Writing HTTP request... <%s>", sRequest.c_str());
 
-	while ((ret = mbedtls_ssl_write(&ssl, (const unsigned char*)sRequest.data(), sRequest.size())) <= 0) {
+	while ((ret = mbedtls_ssl_write(&ssl, (const unsigned char*)sRequest.c_str(), sRequest.length())) <= 0) {
 		if (ret != MBEDTLS_ERR_SSL_WANT_READ && ret != MBEDTLS_ERR_SSL_WANT_WRITE) {
 			ESP_LOGE(LOGTAG, "mbedtls_ssl_write returned -0x%x", -ret);
 			goto exit;
@@ -381,7 +381,7 @@ unsigned short WebClient::HttpExecuteSecure() {
 	while (!mHttpResponseParser.ResponseFinished()) {
 		//ESP_LOGI(LOGTAG, "before ssl_read");
 		//ret = mbedtls_ssl_read(&ssl, (unsigned char*)buf, sizeof(buf));
-		ret = mbedtls_ssl_read(&ssl, (unsigned char*)sReceiveBuf.data(), sReceiveBuf.size());
+		ret = mbedtls_ssl_read(&ssl, (unsigned char*)sReceiveBuf.c_str(), sReceiveBuf.length());
 		//ESP_LOGI(LOGTAG, "after ssl_read ret=%d", ret);
 
 
@@ -402,7 +402,7 @@ unsigned short WebClient::HttpExecuteSecure() {
 		len = ret;
 
 		//ESP_LOGI(LOGTAG, "invoking responseparse(buflen=%d)", len);
-		if (!mHttpResponseParser.ParseResponse((char*)sReceiveBuf.data(), len)) {
+		if (!mHttpResponseParser.ParseResponse((char*)sReceiveBuf.c_str(), len)) {
 			ESP_LOGE(LOGTAG, "HTTP Error Code: %d", mHttpResponseParser.GetError());
 			goto exit;
 		}

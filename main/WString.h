@@ -49,6 +49,15 @@ class String
     }
 
 public:
+    //ADDED!!!
+    void clear() { invalidate(); };
+
+    /*
+     * Always clears contents!!
+     */
+    unsigned char resize(unsigned int);
+
+
     // constructors
     // creates a copy of the initial value.
     // if the initial value is null or invalid, or if memory allocation
@@ -260,6 +269,8 @@ public:
     long toInt(void) const;
     float toFloat(void) const;
 
+    unsigned char concat(const char *cstr, unsigned int length);
+
 protected:
     char *buffer;	        // the actual char array
     unsigned int capacity;  // the array length minus one (for the '\0')
@@ -268,7 +279,6 @@ protected:
     void init(void);
     void invalidate(void);
     unsigned char changeBuffer(unsigned int maxStrLen);
-    unsigned char concat(const char *cstr, unsigned int length);
 
     // copy and move
     String & copy(const char *cstr, unsigned int length);

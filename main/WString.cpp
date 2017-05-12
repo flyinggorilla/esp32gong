@@ -28,6 +28,22 @@
 //#include "esp_common.h"
 //}
 
+//ADDITION TO ORIGINAL LIBRARY
+unsigned char String::resize(unsigned int size) {
+	invalidate();
+
+	size_t newSize = (size + 16) & (~0xf);
+    char *buffer = (char *) malloc(newSize);
+    if(buffer) {
+        memset(buffer, 0, newSize);
+        capacity = newSize - 1;
+        len = size;
+        return 1;
+    }
+    return 0;
+}
+
+
 /*********************************************/
 /*  Constructors                             */
 /*********************************************/

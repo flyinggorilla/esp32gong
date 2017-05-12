@@ -64,7 +64,7 @@ String& Url::GetPortAsString() {
 
 String& Url::GetUrl() {
 	msUrl.clear();
-	if (!msHost.empty()) {
+	if (msHost.length()) {
 		msUrl += mbSecure ? "https://" : "http://";
 		msUrl += msHost;
 
@@ -76,7 +76,7 @@ String& Url::GetUrl() {
 		}
 	}
 
-	if (msPath.empty() || msPath.at(0) != '/') {
+	if (!msPath.length() || msPath[0] != '/') {
 		msUrl += '/';
 	}
 	msUrl += msPath;
@@ -85,7 +85,7 @@ String& Url::GetUrl() {
 		msUrl += '?';
 		msUrl += GetQuery();
 	}
-	if (!msFragment.empty()) {
+	if (msFragment.length()) {
 		msUrl += '#';
 		msUrl += msFragment;
 
@@ -141,7 +141,7 @@ String Url::UrlEncode(String& str) {
 		escaped << std::nouppercase;
 	}
 
-	return escaped.str();
+	return String(escaped.str().c_str());
 }
 
 String Url::UrlDecode(String str) {
@@ -272,7 +272,7 @@ bool Url::ParseUrl(String& u) {
 			if (!Match(it, u, "://")) {
 				return false;
 			}
-			c = *it;
+			c = u[it];
 			state = STATE_Host;
 			// dont break here
 
@@ -346,7 +346,7 @@ bool Url::ParseUrl(String& u) {
 
 		it++;
 	}
-	if (msPath.empty()) {
+	if (!msPath.length()) {
 		msPath += '/';
 	}
 

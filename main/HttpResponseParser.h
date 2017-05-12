@@ -1,7 +1,8 @@
 #ifndef MAIN_HTTPREQUESTPARSER_HPP_
 #define MAIN_HTTPREQUESTPARSER_HPP_
 
-#include <string>
+//#include <string>
+#include "WString.h"
 #include <list>
 
 #include "DownloadHandler.h"
@@ -46,11 +47,11 @@ public:
 
 	bool IsHttp11() 		{ return mbHttp11; };
 	bool IsConnectionClose(){ return mbConClose; };
-	std::string& GetBody()  { return mBody; };
-	std::string& GetContentType()  { return msContentType; };
+	String& GetBody()  { return mBody; };
+	String& GetContentType()  { return msContentType; };
 	unsigned int GetContentLength() { return muActualContentLength; }
 	unsigned short GetStatusCode() { return muStatusCode; }
-	std::string& GetRedirectLocation() { return msLocation; }
+	String& GetRedirectLocation() { return msLocation; }
 
 
 	short GetError()  	{ return muError; };
@@ -60,7 +61,7 @@ private:
 	void SetError(short u) { muError = u; };
 
 private:
-	std::string mBody;
+	String mBody;
 	unsigned int muContentLength;
 	unsigned int muActualContentLength;
 	unsigned int muMaxBodyBufferSize;
@@ -70,8 +71,8 @@ private:
 	bool mbConClose;
 	bool mbContentLength;
 	unsigned short muStatusCode;
-	std::string msContentType;
-	std::string msLocation;
+	String msContentType;
+	String msLocation;
 	DownloadHandler* mpDownloadHandler = NULL;
 	uint8_t muParseState;
 	StringParser mStringParser;
