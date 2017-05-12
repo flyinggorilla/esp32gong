@@ -1,13 +1,11 @@
 /*
  * Ota.cpp
  *
- *  Created on: 11.04.2017
- *      Author: bernd
  */
 #include "Ota.h"
 
 #include "sdkconfig.h"
-#include <string.h>
+//#include <string.h>
 #include <sys/socket.h>
 #include <netdb.h>
 
@@ -24,15 +22,22 @@
 #include <nvs.h>
 #include <nvs_flash.h>
 
+#include "WString.h"
 #include "WebClient.h"
 
-#define BUFFSIZE 1024
-#define TEXT_BUFFSIZE 1024
+#define LATEST_FIRMWARE_URL "https://surpro4:9999/getfirmware"
+//#define BUFFSIZE 1024
+//#define TEXT_BUFFSIZE 1024
 
 static const char* LOGTAG = "ota";
 
-Ota::Ota() {
 
+volatile int Ota::miProgress = OTA_PROGRESS_NOTYETSTARTED;
+int Ota::GetProgress() { return miProgress; }
+
+
+Ota::Ota() {
+    miProgress = OTA_PROGRESS_NOTYETSTARTED;
 }
 
 Ota::~Ota() {
@@ -40,24 +45,16 @@ Ota::~Ota() {
 }
 
 
-static void __attribute__((noreturn)) task_fatal_error()
-{
-    ESP_LOGE(LOGTAG, "Exiting task due to fatal error...");
-    (void)vTaskDelete(NULL);
-
-    while (1) {
-        ;
-    }
-}
-
-
 bool Ota::OnReceiveBegin(unsigned short int httpStatusCode, bool isContentLength, unsigned int contentLength) {
-	if (httpStatusCode != 200) {
-	    ESP_LOGE(LOGTAG, "Server responded with %d HTTP Status code. Aborting download.", httpStatusCode);
-	    return false;
-	}
 
     ESP_LOGI(LOGTAG, "Starting OTA example...");
+
+    if (isContentLength) {
+        muContentLength = contentLength;
+    } else {
+        muContentLength = 1536*1024; // we use Ota partition size when we dont have exact firmware size
+    }
+    miProgress = 0;
 
 	esp_err_t err;
     const esp_partition_t *configured = esp_ota_get_boot_partition();
@@ -71,6 +68,7 @@ bool Ota::OnReceiveBegin(unsigned short int httpStatusCode, bool isContentLength
     mpUpdatePartition = esp_ota_get_next_update_partition(NULL);
     if (mpUpdatePartition == NULL) {
         ESP_LOGE(LOGTAG, "could not get next update partition");
+        miProgress = OTA_PROGRESS_FLASHERROR;
     	return false;
     }
 
@@ -81,56 +79,62 @@ bool Ota::OnReceiveBegin(unsigned short int httpStatusCode, bool isContentLength
     err = esp_ota_begin(mpUpdatePartition, OTA_SIZE_UNKNOWN, &mOtaHandle);
     if (err != ESP_OK) {
         ESP_LOGE(LOGTAG, "esp_ota_begin failed, error=%d", err);
-        task_fatal_error();
+        //task_fatal_error();
+        miProgress = OTA_PROGRESS_FLASHERROR;
         return false;
     }
     ESP_LOGI(LOGTAG, "esp_ota_begin succeeded");
-    mbUpdateFailed = false;
     return true;
 }
 
 bool Ota::OnReceiveData(char* buf, int len) {
-	if (mbUpdateFailed)
-		return false;
+    //ESP_LOGI(LOGTAG, "OnReceiveData(%d)", len);
 
 	esp_err_t err;
+    //ESP_LOGI(LOGTAG, "Before esp_ota_write");
     err = esp_ota_write( mOtaHandle, (const void *)buf, len);
     if (err == ESP_ERR_INVALID_SIZE) {
-    	ESP_LOGE(LOGTAG, "Error partition too small for firmware data: %d", muDataLength + len );
+    	ESP_LOGE(LOGTAG, "Error partition too small for firmware data: %d", muActualDataLength + len );
+        miProgress = OTA_PROGRESS_FLASHERROR;
+    	return false;
     } else if (err != ESP_OK) {
     	ESP_LOGE(LOGTAG, "Error writing data: %d", err);
+        miProgress = OTA_PROGRESS_FLASHERROR;
     	return false;
     }
-    muDataLength += len;
-    ESP_LOGD(LOGTAG, "Have written image length %d, total %d", len, muDataLength);
+    muActualDataLength += len;
+    miProgress = 100 * muActualDataLength / muContentLength;
+    ESP_LOGI(LOGTAG, "Have written image length %d, total %d", len, muActualDataLength);
     return err == ESP_OK;
 }
 
-void Ota::OnReceiveEnd() {
-	if (mbUpdateFailed)
-		return;
-
-    ESP_LOGI(LOGTAG, "Total Write binary data length : %u", muDataLength);
+bool Ota::OnReceiveEnd() {
+    ESP_LOGI(LOGTAG, "Total Write binary data length : %u", muActualDataLength);
     //ESP_LOGI(LOGTAG, "DATA: %s", dummy.c_str());
 
     esp_err_t err;
 
     if (esp_ota_end(mOtaHandle) != ESP_OK) {
         ESP_LOGE(LOGTAG, "esp_ota_end failed!");
-        task_fatal_error();
+        miProgress = OTA_PROGRESS_FLASHERROR;
+        //task_fatal_error();
+        return false;
     }
     err = esp_ota_set_boot_partition(mpUpdatePartition);
     if (err != ESP_OK) {
         ESP_LOGE(LOGTAG, "esp_ota_set_boot_partition failed! err=0x%x", err);
-        task_fatal_error();
+        miProgress = OTA_PROGRESS_FLASHERROR;
+        //task_fatal_error();
+        return false;
     }
     ESP_LOGI(LOGTAG, "Prepare to restart system!");
-    mbUpdateFailed = false;
+    miProgress = OTA_PROGRESS_FINISHEDSUCCESS;
+    return true;
 }
 
 
 
-bool Ota::UpdateFirmware(std::string sUrl)
+bool Ota::UpdateFirmware(String sUrl)
 {
 	Url url;
 	url.Parse(sUrl);
@@ -139,36 +143,71 @@ bool Ota::UpdateFirmware(std::string sUrl)
 	mWebClient.Prepare(&url);
 	mWebClient.SetDownloadHandler(this);
 
-    if (!mWebClient.HttpGet()) {
-      	ESP_LOGE(LOGTAG, "Error in HttpExecute()")
-      			return false;
+    unsigned short statuscode = mWebClient.HttpGet();
+    if (statuscode != 200) {
+        if (miProgress == OTA_PROGRESS_NOTYETSTARTED || miProgress >= 0) {
+            miProgress = OTA_PROGRESS_CONNECTIONERROR;
+        }
+      	ESP_LOGE(LOGTAG, "Ota update failed - error %u", statuscode)
+        // esp_reboot();
+      	return false;
     }
 
-	ESP_LOGI(LOGTAG, "UpdateFirmware finished. downloaded %u bytes, %s" , muDataLength, mbUpdateFailed ? "uuuuh! failed.": "yeah! success!");
+	ESP_LOGI(LOGTAG, "UpdateFirmware finished successfully. downloaded %u bytes" , muActualDataLength);
 
-    return !mbUpdateFailed;
+    return true;
 
 }
 
-/*
+bool Ota::SwitchBootPartition() {
+
+
+ 	esp_err_t err;
+    const esp_partition_t *configured = esp_ota_get_boot_partition();
+    const esp_partition_t *running = esp_ota_get_running_partition();
+    
+
+    ESP_LOGI(LOGTAG, "Running partition type %d subtype %d (offset 0x%08x)",
+             running->type, running->subtype, running->address);
+    ESP_LOGI(LOGTAG, "Configured boot partition type %d subtype %d (offset 0x%08x)",
+             configured->type, configured->subtype, configured->address);
+
+    const esp_partition_t *switchto = esp_ota_get_next_update_partition(NULL);
+    if (switchto == NULL) {
+        ESP_LOGE(LOGTAG, "could not get next update partition");
+    	return false;
+    }
+
+    err = esp_ota_set_boot_partition(switchto);
+    if (err != ESP_OK) {
+        ESP_LOGE(LOGTAG, "esp_ota_set_boot_partition failed! err=0x%x", err);
+        //task_fatal_error();
+        return false;
+    }
+    ESP_LOGI(LOGTAG, "Partition switched. Prepare to restart system!");
+    return true;
+}
+
+
 void task_function_firmwareupdate(void* user_data) {
 	ESP_LOGW(LOGTAG, "Starting Firmware Update Task ....");
 
-  	Ota ota;
-    if(ota.UpdateFirmware("http://surpro4:9999/getfirmware")) {
-	  	ESP_LOGI(LOGTAG, "AFTER OTA STUFF---- RESTARTING IN 2 SEC");
-		vTaskDelay(2*1000 / portTICK_PERIOD_MS);
-		esp_restart();
+    Ota ota;
+    //if(ota.UpdateFirmware("https://github.com/flyinggorilla/esp32gong/raw/master/firmware/ufo-esp32.bin")) {
+    if(ota.UpdateFirmware(LATEST_FIRMWARE_URL)) {
+      	ESP_LOGI(LOGTAG, "Firmware updated. Rebooting now......");
     } else {
-    	//TODO add ota.GetErrorInfo() to inform end-user of problem
 	  	ESP_LOGE(LOGTAG, "OTA update failed!");
     }
-
+  
+    // wait 10 seconds before rebooting to make sure client gets success info
+    vTaskDelay(10*1000 / portTICK_PERIOD_MS);
+	esp_restart();
 }
 
 
 
 void Ota::StartUpdateFirmwareTask() {
-	xTaskCreate(&task_function_firmwareupdate, "firmwareupdate", 4096, NULL, 5, NULL);
+	xTaskCreate(&task_function_firmwareupdate, "firmwareupdate", 8192, NULL, 5, NULL);
 }
-*/
+

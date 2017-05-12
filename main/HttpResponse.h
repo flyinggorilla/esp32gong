@@ -24,6 +24,12 @@ public:
 	bool Send(const char* sBody, __uint16_t uBodyLen);
 	bool Send() { return Send(NULL, 0); };
 
+public:
+	constexpr static char HeaderContentTypeJson[] = "content-type: text/json";
+	constexpr static char HeaderContentTypeHtml[] = "content-type: text/html";
+	constexpr static char HeaderContentTypeBinary[] = "content-type: application/octet-stream";
+	constexpr static char HeaderNoCache[] = "cache-control: private, max-age=0, no-cache, no-store";
+
 private:
 	void PrivateInit( bool bHttp11, bool bConnectionClose);
 	bool SendInternal(const char* sData, __uint16_t uLen);
@@ -37,13 +43,6 @@ private:
 	bool mbHttp11;
 	bool mbConnectionClose;
 	std::list<std::string> mHeaders;
-
-public:
-	constexpr static char HeaderContentTypeJson[] = "content-type: text/json";
-	constexpr static char HeaderContentTypeHtml[] = "content-type: text/html";
-	constexpr static char HeaderContentTypeBinary[] = "content-type: application/octet-stream";
-	constexpr static char HeaderNoCache[] = "cache-control: private, max-age=0, no-cache, no-store";
-
 
 };
 

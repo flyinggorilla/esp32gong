@@ -30,6 +30,7 @@
 #define ERROR_ZEROCONTENTLENGTH						5
 #define ERROR_INVALIDHTTPTYPE						6
 #define ERROR_HTTPTYPENOTDETECTED					7
+#define ERROR_DOWNLOADHANDLER_ONRECEIVEEND_FAILED	8
 
 
 
@@ -70,7 +71,9 @@ bool HttpResponseParser::ParseResponse(char* sBuffer, unsigned int uLen) {
 	if (uLen == 0) {
 		mbFinished = true;
 		if (mpDownloadHandler) {
-			mpDownloadHandler->OnReceiveEnd();
+			if (!mpDownloadHandler->OnReceiveEnd()) {
+				return SetError(ERROR_DOWNLOADHANDLER_ONRECEIVEEND_FAILED), false;
+			}
 		} else {
 			ESP_LOGI(LOGTAG, "BODY:<%s>", mBody.c_str());
 		}
@@ -137,8 +140,9 @@ bool HttpResponseParser::ParseResponse(char* sBuffer, unsigned int uLen) {
 					ESP_LOGI(LOGTAG, "HEADER: content-type: %s", msContentType.c_str());
 					ESP_LOGI(LOGTAG, "HEADER: content-length: %u %s", muContentLength,
 							mbContentLength ? "" : "<no header set>");
-					ESP_LOGI(LOGTAG, "HEADER: location: %s", msLocation.c_str());
-
+					if (msLocation.size()) {
+						ESP_LOGI(LOGTAG, "HEADER: location: %s", msLocation.c_str());
+					}
 					muParseState = STATE_CopyBody;
 					if (mpDownloadHandler) {
 						if (!mpDownloadHandler->OnReceiveBegin(muStatusCode, mbContentLength, muContentLength)) {

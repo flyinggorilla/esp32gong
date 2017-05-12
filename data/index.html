@@ -108,24 +108,31 @@
 			</div>
 		</header>
 		<div class="content">
-			<ul class="list">
-				<li class="divider">from update server</li>
-				<li class="padded-list">
-					<span class="padded-list">download and update</span>
-					<button class="btn btn-flat primary" id="firmwareupdate">update</button>
-				</li>
-				<li class="divider">manual update</li>
-			</ul>
+			<div class="input-wrapper list">
+				<ul class="list">
+					<li class="divider">from update server</li>
+					<li class="padded-list">
+						<button class="btn btn-flat primary" id="firmware_update"><a href="/firmware?update">download and update</a></button>
+					</li>
+					<li class="padded-list">
+						<button class="btn btn-flat primary" id="firmware_restart">restart</button>
+					</li>
+					<li class="padded-list">
+						<button class="btn btn-flat primary" id="firmware_switchbootpartition">switch to previus firmware (if available)</button>
+					</li>
+					<li class="divider">manual update</li>
+				</ul>
 
-			<form method='POST' action='/update' enctype='multipart/form-data'>
-				<span class="padded-list">Select firmware file like wifigong.ino.bin or index.html (do not upload the wifigong.spiffs.bin here)</span>
-				<li>
-					<input class="padded-full" type="file" name="update" id="firmwarefilename" />
-				</li>
-				<li>
-					<button class="btn btn-submit fit-parent primary" type="submit">Update</button>
-				</li>
-			</form>
+				<form method='POST' action='/update' enctype='multipart/form-data'>
+					<span class="padded-list">Select firmware file like ufo.ino.bin or index.html (do not upload the ufo.spiffs.bin here)</span>
+					<li>
+						<input class="padded-full" type="file" name="update" id="firmwarefilename"/>
+					</li>
+					<li>
+						<button class="btn btn-submit fit-parent primary" type="submit">Update</button>
+					</li>
+				</form>
+			</div>
 
 		</div>
 	</pagefirmwareupdate>
@@ -226,10 +233,26 @@
 			};
 
 
-			var onFirmwareUpdate = function (evt) {
+
+			/*	var onFirmwareUpdate = function (evt) {
+					var req = phonon.ajax({
+						method: 'GET',
+						url: 'firmware?update',
+						success: function (res, xhr) {
+							console.log(res);
+						},
+
+						error: function (res, flagError, xhr) {
+							console.error(flagError);
+							console.log(res);
+						}
+					});
+				}; */
+
+			var onSwitchBootPartition = function (evt) {
 				var req = phonon.ajax({
 					method: 'GET',
-					url: 'firmware?update',
+					url: 'firmware?switchbootpartition',
 					success: function (res, xhr) {
 						console.log(res);
 					},
@@ -239,7 +262,21 @@
 						console.log(res);
 					}
 				});
+			};
 
+			var onRestart = function (evt) {
+				var req = phonon.ajax({
+					method: 'GET',
+					url: 'firmware?restart',
+					success: function (res, xhr) {
+						console.log(res);
+					},
+
+					error: function (res, flagError, xhr) {
+						console.error(flagError);
+						console.log(res);
+					}
+				});
 			};
 
 			var onRestart = function (evt) {
@@ -247,9 +284,11 @@
 			}
 
 			activity.onCreate(function () {
+					// document.querySelector('#firmware_update').on('tap', onFirmwareUpdate);
+				document.querySelector('#firmware_restart').on('tap', onRestart);
+				document.querySelector('#firmware_switchbootpartition').on('tap', onSwitchBootPartition);
 				// document.querySelector('#submitwifisettings').on('tap', onWifiSettingsSubmit);
 				document.querySelector('#gongplay').on('tap', onApi);
-				document.querySelector('#firmwareupdate').on('tap', onFirmwareUpdate);
 			})
 		});
 

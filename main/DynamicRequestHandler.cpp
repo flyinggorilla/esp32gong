@@ -84,40 +84,6 @@ bool DynamicRequestHandler::HandleApiEditRequest(std::list<TParam>& params, Http
 	return rResponse.Send();
 }
 
-bool DynamicRequestHandler::HandleFirmwareRequest(std::list<TParam>& params, HttpResponse& response) {
-	std::list<TParam>::iterator it = params.begin();
-	std::string sBody;
-	response.SetRetCode(400); // invalid request
-	while (it != params.end()) {
-		if ((*it).paramName == "update") {
-			//Ota::StartUpdateFirmwareTask();
-			ESP_LOGW(LOGTAG, "Starting Firmware Update Task ....");
-
-			Ota ota;
-			if(ota.UpdateFirmware("http://surpro4:9999/getfirmware")) {
-				ESP_LOGI(LOGTAG, "AFTER OTA STUFF---- RESTARTING IN 2 SEC");
-				mbRestart = true;
-				sBody = "Firmware update process initiated......";
-				response.SetRetCode(200);
-			} else {
-				//TODO add ota.GetErrorInfo() to inform end-user of problem
-				ESP_LOGE(LOGTAG, "OTA update failed!");
-				sBody = "Firmware update failed. Rebooting anyway.";
-				response.SetRetCode(500);
-				mbRestart = true;
-			}
-		} else if ((*it).paramName == "check") {
-			//TODO implement firmware version check;
-			sBody = "not implemented";
-			response.SetRetCode(501); // not implemented
-		}
-		it++;
-	}
-	response.AddHeader(HttpResponse::HeaderNoCache);
-	response.AddHeader(HttpResponse::HeaderContentTypeJson);
-	return response.Send(sBody.data(), sBody.size());
-}
-
 bool DynamicRequestHandler::HandleInfoRequest(std::list<TParam>& params, HttpResponse& rResponse) {
 
 	std::string sBody;
@@ -292,6 +258,67 @@ bool DynamicRequestHandler::HandleConfigRequest(std::list<TParam>& params, HttpR
 	rResponse.AddHeader(HttpResponse::HeaderNoCache);
 	return rResponse.Send(sBody.data(), sBody.size());
 }
+
+
+bool DynamicRequestHandler::HandleFirmwareRequest(std::list<TParam>& params, HttpResponse& response) {
+	std::list<TParam>::iterator it = params.begin();
+	std::string sBody;
+	response.SetRetCode(400); // invalid request
+	while (it != params.end()) {
+		if ((*it).paramName == "update") {
+			if (Ota::GetProgress() == OTA_PROGRESS_NOTYETSTARTED) {
+				Ota::StartUpdateFirmwareTask();
+				//TODO implement firmware version check;
+			}
+			sBody = "<html><head><title>Firmware update progress</title>"
+					"<meta http-equiv=\"refresh\" content=\"5; url=/firmware?progress\"></head><body>"
+					"<h1>Firmware update task initiated....</h1></body></html>";
+			response.AddHeader(HttpResponse::HeaderContentTypeHtml);
+			response.SetRetCode(200);
+		} else if ((*it).paramName == "progress") {
+			if (Ota::GetProgress() == OTA_PROGRESS_FINISHEDSUCCESS) {
+				sBody = "<html><head><title>SUCCESS - firmware update succeded, rebooting shortly.</title>"
+				        "<meta http-equiv=\"refresh\" content=\"20; url=/\"></head><body><h1>Progress: ";
+			} else {
+				sBody = "<html><head><title>Firmware update progress</title>"
+						"<meta http-equiv=\"refresh\" content=\"5\"></head><body><h1>Progress: ";
+				char buf[64];
+				sprintf(buf, "%d%%", Ota::GetProgress());
+				sBody += buf;
+			}
+			sBody += "</h1></body><html>";
+			response.AddHeader(HttpResponse::HeaderContentTypeHtml);
+			response.SetRetCode(200);
+		} else if ((*it).paramName == "check") {
+			//TODO implement firmware version check;
+			sBody = "not implemented";
+			response.SetRetCode(501); // not implemented
+		} else if ((*it).paramName == "restart") {
+			//TODO implement firmware version check;
+			sBody = "restarting...";
+			mbRestart = true;
+			response.SetRetCode(200);
+		} else if ((*it).paramName == "switchbootpartition") {
+			Ota ota;
+			if(ota.SwitchBootPartition()) {
+				mbRestart = true;
+				sBody = "Switching boot partition successful.";
+				response.SetRetCode(200);
+			} else {
+				//TODO add ota.GetErrorInfo() to inform end-user of problem
+				sBody = "Switching boot partition failed.";
+				response.SetRetCode(500);
+			}
+		} else {
+				sBody = "Invalid request.";
+				response.SetRetCode(400);
+		}
+		it++;
+	}
+	response.AddHeader(HttpResponse::HeaderNoCache);
+	return response.Send(sBody.data(), sBody.size());
+}
+
 
 void DynamicRequestHandler::CheckForRestart() {
 

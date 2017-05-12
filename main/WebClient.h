@@ -3,7 +3,8 @@
 
 #include <stdio.h>
 #include <list>
-#include <string>
+//#include <string>
+#include "WString.h"
 
 #include "DownloadHandler.h"
 #include "Url.h"
@@ -30,7 +31,7 @@ public:
 	 * Adds HTTP headers to the request - you should have called Prepare() beforehand
 	 * @param e.g. a header like "content-type: json/text"
 	 */
-	bool AddHttpHeader(std::string& sHeader);
+	bool AddHttpHeader(String& sHeader);
 	bool AddHttpHeaderCStr(const char* header);
 
 
@@ -81,7 +82,7 @@ public:
 	 * 		- HTTP response status code
 	 * 		- 0 on error
 	 */
-	unsigned short HttpPost(std::string& sData);
+	unsigned short HttpPost(String& sData);
 
 	/*
 	 * in case the default max 16kB dynamic buffer limit is too small, you can increase the limit here.
@@ -97,7 +98,7 @@ public:
 	 * get a reference to response data
 	 * use GetResponseData().data() for accessing binary data and GetResponseData().size() for its length
 	 */
-	std::string& GetResponseData() { return mHttpResponseParser.GetBody(); }
+	String& GetResponseData() { return mHttpResponseParser.GetBody(); }
 
 	/*
 	 * optionally clear internal HTTP response content buffer - irrelevant when using DownloadHandler
@@ -108,7 +109,7 @@ public:
 	/*
 	 * @returns the HTTP response content-type. returns an empty string of no content-type header was set
 	 */
-	std::string& GetContentType() { return mHttpResponseParser.GetContentType(); }
+	String& GetContentType() { return mHttpResponseParser.GetContentType(); }
 
 	//TODO: verify server certificates / CA
 
@@ -116,7 +117,7 @@ private:
 	HttpResponseParser mHttpResponseParser;
 	DownloadHandler* mpDownloadHandler = NULL;
 	Url* mpUrl = NULL;
-	std::list<std::string> mlRequestHeaders;
+	std::list<String> mlRequestHeaders;
 	const char* mpPostData = NULL;
 	unsigned int muPostDataSize = 0;
 
@@ -126,7 +127,7 @@ private:
 	unsigned short HttpExecuteSecure();
 	unsigned int muMaxResponseDataSize;
 	unsigned short HttpExecute();
-	void PrepareRequest(std::string& sRequest);
+	void PrepareRequest(String& sRequest);
 };
 
 
