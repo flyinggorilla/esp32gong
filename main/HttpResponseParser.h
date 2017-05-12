@@ -50,6 +50,7 @@ public:
 	std::string& GetContentType()  { return msContentType; };
 	unsigned int GetContentLength() { return muActualContentLength; }
 	unsigned short GetStatusCode() { return muStatusCode; }
+	std::string& GetRedirectLocation() { return msLocation; }
 
 
 	short GetError()  	{ return muError; };
@@ -70,6 +71,7 @@ private:
 	bool mbContentLength;
 	unsigned short muStatusCode;
 	std::string msContentType;
+	std::string msLocation;
 	DownloadHandler* mpDownloadHandler = NULL;
 	uint8_t muParseState;
 	StringParser mStringParser;

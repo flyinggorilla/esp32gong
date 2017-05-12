@@ -200,7 +200,11 @@ bool DynamicRequestHandler::HandleInfoRequest(std::list<TParam>& params, HttpRes
 	cJSON_AddStringToObject(json, "wifiautoconnect", isautoconnect ? "on" : "off");
 	cJSON_AddStringToObject(json, "firmwareversion", FIRMWARE_VERSION);
 
-	sBody = cJSON_PrintUnformatted(json);
+
+	char* output = cJSON_PrintUnformatted(json);
+	sBody = output;
+	free(output);
+	cJSON_Delete(json);
 
 	rResponse.AddHeader(HttpResponse::HeaderContentTypeJson);
 	rResponse.AddHeader(HttpResponse::HeaderNoCache);

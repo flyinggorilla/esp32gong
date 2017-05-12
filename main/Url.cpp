@@ -259,6 +259,9 @@ bool Url::ParseUrl(std::string& u) {
 			// dont break here;
 
 		case STATE_Http:
+			if (c == ' ') { // skip leading spaces
+				break;
+			}
 
 			if (!Match(it, u, "http")) {
 				return false;

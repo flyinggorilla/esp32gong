@@ -123,7 +123,7 @@ private:
 	/*
 	 * Note: The site "https://www.howsmyssl.com/a/check" is useful to test and experiment with TLS layer and CA Certificates
 	 */
-	bool HttpExecuteSecure();
+	unsigned short HttpExecuteSecure();
 	unsigned int muMaxResponseDataSize;
 	unsigned short HttpExecute();
 	void PrepareRequest(std::string& sRequest);
