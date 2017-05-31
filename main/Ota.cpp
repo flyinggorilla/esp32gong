@@ -47,7 +47,8 @@ Ota::~Ota() {
 
 bool Ota::OnReceiveBegin(unsigned short int httpStatusCode, bool isContentLength, unsigned int contentLength) {
 
-    ESP_LOGI(LOGTAG, "Starting OTA example...");
+
+    ESP_LOGI(LOGTAG, "OnReceiveBegin(%u, %u)", httpStatusCode, contentLength);
 
     if (isContentLength) {
         muContentLength = contentLength;
@@ -83,6 +84,7 @@ bool Ota::OnReceiveBegin(unsigned short int httpStatusCode, bool isContentLength
         miProgress = OTA_PROGRESS_FLASHERROR;
         return false;
     }
+
     ESP_LOGI(LOGTAG, "esp_ota_begin succeeded");
     return true;
 }
@@ -90,8 +92,9 @@ bool Ota::OnReceiveBegin(unsigned short int httpStatusCode, bool isContentLength
 bool Ota::OnReceiveData(char* buf, int len) {
     //ESP_LOGI(LOGTAG, "OnReceiveData(%d)", len);
 
+	//vTaskDelay(50); // to make the watchdog happy!!
+
 	esp_err_t err;
-    //ESP_LOGI(LOGTAG, "Before esp_ota_write");
     err = esp_ota_write( mOtaHandle, (const void *)buf, len);
     if (err == ESP_ERR_INVALID_SIZE) {
     	ESP_LOGE(LOGTAG, "Error partition too small for firmware data: %d", muActualDataLength + len );
@@ -110,7 +113,7 @@ bool Ota::OnReceiveData(char* buf, int len) {
 
 bool Ota::OnReceiveEnd() {
     ESP_LOGI(LOGTAG, "Total Write binary data length : %u", muActualDataLength);
-    //ESP_LOGI(LOGTAG, "DATA: %s", dummy.c_str());
+
 
     esp_err_t err;
 
@@ -120,13 +123,17 @@ bool Ota::OnReceiveEnd() {
         //task_fatal_error();
         return false;
     }
-    err = esp_ota_set_boot_partition(mpUpdatePartition);
+
+    ESP_LOGW(LOGTAG, "DEBUGGING CODE ACTIVE ---- NO BOOT PARTITION SET!!!!!");
+
+/*    err = esp_ota_set_boot_partition(mpUpdatePartition);
     if (err != ESP_OK) {
         ESP_LOGE(LOGTAG, "esp_ota_set_boot_partition failed! err=0x%x", err);
         miProgress = OTA_PROGRESS_FLASHERROR;
         //task_fatal_error();
         return false;
     }
+*/
     ESP_LOGI(LOGTAG, "Prepare to restart system!");
     miProgress = OTA_PROGRESS_FINISHEDSUCCESS;
     return true;
@@ -208,6 +215,7 @@ void task_function_firmwareupdate(void* user_data) {
 
 
 void Ota::StartUpdateFirmwareTask() {
-	xTaskCreate(&task_function_firmwareupdate, "firmwareupdate", 8192, NULL, 5, NULL);
+	//xTaskCreate(&task_function_firmwareupdate, "firmwareupdate", 8192, NULL, 5, NULL);
+	xTaskCreatePinnedToCore(&task_function_firmwareupdate, "firmwareupdate", 8192, NULL, 5, NULL, 0);
 }
 

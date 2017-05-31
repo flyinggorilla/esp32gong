@@ -36,7 +36,7 @@
 #include "mbedtls/certs.h"
 
 #define DEFAULT_MAXRESPONSEDATASIZE 16*1024
-#define RECEIVE_BUFFER_SIZE 16*1024 
+#define RECEIVE_BUFFER_SIZE 16*1024
 
 static const char LOGTAG[] = "WebClient";
 
@@ -225,7 +225,7 @@ unsigned short WebClient::HttpExecute() {
 		}
 	}
 
-	ESP_LOGI(LOGTAG, "data %i bytes: %s", mHttpResponseParser.GetContentLength(), mHttpResponseParser.GetBody().c_str());
+	//ESP_LOGI(LOGTAG, "data %i bytes: %s", mHttpResponseParser.GetContentLength(), mHttpResponseParser.GetBody().c_str());
 
 	close(socket);
 
@@ -326,6 +326,7 @@ unsigned short WebClient::HttpExecuteSecure() {
 	ESP_LOGI(LOGTAG, "Performing the SSL/TLS handshake...");
 
 	while ((ret = mbedtls_ssl_handshake(&ssl)) != 0) {
+		ESP_LOGI(LOGTAG, "in while loop...");
 		if (ret != MBEDTLS_ERR_SSL_WANT_READ && ret != MBEDTLS_ERR_SSL_WANT_WRITE) {
 			ESP_LOGE(LOGTAG, "mbedtls_ssl_handshake returned -0x%x", -ret);
 			goto exit;
@@ -367,20 +368,24 @@ unsigned short WebClient::HttpExecuteSecure() {
 	}
 
 
-	ESP_LOGI(LOGTAG, "%d bytes written", ret);
+	//ESP_LOGI(LOGTAG, "%d bytes written", ret);
 	ESP_LOGI(LOGTAG, "Reading HTTP response...");
 
 	sRequest.clear(); // free memory
 
-	ESP_LOGI(LOGTAG, "... socket send success");
+	//ESP_LOGI(LOGTAG, "... socket send success");
 
 	// Read HTTP response
 	mHttpResponseParser.Init(mpDownloadHandler, muMaxResponseDataSize);
-	sReceiveBuf.resize(RECEIVE_BUFFER_SIZE);
+	if (!sReceiveBuf.resize(RECEIVE_BUFFER_SIZE))
+		ESP_LOGE(LOGTAG, "memory allocation failed (%d)", RECEIVE_BUFFER_SIZE);
+
+	//ESP_LOGI(LOGTAG, "sReceiveBuf.length(%d)", sReceiveBuf.length());
+
 
 	while (!mHttpResponseParser.ResponseFinished()) {
 		//ESP_LOGI(LOGTAG, "before ssl_read");
-		//ret = mbedtls_ssl_read(&ssl, (unsigned char*)buf, sizeof(buf));
+		//ESP_LOGI(LOGTAG, "sReceiveBuf.length(%d), pointer=%p", sReceiveBuf.length(), sReceiveBuf.c_str());
 		ret = mbedtls_ssl_read(&ssl, (unsigned char*)sReceiveBuf.c_str(), sReceiveBuf.length());
 		//ESP_LOGI(LOGTAG, "after ssl_read ret=%d", ret);
 

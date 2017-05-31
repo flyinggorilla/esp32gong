@@ -67,6 +67,7 @@ void HttpResponseParser::Init(DownloadHandler* pDownloadHandler, unsigned int ma
 }
 
 bool HttpResponseParser::ParseResponse(char* sBuffer, unsigned int uLen) {
+
 	// when uLen == 0, then connection is closed
 	if (uLen == 0) {
 		mbFinished = true;
@@ -94,6 +95,7 @@ bool HttpResponseParser::ParseResponse(char* sBuffer, unsigned int uLen) {
 					return SetError(ERROR_HTTPTYPENOTDETECTED), false;
 				mbHttp11 = uFound ? true : false;
 				muParseState = STATE_StatusCode;
+				//ESP_LOGI(LOGTAG, "HTTPTYPE:");
 			} else {
 				if (!mStringParser.ConsumeChar(c))
 					return SetError(ERROR_INVALIDHTTPTYPE), false;
@@ -104,6 +106,7 @@ bool HttpResponseParser::ParseResponse(char* sBuffer, unsigned int uLen) {
 			if (c == ' ') {
 				mStringParser.Init();
 				muParseState = STATE_StatusMessage;
+				//ESP_LOGI(LOGTAG, "STATUSCODE: %u", muStatusCode);
 			} else {
 				if ((c >= '0') && (c <= '9')) {
 					muStatusCode *= 10;

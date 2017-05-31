@@ -111,8 +111,9 @@ void Esp32Gong::Start() {
 	gpio_pad_select_gpio((gpio_num_t) ONBOARDLED_GPIO);
 	gpio_set_direction((gpio_num_t) ONBOARDLED_GPIO, (gpio_mode_t) GPIO_MODE_OUTPUT);
 
-	xTaskCreate(&task_function_webserver, "Task_WebServer", 4096, this, 5, NULL);
-	xTaskCreate(&task_function_resetbutton, "Task_ResetButton", 4096, this, 5, NULL);
+//	xTaskCreate(&task_function_webserver, "Task_WebServer", 8192*2, this, 5, NULL);
+//	xTaskCreate(&task_function_webserver, "Task_WebServer", 8192, this, 5, NULL);
+	xTaskCreate(&task_function_resetbutton, "Task_ResetButton", 2048, this, 5, NULL);
 
 	ESP_LOGI(LOGTAG, "CONFIG HOSTNAME: %s", mConfig.msHostname.c_str() == NULL ? "NULL" : mConfig.msHostname.c_str());
 
@@ -124,7 +125,7 @@ void Esp32Gong::Start() {
 		}
 		wifi.StartAPMode(mConfig.msAPSsid, mConfig.msAPPass, mConfig.msHostname);
 		// start DNS server to always redirect any domain to 192.168.4.1
-		xTaskCreate(&task_function_dnsserver, "Task_DnsServer", 16000, this, 5, NULL);
+//		xTaskCreate(&task_function_dnsserver, "Task_DnsServer", 8192, this, 5, NULL);
 	} else {
 		if (mConfig.msSTAENTUser.length())
 			wifi.StartSTAModeEnterprise(mConfig.msSTASsid, mConfig.msSTAENTUser, mConfig.msSTAPass, mConfig.msSTAENTCA, mConfig.msHostname);
@@ -143,7 +144,12 @@ void Esp32Gong::Start() {
 		vTaskDelay(100/portTICK_PERIOD_MS);
 	}
 
-	xTaskCreate(&task_test_webclient, "Task_TestWebClient", 8192, this, 5, NULL);
+	//xTaskCreate(&task_test_webclient, "Task_TestWebClient", 8192, this, 5, NULL);
+	//ESP_LOGI(LOGTAG, "********************** OTA MAIN VERSION *********************");
+	//Ota ota;
+    //ota.UpdateFirmware("https://surpro4:9999/getfirmware");
+	ESP_LOGI(LOGTAG, "********************** OTA THREAD VERSION PINNED TO CORE *********************");
+	Ota::StartUpdateFirmwareTask();
 
 
 }

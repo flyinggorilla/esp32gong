@@ -56,9 +56,10 @@ void Url::Clear() {
 }
 
 String& Url::GetPortAsString() {
-	char buf[20];
-	sprintf(buf, "%hu", muPort);
-	msPort = buf;
+	//char buf[20];
+	//sprintf(buf, "%hu", muPort);
+	//msPort = buf;
+	msPort = muPort;
 	return msPort;
 }
 
@@ -70,9 +71,10 @@ String& Url::GetUrl() {
 
 		if (!(muPort == 80 && !mbSecure) && !(muPort == 443 && mbSecure)) {
 			msUrl += ':';
-			char buf[20];
-			sprintf(buf, "%hu", muPort);
-			msUrl += buf;
+			//char buf[20];
+			//sprintf(buf, "%hu", muPort);
+			//msUrl += buf;
+			msUrl += muPort;
 		}
 	}
 

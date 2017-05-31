@@ -52,6 +52,11 @@ public:
     //ADDED!!!
     void clear() { invalidate(); };
 
+
+    //TEMP ADDED!! DEBUGGING
+    void dump();
+
+
     /*
      * Always clears contents!!
      */
@@ -237,7 +242,7 @@ public:
     }
     const char * c_str() const
     {
-        return buffer;
+        return buffer ? buffer : "";  //CHANGED!!!! DONT RETURN NULL
     }
 
     // search

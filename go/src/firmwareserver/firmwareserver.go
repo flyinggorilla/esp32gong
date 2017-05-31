@@ -1,7 +1,7 @@
 package main
 
-/*  This firmware server is meant for testing purposes only. 
-	For production use generate proper certificates 
+/*  This firmware server is meant for testing purposes only.
+For production use generate proper certificates
 */
 
 import (
@@ -26,8 +26,8 @@ func firmwareHandler(w http.ResponseWriter, r *http.Request) {
 	log.Println("serving User-Agent: ", r.Header.Get("User-Agent"))
 	w.Header().Set("Content-Type", "application/octet-stream")
 	w.Header().Set("Content-Disposition", "attachment;filename=firmware.bin")
-	//data, err := ioutil.ReadFile("C:/Users/bernd/Documents/GitHub/esp32gong/build/esp32gong.bin")
-	data, err := ioutil.ReadFile("C:/Users/bernd/Documents/GitHub/ufo-esp32/build/ufo-esp32.bin")
+	data, err := ioutil.ReadFile("C:/Users/bernd/Documents/GitHub/esp32gong/build/esp32gong.bin")
+	//data, err := ioutil.ReadFile("C:/Users/bernd/Documents/GitHub/ufo-esp32/build/ufo-esp32.bin")
 	if err != nil {
 		panic(err)
 	}
@@ -43,7 +43,7 @@ func main() {
 		log.Println("Please specify commandline option: http | https")
 		return
 	}
-	
+
 	if os.Args[1] == "https" {
 		log.Println("server runs at: https://localhost:9999")
 		http.HandleFunc("/", rootHandler)

@@ -24,24 +24,49 @@
 #include "WString.h"
 #include "stdlib_noniso.h"
 #include "stdlib.h"
-//extern "C" {
-//#include "esp_common.h"
-//}
+
+#include "esp_log.h"
+
+static const char LOGTAG[] = "String";
 
 //ADDITION TO ORIGINAL LIBRARY
 unsigned char String::resize(unsigned int size) {
-	invalidate();
+	//invalidate();
 
-	size_t newSize = (size + 16) & (~0xf);
-    char *buffer = (char *) malloc(newSize);
+	/*size_t newSize = (size + 16) & (~0xf);
+    buffer = (char *) malloc(newSize);
     if(buffer) {
         memset(buffer, 0, newSize);
         capacity = newSize - 1;
         len = size;
         return 1;
     }
-    return 0;
+    return 0;*/
+ 	size_t newSize = (size + 16) & (~0xf);
+    ESP_LOGI(LOGTAG, "before: c=%d, l=%d, target=%d, new=%d", capacity, len, size, newSize);
+	char *newbuffer = (char *) malloc(newSize);
+	if(newbuffer) {
+		memset(newbuffer, 0, newSize);
+		memcpy(newbuffer, buffer, len);
+		if (buffer) {
+			free(buffer);
+		}
+		capacity = newSize - 1;
+		len = size;
+		buffer = newbuffer;
+	    ESP_LOGI(LOGTAG, "after: c=%d, l=%d, target=%d, new=%d, ptr=%p", capacity, len, size, newSize, newbuffer);
+		return 1;
+	}
+	return 0;
+
 }
+
+void String::dump() {
+    ESP_LOGI(LOGTAG, "dump: c=%d, l=%d, ptr=%p", capacity, len, buffer);
+}
+
+
+
 
 
 /*********************************************/
@@ -193,6 +218,9 @@ unsigned char String::changeBuffer(unsigned int maxStrLen)
         capacity = newSize - 1;
         buffer = newbuffer;
         return 1;
+    }
+    if (buffer) { // ADDED FREEING BUFFER BEFOR SETTING NEW ONE (WHICH IS NULL IN THIS CASE)
+        free(buffer);
     }
     buffer = newbuffer;
     return 0;
