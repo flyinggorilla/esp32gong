@@ -326,7 +326,6 @@ unsigned short WebClient::HttpExecuteSecure() {
 	ESP_LOGI(LOGTAG, "Performing the SSL/TLS handshake...");
 
 	while ((ret = mbedtls_ssl_handshake(&ssl)) != 0) {
-		ESP_LOGI(LOGTAG, "in while loop...");
 		if (ret != MBEDTLS_ERR_SSL_WANT_READ && ret != MBEDTLS_ERR_SSL_WANT_WRITE) {
 			ESP_LOGE(LOGTAG, "mbedtls_ssl_handshake returned -0x%x", -ret);
 			goto exit;

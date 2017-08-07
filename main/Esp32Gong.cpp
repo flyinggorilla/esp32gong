@@ -112,7 +112,7 @@ void Esp32Gong::Start() {
 	gpio_set_direction((gpio_num_t) ONBOARDLED_GPIO, (gpio_mode_t) GPIO_MODE_OUTPUT);
 
 //	xTaskCreate(&task_function_webserver, "Task_WebServer", 8192*2, this, 5, NULL);
-//	xTaskCreate(&task_function_webserver, "Task_WebServer", 8192, this, 5, NULL);
+	xTaskCreate(&task_function_webserver, "Task_WebServer", 8192, this, 5, NULL);
 	xTaskCreate(&task_function_resetbutton, "Task_ResetButton", 2048, this, 5, NULL);
 
 	ESP_LOGI(LOGTAG, "CONFIG HOSTNAME: %s", mConfig.msHostname.c_str() == NULL ? "NULL" : mConfig.msHostname.c_str());
@@ -148,8 +148,8 @@ void Esp32Gong::Start() {
 	//ESP_LOGI(LOGTAG, "********************** OTA MAIN VERSION *********************");
 	//Ota ota;
     //ota.UpdateFirmware("https://surpro4:9999/getfirmware");
-	ESP_LOGI(LOGTAG, "********************** OTA THREAD VERSION PINNED TO CORE *********************");
-	Ota::StartUpdateFirmwareTask();
+	//ESP_LOGI(LOGTAG, "********************** OTA THREAD VERSION PINNED TO CORE *********************");
+	//Ota::StartUpdateFirmwareTask();
 
 
 }

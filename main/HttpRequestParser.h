@@ -7,16 +7,19 @@
 #include <list>
 
 
-#define STATE_Method				0
-#define STATE_ParseUrl				1
-#define STATE_HttpType				2
-#define STATE_SearchEndOfHeaderLine 3
-#define STATE_SkipHeader			4
-#define STATE_CheckHeaderName		5
-#define STATE_CheckHeaderValue		6
-#define STATE_ReadContentLength		7
-#define STATE_CopyBody				8
-
+#define STATE_Method					0
+#define STATE_ParseUrl					1
+#define STATE_HttpType					2
+#define STATE_SearchEndOfHeaderLine 	3
+#define STATE_SkipHeader				4
+#define STATE_CheckHeaderName			5
+#define STATE_CheckHeaderValue			6
+#define STATE_ReadContentLength			7
+#define STATE_SearchBoundary			8
+#define STATE_ParseBoundary				9
+#define STATE_CopyBody					10
+#define STATE_ProcessMultipartBodyStart	11
+#define STATE_ProcessMultipartBody		12
 
 class HttpRequestParser {
 public:
@@ -27,6 +30,7 @@ public:
 	void Clear();
 
 	bool ParseRequest(char* sBuffer, __uint16_t uLen);
+	void ProcessMultipartBody(char* sBuffer, __uint16_t uLen);
 
 	bool RequestFinished() 	{ return mbFinished; };
 	bool IsHttp11() 		{ return mbHttp11; };
@@ -35,6 +39,7 @@ public:
 
 	std::string& GetUrl() 	{ return mUrl; };
 	std::string& GetBody()  { return mBody; };
+	std::string& GetBoundary() { return mBoundary; }
 	std::list<TParam>& GetParams() { return mParams; };
 
 	void SetError(__uint8_t u) { muError = u; };
@@ -48,7 +53,10 @@ private:
 	TParam* mpActParam;
 
 	std::string mBody;
+	std::string mBoundary;
 	__uint16_t muContentLength;
+	__uint16_t muActBodyLength;
+	
 
 	bool mbFinished;
 	bool mbHttp11;

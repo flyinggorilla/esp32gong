@@ -82,6 +82,15 @@ void Wifi::StartSTAModeEnterprise(std::string& rsSsid, std::string& rsUser, std:
 void Wifi::Connect() {
 	ESP_LOGD(LOGTAG, "  Connect(<%s><%s><%s><%d>)", msSsid.data(), msUser.data(), msPass.data(), msCA.length());
 
+void Wifi::Connect(){
+	ESP_LOGD(tag, "  Connect(<%s><%s><%s><%d>)", msSsid.data(), msUser.data(), msPass.data(), msCA.length());
+	ESP_LOGD(tag, "-----------------------");
+	ESP_LOGD(tag, "%s", msCA.data());
+	ESP_LOGD(tag, "-----------------------");
+	
+
+	nvs_flash_init();
+	tcpip_adapter_init();
 	if (ip.length() > 0 && gw.length() > 0 && netmask.length() > 0) {
 		tcpip_adapter_dhcpc_stop(TCPIP_ADAPTER_IF_STA);
 		tcpip_adapter_ip_info_t ipInfo;
@@ -92,8 +101,7 @@ void Wifi::Connect() {
 	}
 
 	esp_event_loop_init(eventHandler, this);
-	wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT()
-	;
+	wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
 	esp_wifi_init(&cfg);
 	esp_wifi_set_storage(WIFI_STORAGE_RAM);
 	esp_wifi_set_mode(WIFI_MODE_STA);

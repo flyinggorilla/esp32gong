@@ -13,6 +13,7 @@ public:
 	void Init();
 	bool AddStringToParse(const char* sParse);
 	bool ConsumeChar(char c, bool ignoreLeadingSpaces = false);
+	void ConsumeCharSimple(char c);
 	bool Found(__uint8_t& rIndex);
 
 private:

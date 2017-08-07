@@ -4,8 +4,8 @@
 #include <esp_log.h>
 
 
-//#define WIFI_SSID CONFIG_WIFI_SSID
-//#define WIFI_PASS CONFIG_WIFI_PASSWORD
+#define WIFI_SSID CONFIG_WIFI_SSID
+#define WIFI_PASS CONFIG_WIFI_PASSWORD
 
 
 Config::Config() {
@@ -13,8 +13,8 @@ Config::Config() {
 	msAPSsid = "esp32gong";
 	msHostname = "esp32gong";
 
-	msSTASsid = ""; //WIFI_SSID;
-	msSTAPass = ""; //WIFI_PASS;
+	msSTASsid = WIFI_SSID;
+	msSTAPass = WIFI_PASS;
 
 	mbWebServerUseSsl = false;
 	muWebServerPort = 0;

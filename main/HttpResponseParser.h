@@ -2,10 +2,10 @@
 #define MAIN_HTTPREQUESTPARSER_HPP_
 
 //#include <string>
-#include "WString.h"
 #include <list>
 
 #include "DownloadHandler.h"
+#include "String.h"
 #include "StringParser.h"
 
 

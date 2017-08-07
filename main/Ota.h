@@ -8,8 +8,8 @@
 
 #include <esp_ota_ops.h>
 //#include <string>
-#include "WString.h"
 #include "DownloadHandler.h"
+#include "String.h"
 #include "WebClient.h"
 
 #define OTA_PROGRESS_NOTYETSTARTED      -1

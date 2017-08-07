@@ -267,6 +267,13 @@ void WebServer::WebRequestHandler(int socket) {
 				sBody += "\r\n";
 				it++;
 			}
+			if (!httpParser.IsGet()){
+				sBody += "Boundary:<";
+				sBody += httpParser.GetBoundary();
+				sBody += ">\r\n";
+				sBody += "Body:\r\n";
+				sBody += httpParser.GetBody();
+			}
 			if (!httpResponse.Send(sBody.data(), sBody.size()))
 				break;
 		} else {

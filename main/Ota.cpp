@@ -22,7 +22,7 @@
 #include <nvs.h>
 #include <nvs_flash.h>
 
-#include "WString.h"
+#include "String.h"
 #include "WebClient.h"
 
 #define LATEST_FIRMWARE_URL "https://surpro4:9999/getfirmware"
@@ -216,6 +216,7 @@ void task_function_firmwareupdate(void* user_data) {
 
 void Ota::StartUpdateFirmwareTask() {
 	//xTaskCreate(&task_function_firmwareupdate, "firmwareupdate", 8192, NULL, 5, NULL);
-	xTaskCreatePinnedToCore(&task_function_firmwareupdate, "firmwareupdate", 8192, NULL, 5, NULL, 0);
+	int core = 0;
+	xTaskCreatePinnedToCore(&task_function_firmwareupdate, "firmwareupdate", 8192, NULL, 5, NULL, core);
 }
 

@@ -3,12 +3,10 @@
 
 #include <stdio.h>
 #include <list>
-//#include <string>
-#include "WString.h"
-
 #include "DownloadHandler.h"
 #include "Url.h"
 #include "HttpResponseParser.h"
+#include "String.h"
 
 class WebClient {
 public:

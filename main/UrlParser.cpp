@@ -1,5 +1,4 @@
 #include "UrlParser.h"
-
 #include <_ansi.h>
 #include <ctype.h>
 

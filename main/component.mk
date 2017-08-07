@@ -7,5 +7,6 @@
 # please read the ESP-IDF documents if you need to do this.
 #
 
+#COMPONENT_EMBED_TXTFILES := wpa2_ca.pem
 COMPONENT_EMBED_TXTFILES := cacert.pem
 COMPONENT_EMBED_TXTFILES += prvtkey.pem

@@ -1,5 +1,4 @@
 #include "StringParser.h"
-
 #include <_ansi.h>
 #include <ctype.h>
 
@@ -43,17 +42,34 @@ bool StringParser::ConsumeChar(char c, bool ignoreLeadingSpaces){
 			}
 			mbFirstChar = false;
 		}
+		return true;
 	}
 	else{
 		for (__uint8_t u=0 ; u<muCount ; u++){
-			if (mPos[u] && mStringsToSearch[u][mPos[u]] == c){
-				mPos[u]++;
-				oneActive = true;
+			if (mPos[u]){
+				if (mStringsToSearch[u][mPos[u]] == c){
+					mPos[u]++;
+					oneActive = true;
+				}
+				else
+					mPos[u] = 0;
 			}
 		}
 
 	}
 	return oneActive;
+}
+void StringParser::ConsumeCharSimple(char c){
+	for (__uint8_t u=0 ; u<muCount ; u++){
+		if (mStringsToSearch[u][mPos[u]] == c)
+			mPos[u]++;
+		else{
+			if (mStringsToSearch[u][0] == c)
+				mPos[u] = 1;
+			else
+				mPos[u] = 0;
+		}
+	}	
 }
 
 

@@ -3,7 +3,8 @@
 
 #include <stdio.h>
 #include <list>
-#include "WString.h"
+
+#include "String.h"
 
 struct TQueryParam{
 	String paramName;
