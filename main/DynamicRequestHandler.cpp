@@ -1,22 +1,26 @@
 #include "DynamicRequestHandler.h"
-#include "Config.h"
-#include "esp_system.h"
-#include <esp_log.h>
-
-#include "esp_system.h"
-#include <esp_log.h>
-#include <cJSON.h>
-#include "Config.h"
 #include "Esp32Gong.h"
+#include "Config.h"
 #include "I2SPlayer.h"
-#include "Wifi.h"
+#include "esp_system.h"
+#include <esp_log.h>
 #include "Ota.h"
+#include "String.h"
+#include "WebClient.h"
+#include "Wifi.h"
 
-extern Wifi wifi;
+
+static char tag[] = "DynamicRequestHandler";
+
 extern Esp32Gong esp32gong;
 extern I2SPlayer musicPlayer;
+extern Wifi wifi;
 
-static const char LOGTAG[] = "WebSrvDRH";
+
+#define OTA_LATEST_FIRMWARE_JSON_URL "http://surpro5:9999/version.json"  // testing with local go server
+#define OTA_LATEST_FIRMWARE_URL "http://surpro5:9999/esp32gong.bin"  // testing with local go server
+//#define OTA_LATEST_FIRMWARE_JSON_URL "https://raw.githubusercontent.com/Dynatrace/ufo-esp32/master/firmware/version.json"
+//#define OTA_LATEST_FIRMWARE_URL "https://raw.githubusercontent.com/Dynatrace/ufo-esp32/master/firmware/ufo-esp32.bin"
 
 DynamicRequestHandler::DynamicRequestHandler() {
 	mbRestart = false;
@@ -26,159 +30,94 @@ DynamicRequestHandler::~DynamicRequestHandler() {
 
 }
 
-bool DynamicRequestHandler::HandleApiRequest(std::list<TParam>& params, HttpResponse& rResponse) {
+bool DynamicRequestHandler::HandleApiRequest(std::list<TParam>& params, HttpResponse& rResponse){
 
-	std::string sBody;
+	esp32gong.IndicateApiCall();
+
+	String sBody;
 	std::list<TParam>::iterator it = params.begin();
+
+	int volume = 100;
+	bool play = false;
 	while (it != params.end()) {
 
 		if ((*it).paramName == "gong") {
-			musicPlayer.setVolume(25);
-			musicPlayer.playAsync();
-			sBody = "<html><body>api call - lets play music</html></body>";
+			play = true;
+		} else if ((*it).paramName == "volume") {
+			long volumeParam = (*it).paramValue.toInt();
+			if ((volumeParam >= 0) && (volumeParam <= 100) ) {
+				volume = volumeParam;
+				ESP_LOGI(tag, "gong playing with volume %i", volume);
+			} else {
+				ESP_LOGW(tag, "invalid volume - valid value range is from 0 (off) to 100 (max)");
+			}
 		}
-
 		it++;
+	}
+	if(play) {
+		musicPlayer.setVolume(volume);
+		musicPlayer.playAsync();
+		sBody = "<html><body>api call - lets play music</html></body>";
 	}
 
 	rResponse.AddHeader(HttpResponse::HeaderNoCache);
 	rResponse.SetRetCode(200);
-	return rResponse.Send(sBody.data(), sBody.size());
+	return rResponse.Send(sBody.c_str(), sBody.length());
 }
 
 
-bool DynamicRequestHandler::HandleApiListRequest(std::list<TParam>& params, HttpResponse& rResponse) {
-	std::string sBody;
-	//esp32gong.GetApiStore().GetApisJson(sBody);
-	rResponse.AddHeader(HttpResponse::HeaderNoCache);
-	rResponse.SetRetCode(200);
-	return rResponse.Send(sBody.data(), sBody.size());
-}
-bool DynamicRequestHandler::HandleApiEditRequest(std::list<TParam>& params, HttpResponse& rResponse) {
 
-	/*__uint8_t uId = 0xff;
-	const char* sNewApi = NULL;
-	bool bDelete = false;
 
-	std::list<TParam>::iterator it = params.begin();
-	while (it != params.end()) {
+bool DynamicRequestHandler::HandleInfoRequest(std::list<TParam>& params, HttpResponse& rResponse){
 
-		if ((*it).paramName == "apiid")
-			uId = strtol((*it).paramValue.data(), NULL, 10) - 1;
-		else if ((*it).paramName == "apiedit")
-			sNewApi = (*it).paramValue.data();
-		else if ((*it).paramName == "delete")
-			bDelete = true;
-		it++;
-	}
-	if (bDelete) {
-		if (!esp32gong.GetApiStore().DeleteApi(uId))
-			rResponse.SetRetCode(500);
-	} else {
-		if (!esp32gong.GetApiStore().SetApi(uId, sNewApi))
-			rResponse.SetRetCode(500);
-	}
-	rResponse.AddHeader("Location: /"); */
-	rResponse.AddHeader(HttpResponse::HeaderNoCache);
-	rResponse.SetRetCode(302);
-	return rResponse.Send();
-}
+	char sHelp[20];
+	String sBody;
 
-bool DynamicRequestHandler::HandleInfoRequest(std::list<TParam>& params, HttpResponse& rResponse) {
-
-	std::string sBody;
-
-	/*	char sBuf[100];
-	 char sHelp[20];
-
-	 sBody = "{";
-	 sprintf(sBuf, "\"apmode\":\"%d\",", esp32gong.GetConfig().mbAPMode);
-	 sBody += sBuf;
-	 sprintf(sBuf, "\"heap\":\"%d Bytes\",", esp_get_free_heap_size());
-	 sBody += sBuf;
-	 sprintf(sBuf, "\"ssid\":\"%s\",", esp32gong.GetConfig().msSTASsid.data());
-	 sBody += sBuf;
-
-	 if (esp32gong.GetConfig().mbAPMode){
-	 sprintf(sBuf, "\"lastiptoap\":\"%d.%d.%d.%d\",", IP2STR((ip4_addr*)&(esp32gong.GetConfig().muLastSTAIpAddress)));
-	 sBody += sBuf;
-	 }
-	 else{
-	 esp32gong.GetWifi().GetLocalAddress(sHelp);
-	 sprintf(sBuf, "\"ipaddress\":\"%s\",", sHelp);
-	 sBody += sBuf;
-	 esp32gong.GetWifi().GetGWAddress(sHelp);
-	 sprintf(sBuf, "\"ipgateway\":\"%s\",", sHelp);
-	 sBody += sBuf;
-	 esp32gong.GetWifi().GetNetmask(sHelp);
-	 sprintf(sBuf, "\"ipsubnetmask\":\"%s\",", sHelp);
-	 sBody += sBuf;
-	 }
-	 esp32gong.GetWifi().GetMac((__uint8_t*)sHelp);
-	 sprintf(sBuf, "\"macaddress\":\"%x:%x:%x:%x:%x:%x\",", sHelp[0], sHelp[1], sHelp[2], sHelp[3], sHelp[4], sHelp[5]);
-	 sBody += sBuf;
-	 sprintf(sBuf, "\"firmwareversion\":\"%s\"", FIRMWARE_VERSION);
-	 sBody += sBuf;
-	 sBody += '}';
-	 */
-
-	cJSON *json;
-	json = cJSON_CreateObject();
-	char sbuf[128];
-
-	cJSON_AddStringToObject(json, "esp-idf", esp_get_idf_version());
-	cJSON_AddNumberToObject(json, "heap", esp_get_free_heap_size());
-	cJSON_AddStringToObject(json, "ssid", esp32gong.GetConfig().msSTASsid.c_str());
-
-	tcpip_adapter_ip_info_t ip_info;
-	ESP_ERROR_CHECK(tcpip_adapter_get_ip_info(TCPIP_ADAPTER_IF_STA, &ip_info));
-	sprintf(sbuf, IPSTR, IP2STR(&ip_info.ip));
-	cJSON_AddStringToObject(json, "ipaddress", sbuf);
-	sprintf(sbuf, IPSTR, IP2STR(&ip_info.gw));
-	cJSON_AddStringToObject(json, "ipgateway", sbuf);
-	sprintf(sbuf, IPSTR, IP2STR(&ip_info.netmask));
-	cJSON_AddStringToObject(json, "ipsubnetmask", sbuf);
-	sprintf(sbuf, IPSTR, IP2STR(&ip_info.gw));
-	cJSON_AddStringToObject(json, "ipdns", sbuf);
-	cJSON_AddStringToObject(json, "hostname", esp32gong.GetConfig().msHostname.c_str());
-	uint8_t mac[6];
-	ESP_ERROR_CHECK(esp_wifi_get_mac(ESP_IF_WIFI_STA, mac));
-	sprintf(sbuf, "%02X:%02X:%02X:%02X:%02X:%02X", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
-	cJSON_AddStringToObject(json, "macaddress", sbuf);
-	ESP_ERROR_CHECK(tcpip_adapter_get_ip_info(TCPIP_ADAPTER_IF_AP, &ip_info));
-	sprintf(sbuf, IPSTR, IP2STR(&ip_info.ip));
-	cJSON_AddStringToObject(json, "apipaddress", sbuf);
+	sBody.reserve(512);
+	sBody.printf("{\"apmode\":\"%s\",", esp32gong.GetConfig().mbAPMode ? "1":"0");
+	sBody.printf("\"heap\":\"%d\",", esp_get_free_heap_size());
+	sBody.printf("\"ssid\":\"%s\",",  esp32gong.GetConfig().msSTASsid.c_str());
+	sBody.printf("\"hostname\":\"%s\",",  esp32gong.GetConfig().msHostname.c_str());
+	sBody.printf("\"enterpriseuser\":\"%s\",", esp32gong.GetConfig().msSTAENTUser.c_str());
+	sBody.printf("\"sslenabled\":\"%s\",", esp32gong.GetConfig().mbWebServerUseSsl ? "1":"0");
+	sBody.printf("\"listenport\":\"%d\",", esp32gong.GetConfig().muWebServerPort);
 
 	if (esp32gong.GetConfig().mbAPMode) {
-		wifi_sta_list_t apstations;
-		if (ESP_OK == esp_wifi_ap_get_sta_list(&apstations)) {
-			sprintf(sbuf, "%i", apstations.num);
-		} else {
-			sprintf(sbuf, "n/a");
-		}
-		cJSON_AddStringToObject(json, "apconnectedstations", sbuf);
+		sBody.printf("\"lastiptoap\":\"%d.%d.%d.%d\",", IP2STR((ip4_addr*)&(esp32gong.GetConfig().muLastSTAIpAddress)));
+	} else {
+		sBody += "\"ipaddress\":\"";
+		sBody += wifi.GetLocalAddress();
+		wifi.GetGWAddress(sHelp);
+		sBody.printf("\",\"ipgateway\":\"%s\",", sHelp);
+		wifi.GetNetmask(sHelp);
+		sBody.printf("\"ipsubnetmask\":\"%s\",", sHelp);
 
-		sprintf(sbuf, "%d.%d.%d.%d", IP2STR((ip4_addr* )&(esp32gong.GetConfig().muLastSTAIpAddress)));
-		cJSON_AddStringToObject(json, "lastiptoap", sbuf);
+		uint8_t uChannel;
+		int8_t iRssi;
+		wifi.GetApInfo(iRssi, uChannel);
+		sBody.printf("\"rssi\":\"%d\",", iRssi);
+		sBody.printf("\"channel\":\"%d\",", uChannel);
 	}
-	bool isautoconnect;
-	ESP_ERROR_CHECK(esp_wifi_get_auto_connect(&isautoconnect));
-	cJSON_AddStringToObject(json, "wifiautoconnect", isautoconnect ? "on" : "off");
-	cJSON_AddStringToObject(json, "firmwareversion", FIRMWARE_VERSION);
+	wifi.GetMac((__uint8_t*)sHelp);
 
-
-	char* output = cJSON_PrintUnformatted(json);
-	sBody = output;
-	free(output);
-	cJSON_Delete(json);
+	sBody.printf("\"macaddress\":\"%x:%x:%x:%x:%x:%x\",", sHelp[0], sHelp[1], sHelp[2], sHelp[3], sHelp[4], sHelp[5]);
+	sBody.printf("\"firmwareversion\":\"%s\",", FIRMWARE_VERSION);
+	//sBody.printf("\"ufoid\":\"%s\",", esp32gong.GetConfig().msUfoId.c_str());
+	//sBody.printf("\"ufoname\":\"%s\",", esp32gong.GetConfig().msUfoName.c_str());
+	sBody.printf("\"organization\":\"%s\",", esp32gong.GetConfig().msOrganization.c_str());
+	sBody.printf("\"department\":\"%s\",", esp32gong.GetConfig().msDepartment.c_str());
+	sBody.printf("\"location\":\"%s\"", esp32gong.GetConfig().msLocation.c_str());
+	sBody += '}';
 
 	rResponse.AddHeader(HttpResponse::HeaderContentTypeJson);
 	rResponse.AddHeader(HttpResponse::HeaderNoCache);
 	rResponse.SetRetCode(200);
-	return rResponse.Send(sBody.data(), sBody.size());
+	return rResponse.Send(sBody.c_str(), sBody.length());
 }
 
-bool DynamicRequestHandler::HandleConfigRequest(std::list<TParam>& params, HttpResponse& rResponse) {
+
+
+bool DynamicRequestHandler::HandleConfigRequest(std::list<TParam>& params, HttpResponse& rResponse){
 
 	const char* sWifiMode = NULL;
 	const char* sWifiSsid = NULL;
@@ -188,37 +127,42 @@ bool DynamicRequestHandler::HandleConfigRequest(std::list<TParam>& params, HttpR
 	const char* sWifiEntCA = NULL;
 	const char* sWifiHostName = NULL;
 
-	std::string sBody;
-	ESP_LOGI(LOGTAG, "Config request Handler start");
-
+	String sBody;
+	ESP_LOGI(tag, "HANDLING CONFIG REQUEST: <<<<< %s >>>>>", sBody.c_str());
+	
 	std::list<TParam>::iterator it = params.begin();
-	while (it != params.end()) {
-		ESP_LOGI(LOGTAG, "Config request params: %s=%s", (*it).paramName.c_str(), (*it).paramValue.c_str());
+	while (it != params.end()){
 
 		if ((*it).paramName == "wifimode")
-			sWifiMode = (*it).paramValue.data();
-		else if ((*it).paramName == "wifissid")
-			sWifiSsid = (*it).paramValue.data();
+			sWifiMode = (*it).paramValue.c_str();
+		else if ((*it).paramName == "wifissid") {
+			sWifiSsid = (*it).paramValue.c_str();
+			ESP_LOGI(tag, "SETTING SSID TO: %s", sWifiSsid);
+		}
 		else if ((*it).paramName == "wifipwd")
-			sWifiPass = (*it).paramValue.data();
+			sWifiPass = (*it).paramValue.c_str();
 		else if ((*it).paramName == "wifientpwd")
-			sWifiEntPass = (*it).paramValue.data();
+			sWifiEntPass = (*it).paramValue.c_str();
 		else if ((*it).paramName == "wifientuser")
-			sWifiEntUser = (*it).paramValue.data();
+			sWifiEntUser = (*it).paramValue.c_str();
 		else if ((*it).paramName == "wifientca")
-			sWifiEntCA = (*it).paramValue.data();
-		else if ((*it).paramName == "wifihostname")
-			sWifiHostName = (*it).paramValue.data();
+			sWifiEntCA = (*it).paramValue.c_str();
+		else if ((*it).paramName == "wifihostname") {
+			sWifiHostName = (*it).paramValue.c_str();
+			ESP_LOGI(tag, "SETTING HOSTNAME TO: %s", sWifiHostName);
+		}
 		it++;
 	}
 
 	bool bOk = false;
-	if (sWifiSsid) {
+	if (sWifiSsid){
+		ESP_LOGI(tag, "YES SSID %s IS SET -- activating Station mode", sWifiSsid);
+	
 		esp32gong.GetConfig().msSTASsid = sWifiSsid;
 
-		if (sWifiMode && (sWifiMode[0] == '2')) { //enterprise wap2
-			if (sWifiEntUser && (sWifiEntUser[0] != 0x00)) {
-				esp32gong.GetConfig().msSTAENTUser = sWifiEntUser;
+		if (sWifiMode && (sWifiMode[0] == '2')){ //enterprise wap2
+			if (sWifiEntUser && (sWifiEntUser[0] != 0x00)){
+					esp32gong.GetConfig().msSTAENTUser = sWifiEntUser;
 				if (sWifiEntCA)
 					esp32gong.GetConfig().msSTAENTCA = sWifiEntCA;
 				else
@@ -229,65 +173,168 @@ bool DynamicRequestHandler::HandleConfigRequest(std::list<TParam>& params, HttpR
 					esp32gong.GetConfig().msSTAPass.clear();
 				bOk = true;
 			}
-		} else {
+		}
+		else{
+			ESP_LOGI(tag, "Configuring Wifi Station");
 			if (sWifiPass)
 				esp32gong.GetConfig().msSTAPass = sWifiPass;
 			else
 				esp32gong.GetConfig().msSTAPass.clear();
+			esp32gong.GetConfig().msSTAENTUser.clear();
+			esp32gong.GetConfig().msSTAENTCA.clear();
 			bOk = true;
 		}
 	}
-	if (sWifiHostName && esp32gong.GetConfig().msHostname.compare(sWifiHostName) != 0) {
+	if (sWifiHostName && !esp32gong.GetConfig().msHostname.equals(sWifiHostName)) {
+		ESP_LOGI(tag, "Setting new hostname");
+	
 		esp32gong.GetConfig().msHostname = sWifiHostName;
 		bOk = true;
 	}
-
-	if (bOk) {
+	if (bOk){
+		ESP_LOGI(tag, "FINALLY turning off AP mode and writing config");
+		
 		esp32gong.GetConfig().mbAPMode = false;
 		esp32gong.GetConfig().Write();
-		ESP_LOGI(LOGTAG, "Config WRITTEN");
 		mbRestart = true;
-		sBody = "Restarting......";
+		sBody = "<html><head><title>SUCCESS - firmware update succeded, rebooting shortly.</title>"
+				"<meta http-equiv=\"refresh\" content=\"10; url=/\"></head><body>"
+				"<h2>New settings stored, rebooting shortly.</h2></body></html>";
 		rResponse.SetRetCode(200);
-	} else {
-		ESP_LOGE(LOGTAG, "Config NOT OK");
+	}
+	else{
 		rResponse.AddHeader("Location: /#!pagewifisettings");
 		rResponse.SetRetCode(302);
 	}
 
 	rResponse.AddHeader(HttpResponse::HeaderNoCache);
-	return rResponse.Send(sBody.data(), sBody.size());
+	return rResponse.Send(sBody.c_str(), sBody.length());
 }
 
+bool DynamicRequestHandler::HandleSrvConfigRequest(std::list<TParam>& params, HttpResponse& rResponse){
+	const char* sSslEnabled = NULL;
+	const char* sListenPort = NULL;
+	const char* sServerCert = NULL;
+	const char* sCurrentHost = NULL;
+
+	String sBody;
+
+	std::list<TParam>::iterator it = params.begin();
+	while (it != params.end()){
+		if ((*it).paramName == "sslenabled")
+			sSslEnabled = (*it).paramValue.c_str();
+		else if ((*it).paramName == "listenport")
+			sListenPort = (*it).paramValue.c_str();
+		else if ((*it).paramName == "servercert")
+			sServerCert = (*it).paramValue.c_str();
+		else if ((*it).paramName == "currenthost")
+			sCurrentHost = (*it).paramValue.c_str();
+		it++;
+	}
+	esp32gong.GetConfig().mbWebServerUseSsl = (sSslEnabled != NULL);
+	esp32gong.GetConfig().muWebServerPort = atoi(sListenPort);
+	esp32gong.GetConfig().msWebServerCert = sServerCert;
+	ESP_LOGD(tag, "HandleSrvConfigRequest %d, %d", esp32gong.GetConfig().mbWebServerUseSsl, esp32gong.GetConfig().muWebServerPort);
+	esp32gong.GetConfig().Write();
+	mbRestart = true;
+	
+	String newUrl = "/";
+	if (sCurrentHost){
+		String sHost = sCurrentHost;
+		int i = sHost.indexOf(':');
+		if (i >= 0)
+			sHost = sHost.substring(0, i);
+		if (sHost.length()){
+			if (sSslEnabled != NULL){
+				newUrl = "https://" + sHost;
+				if (esp32gong.GetConfig().muWebServerPort && (esp32gong.GetConfig().muWebServerPort != 443)){
+					newUrl += ':';
+					newUrl += sListenPort;
+				}
+			}
+			else{
+				newUrl = "http://" + sHost;
+				if (esp32gong.GetConfig().muWebServerPort && (esp32gong.GetConfig().muWebServerPort != 80)){
+					newUrl += ':';
+					newUrl += sListenPort;
+				}
+			}
+			newUrl += '/';
+		}
+	}
+
+	sBody = "<html><head><title>SUCCESS - firmware update succeded, rebooting shortly.</title>"
+			"<meta http-equiv=\"refresh\" content=\"10; url=";
+	sBody += newUrl;
+	sBody += "\"></head><body><h2>New settings stored, rebooting shortly.</h2></body></html>";
+	rResponse.SetRetCode(200);
+	rResponse.AddHeader(HttpResponse::HeaderNoCache);
+
+	return rResponse.Send(sBody);
+}
+
+/*
+GET: /firmware?update
+GET: /firmware?progress
+Response:
+{ "session": "9724987887789", 
+"progress": "22",
+"status": "inprogress" }
+Session: 32bit unsigned int ID that changes when UFO reboots
+Progress: 0..100%
+Status: notyetstarted | inprogress | connectionerror | flasherror | finishedsuccess
+notyetstarted: Firmware update process has not started.
+inprogress: Firmware update is in progress.
+connectionerror: Firmware could not be downloaded. 
+flasherror: Firmware could not be flashed.
+finishedsuccess: Firmware successfully updated. Rebooting now.
+*/
 
 bool DynamicRequestHandler::HandleFirmwareRequest(std::list<TParam>& params, HttpResponse& response) {
 	std::list<TParam>::iterator it = params.begin();
-	std::string sBody;
+	String sBody;
 	response.SetRetCode(400); // invalid request
 	while (it != params.end()) {
-		if ((*it).paramName == "update") {
+
+		if ((*it).paramName == "progress") {
+			short progressPct = 0;
+			const char* progressStatus = "notyetstarted";
+			int   progress = Ota::GetProgress();
+			if (progress >= 0) {
+				progressPct = progress;
+				progressStatus = "inprogress";
+			} else {
+				switch (progress) {
+					case OTA_PROGRESS_NOTYETSTARTED: progressStatus = "notyetstarted"; 
+							break;
+					case OTA_PROGRESS_CONNECTIONERROR: progressStatus = "connectionerror"; 
+							break;
+					case OTA_PROGRESS_FLASHERROR: progressStatus = "flasherror"; 
+							break;
+					case OTA_PROGRESS_FINISHEDSUCCESS: progressStatus = "finishedsuccess"; 
+							progressPct = 100;
+							break;
+				}
+			}
+			sBody = "{ \"session\": \"";
+			sBody += Ota::GetTimestamp();
+			sBody += "\", \"progress\": \"";
+			sBody += progressPct;
+			sBody += "\", \"status\": \"";
+			sBody += progressStatus;
+			sBody += "\"}";
+			response.AddHeader(HttpResponse::HeaderContentTypeJson);
+			response.SetRetCode(200);
+		} else if ((*it).paramName == "update") {
 			if (Ota::GetProgress() == OTA_PROGRESS_NOTYETSTARTED) {
-				Ota::StartUpdateFirmwareTask();
+				Ota::StartUpdateFirmwareTask(OTA_LATEST_FIRMWARE_URL);
 				//TODO implement firmware version check;
 			}
-			sBody = "<html><head><title>Firmware update progress</title>"
-					"<meta http-equiv=\"refresh\" content=\"5; url=/firmware?progress\"></head><body>"
-					"<h1>Firmware update task initiated....</h1></body></html>";
-			response.AddHeader(HttpResponse::HeaderContentTypeHtml);
-			response.SetRetCode(200);
-		} else if ((*it).paramName == "progress") {
-			if (Ota::GetProgress() == OTA_PROGRESS_FINISHEDSUCCESS) {
-				sBody = "<html><head><title>SUCCESS - firmware update succeded, rebooting shortly.</title>"
-				        "<meta http-equiv=\"refresh\" content=\"20; url=/\"></head><body><h1>Progress: ";
-			} else {
-				sBody = "<html><head><title>Firmware update progress</title>"
-						"<meta http-equiv=\"refresh\" content=\"5\"></head><body><h1>Progress: ";
-				char buf[64];
-				sprintf(buf, "%d%%", Ota::GetProgress());
-				sBody += buf;
-			}
-			sBody += "</h1></body><html>";
-			response.AddHeader(HttpResponse::HeaderContentTypeHtml);
+			// {"status":"firmware update initiated.", "url":"https://github.com/Dynatrace/ufo-esp32/raw/master/firmware/ufo-esp32.bin"}
+			sBody = "{\"status\":\"firmware update initiated.\", \"url\":\"";
+			sBody += OTA_LATEST_FIRMWARE_URL;
+			sBody += "\"}";
+			response.AddHeader(HttpResponse::HeaderContentTypeJson);
 			response.SetRetCode(200);
 		} else if ((*it).paramName == "check") {
 			//TODO implement firmware version check;
@@ -316,15 +363,41 @@ bool DynamicRequestHandler::HandleFirmwareRequest(std::list<TParam>& params, Htt
 		it++;
 	}
 	response.AddHeader(HttpResponse::HeaderNoCache);
-	return response.Send(sBody.data(), sBody.size());
+	return response.Send(sBody.c_str(), sBody.length());
 }
 
+bool DynamicRequestHandler::HandleCheckFirmwareRequest(std::list<TParam>& params, HttpResponse& response) {
 
-void DynamicRequestHandler::CheckForRestart() {
+	String sBody;
+	response.SetRetCode(404); // not found
 
-	if (mbRestart) {
-		vTaskDelay(100);
-		esp_restart();
+	Url url;
+	url.Parse(OTA_LATEST_FIRMWARE_JSON_URL);
+
+	ESP_LOGD(tag, "Retrieve json from: %s", url.GetUrl().c_str());
+	WebClient webClient;
+	webClient.Prepare(&url);
+
+	unsigned short statuscode = webClient.HttpGet();
+    if (statuscode != 200)
+		return false;
+	int i = webClient.GetResponseData().indexOf("\"version\":\"");
+	if (i <= 0)
+		return false;
+	String version = webClient.GetResponseData().substring(i + 11);
+	i = version.indexOf('"');
+	if (i <= 0)
+		return false;
+	version = version.substring(0, i);
+
+	if (!version.equalsIgnoreCase(FIRMWARE_VERSION)){
+		sBody = "{\"newversion\":\"Firmware available: ";
+		sBody += version;
+		sBody += "\"}";
 	}
+	else
+		sBody = "{}";
+	response.SetRetCode(200);
+	return response.Send(sBody);
+	
 }
-

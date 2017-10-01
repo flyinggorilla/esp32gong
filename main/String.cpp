@@ -30,40 +30,57 @@
 static const char LOGTAG[] = "String";
 
 //ADDITION TO ORIGINAL LIBRARY
-unsigned char String::resize(unsigned int size) {
-	//invalidate();
-
-	/*size_t newSize = (size + 16) & (~0xf);
-    buffer = (char *) malloc(newSize);
-    if(buffer) {
-        memset(buffer, 0, newSize);
-        capacity = newSize - 1;
-        len = size;
-        return 1;
+int String::printf(const char* format, ...) {
+    va_list args;
+    va_start(args, format);
+    int addLen = vsnprintf(NULL, 0, format, args);
+    va_end(args);
+    if (addLen < 0) { // exit in case of a formatting problem
+        return addLen;
     }
-    return 0;*/
+
+    if (len) { // add to existing string, so create temp buffer
+        String s;
+        s.resize(addLen); // resize always allocates at least 1 byte more than addLen
+        addLen = vsnprintf((char*)s.c_str(), addLen+1, format, args);
+        concat(s);
+    } else {  // printf into empty string, so simply reuse sting
+        reserve(addLen + 1);
+        addLen = vsnprintf((char*)c_str(), addLen+1, format, args);
+        len = addLen;
+    }
+    return addLen; 
+}
+
+
+//ADDITION TO ORIGINAL LIBRARY
+unsigned char String::resize(unsigned int size) {
  	size_t newSize = (size + 16) & (~0xf);
-    ESP_LOGI(LOGTAG, "before: c=%d, l=%d, target=%d, new=%d", capacity, len, size, newSize);
+    //ESP_LOGI(LOGTAG, "before: c=%d, l=%d, target=%d, new=%d", capacity, len, size, newSize);
 	char *newbuffer = (char *) malloc(newSize);
 	if(newbuffer) {
 		memset(newbuffer, 0, newSize);
-		memcpy(newbuffer, buffer, len);
+		// retain previous data
+        // memcpy(newbuffer, buffer, newSize <= len ? newSize-1 : len);
 		if (buffer) {
 			free(buffer);
 		}
 		capacity = newSize - 1;
 		len = size;
 		buffer = newbuffer;
-	    ESP_LOGI(LOGTAG, "after: c=%d, l=%d, target=%d, new=%d, ptr=%p", capacity, len, size, newSize, newbuffer);
+	    //ESP_LOGI(LOGTAG, "after: c=%d, l=%d, target=%d, new=%d, ptr=%p", capacity, len, size, newSize, newbuffer);
 		return 1;
 	}
 	return 0;
 
 }
 
+
+/*
+// debugging method
 void String::dump() {
     ESP_LOGI(LOGTAG, "dump: c=%d, l=%d, ptr=%p", capacity, len, buffer);
-}
+}*/
 
 
 
@@ -341,8 +358,12 @@ unsigned char String::concat(const char *cstr, unsigned int length)
     if(!reserve(newlen)) {
         return 0;
     }
-    strcpy(buffer + len, cstr);
+    //this is increadible!!!
+    //strcpy(buffer + len, cstr);
+    memcpy(buffer + len, cstr, length);
     len = newlen;
+    buffer[newlen] = 0x00;
+
     return 1;
 }
 

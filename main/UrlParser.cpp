@@ -1,4 +1,5 @@
 #include "UrlParser.h"
+#include "String.h"
 #include <_ansi.h>
 #include <ctype.h>
 
@@ -19,7 +20,7 @@ void UrlParser::Init(){
 	muDecodedValue = 0;
 }
 
-void UrlParser::ConsumeChar(char c, std::string& url, TParam* pParam){
+void UrlParser::ConsumeChar(char c, String& url, TParam* pParam){
 
 	if (!c)
 		return;
@@ -29,7 +30,7 @@ void UrlParser::ConsumeChar(char c, std::string& url, TParam* pParam){
 			if (c == '?')
 				muState = STATE_UrlComplete;
 			else
-				url.append(1, tolower(c));
+				url += (char)tolower(c);
 			break;
 		case STATE_UrlComplete:
 		case STATE_ParamComplete:
@@ -49,10 +50,10 @@ void UrlParser::ConsumeChar(char c, std::string& url, TParam* pParam){
 			else if (pParam){
 				if (muInDecode){
 					if (ProcessHash(c))
-						pParam->paramName.append(1, muDecodedValue);
+						pParam->paramName += (char)muDecodedValue;
 				}
 				else
-					pParam->paramName.append(1, (c == '+') ? ' ' : tolower(c));
+					pParam->paramName += (c == '+') ? ' ' : (char)tolower(c);
 				muState = STATE_ParseParamName;
 			}
 			break;
@@ -68,10 +69,10 @@ void UrlParser::ConsumeChar(char c, std::string& url, TParam* pParam){
 			else if (pParam){
 				if (muInDecode){
 					if (ProcessHash(c))
-						pParam->paramValue.append(1, muDecodedValue);
+						pParam->paramValue += (char)muDecodedValue;
 				}
 				else
-					pParam->paramValue.append(1, (c == '+') ? ' ' : c);
+					pParam->paramValue += (c == '+') ? ' ' : c;
 			}
 			break;
 
@@ -80,7 +81,7 @@ void UrlParser::ConsumeChar(char c, std::string& url, TParam* pParam){
 
 void UrlParser::SignalEnd(){
 	switch(muState){
-		case STATE_ParseUrl:
+		case STATE_ParseUrl:          
 			muState = STATE_UrlComplete;
 			break;
 		case STATE_ParseParamName:

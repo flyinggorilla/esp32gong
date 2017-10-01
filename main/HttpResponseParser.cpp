@@ -43,7 +43,7 @@ HttpResponseParser::HttpResponseParser() {
 HttpResponseParser::~HttpResponseParser() {
 }
 
-void HttpResponseParser::Init(DownloadHandler* pDownloadHandler, unsigned int maxBodyBufferSize) {
+void HttpResponseParser::Init(DownAndUploadHandler* pDownloadHandler, unsigned int maxBodyBufferSize) {
 	mpDownloadHandler = pDownloadHandler;
 	mBody.clear();
 	msLocation.clear();
@@ -66,6 +66,12 @@ void HttpResponseParser::Init(DownloadHandler* pDownloadHandler, unsigned int ma
 
 }
 
+void HttpResponseParser::Clear(){
+	mBody.clear();
+	msLocation.clear();
+	msContentType.clear();
+}
+
 bool HttpResponseParser::ParseResponse(char* sBuffer, unsigned int uLen) {
 
 	// when uLen == 0, then connection is closed
@@ -76,9 +82,9 @@ bool HttpResponseParser::ParseResponse(char* sBuffer, unsigned int uLen) {
 				return SetError(ERROR_DOWNLOADHANDLER_ONRECEIVEEND_FAILED), false;
 			}
 		} else {
-			ESP_LOGI(LOGTAG, "BODY:<%s>", mBody.c_str());
+			ESP_LOGD(LOGTAG, "BODY:<%s>", mBody.c_str());
 		}
-		ESP_LOGI(LOGTAG, "CONNECTION CLOSED: RECEIVED: %u", muActualContentLength);
+		ESP_LOGD(LOGTAG, "CONNECTION CLOSED: RECEIVED: %u", muActualContentLength);
 	}
 
 	unsigned int uPos = 0;
@@ -137,14 +143,14 @@ bool HttpResponseParser::ParseResponse(char* sBuffer, unsigned int uLen) {
 						return SetError(ERROR_OK), true;
 					}
 
-					ESP_LOGI(LOGTAG, "HTTP: http/%s, status=%hu", mbHttp11 ? "1.1" : "1.0", muStatusCode);
-					ESP_LOGI(LOGTAG, "HEADER: connection: %s",
+					ESP_LOGD(LOGTAG, "HTTP: http/%s, status=%hu", mbHttp11 ? "1.1" : "1.0", muStatusCode);
+					ESP_LOGD(LOGTAG, "HEADER: connection: %s",
 							mbConClose ? "<close-connection header set>" : "<dont close connection>");
-					ESP_LOGI(LOGTAG, "HEADER: content-type: %s", msContentType.c_str());
-					ESP_LOGI(LOGTAG, "HEADER: content-length: %u %s", muContentLength,
+					ESP_LOGD(LOGTAG, "HEADER: content-type: %s", msContentType.c_str());
+					ESP_LOGD(LOGTAG, "HEADER: content-length: %u %s", muContentLength,
 							mbContentLength ? "" : "<no header set>");
 					if (msLocation.length()) {
-						ESP_LOGI(LOGTAG, "HEADER: location: %s", msLocation.c_str());
+						ESP_LOGD(LOGTAG, "HEADER: location: %s", msLocation.c_str());
 					}
 					muParseState = STATE_CopyBody;
 					if (mpDownloadHandler) {
@@ -278,9 +284,9 @@ bool HttpResponseParser::ParseResponse(char* sBuffer, unsigned int uLen) {
 				}
 
 				if (mbFinished) {
-					ESP_LOGI(LOGTAG, "RECEIVED: %u", muActualContentLength);
+					ESP_LOGD(LOGTAG, "RECEIVED: %u", muActualContentLength);
 					if (!mpDownloadHandler)
-						ESP_LOGI(LOGTAG, "BODY:<%s>", mBody.c_str());
+						ESP_LOGD(LOGTAG, "BODY:<%s>", mBody.c_str());
 				}
 				return SetError(ERROR_OK), true;
 			}

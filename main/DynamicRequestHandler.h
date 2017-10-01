@@ -3,7 +3,6 @@
 
 #include "UrlParser.h"
 #include "HttpResponse.h"
-#include <string>
 #include <list>
 
 class DynamicRequestHandler {
@@ -12,15 +11,16 @@ public:
 	virtual ~DynamicRequestHandler();
 
 	bool HandleApiRequest(std::list<TParam>& params, HttpResponse& rResponse);
-	bool HandleApiListRequest(std::list<TParam>& params, HttpResponse& rResponse);
-	bool HandleApiEditRequest(std::list<TParam>& params, HttpResponse& rResponse);
 	bool HandleInfoRequest(std::list<TParam>& params, HttpResponse& rResponse);
 	bool HandleConfigRequest(std::list<TParam>& params, HttpResponse& rResponse);
+	bool HandleSrvConfigRequest(std::list<TParam>& params, HttpResponse& rResponse);
 	bool HandleFirmwareRequest(std::list<TParam>& params, HttpResponse& response);
+	bool HandleCheckFirmwareRequest(std::list<TParam>& params, HttpResponse& response);
 
-	void CheckForRestart();
+	bool ShouldRestart() { return mbRestart; }
 
 private:
+
 	bool mbRestart;
 };
 

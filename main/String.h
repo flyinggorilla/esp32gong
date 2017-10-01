@@ -25,6 +25,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 #include <ctype.h>
 #include "pgmspace.h"
 
@@ -50,17 +51,32 @@ class String
 
 public:
     //ADDED!!!
+    /* @brief   frees allocated memory and initializes String object.
+    */
     void clear() { invalidate(); };
 
+    //ADDED!!!
+    /* @brief stream-like printf method that appends the "printf" formatted output to the String data
+     * use clear() if you dont want to append but simply reuse an existing String object 
+     *             and make sure we dont allocate more memory then necessary
+     * @param   format     normal printf style format strings
+     * @return  the number of characters that have been written, not counting the terminating null character.
+     *          If an encoding error occurs or memory allocation failed, a negative number is returned.
+     */
+    int printf(const char* format, ...);
 
     //TEMP ADDED!! DEBUGGING
-    void dump();
+    //void dump();
 
 
     /*
-     * Always clears contents!!
+     * @brief   Pre-allocates memory and initializes it with zeroes. Deletes any existing String data.
+     *          This method is particularly useful to setup a buffer that receives string or binary data.
+                That buffer can be accessed with c_str() and length() methods.
+     * @param   size  allocates minimum size+1 bytes memory, writes the memory with zeroes, and sets length() to size
+     * @return  true (1) if memory allocation was successful, false (0) otherwise
      */
-    unsigned char resize(unsigned int);
+    unsigned char resize(unsigned int size);
 
 
     // constructors

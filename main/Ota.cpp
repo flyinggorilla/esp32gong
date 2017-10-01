@@ -18,6 +18,7 @@
 #include <esp_event_loop.h>
 #include <esp_log.h>
 #include <esp_partition.h>
+#include <esp_system.h>
 
 #include <nvs.h>
 #include <nvs_flash.h>
@@ -25,7 +26,6 @@
 #include "String.h"
 #include "WebClient.h"
 
-#define LATEST_FIRMWARE_URL "https://surpro4:9999/getfirmware"
 //#define BUFFSIZE 1024
 //#define TEXT_BUFFSIZE 1024
 
@@ -33,11 +33,14 @@ static const char* LOGTAG = "ota";
 
 
 volatile int Ota::miProgress = OTA_PROGRESS_NOTYETSTARTED;
+volatile unsigned int Ota::muTimestamp = 0;
 int Ota::GetProgress() { return miProgress; }
+unsigned int Ota::GetTimestamp() { return muTimestamp; }
 
 
 Ota::Ota() {
     miProgress = OTA_PROGRESS_NOTYETSTARTED;
+    muTimestamp = esp_log_early_timestamp();
 }
 
 Ota::~Ota() {
@@ -45,11 +48,8 @@ Ota::~Ota() {
 }
 
 
-bool Ota::OnReceiveBegin(unsigned short int httpStatusCode, bool isContentLength, unsigned int contentLength) {
-
-
-    ESP_LOGI(LOGTAG, "OnReceiveBegin(%u, %u)", httpStatusCode, contentLength);
-
+bool Ota::InternalOnRecvBegin(bool isContentLength, unsigned int contentLength){
+    
     if (isContentLength) {
         muContentLength = contentLength;
     } else {
@@ -84,17 +84,31 @@ bool Ota::OnReceiveBegin(unsigned short int httpStatusCode, bool isContentLength
         miProgress = OTA_PROGRESS_FLASHERROR;
         return false;
     }
-
     ESP_LOGI(LOGTAG, "esp_ota_begin succeeded");
     return true;
 }
 
-bool Ota::OnReceiveData(char* buf, int len) {
-    //ESP_LOGI(LOGTAG, "OnReceiveData(%d)", len);
+bool Ota::OnReceiveBegin(unsigned short int httpStatusCode, bool isContentLength, unsigned int contentLength) {
+    ESP_LOGD(LOGTAG, "OnReceiveBegin(%u, %u)", httpStatusCode, contentLength);
 
-	//vTaskDelay(50); // to make the watchdog happy!!
+    if (httpStatusCode != 200)
+        return false;
+    return InternalOnRecvBegin(isContentLength, contentLength);
+}
+
+bool Ota::OnReceiveBegin(String& sUrl, unsigned int contentLength){
+    ESP_LOGD(LOGTAG, "OnReceiveBegin(%s, %u)", sUrl.c_str(), contentLength);
+    
+    if (sUrl.equals("/update"))
+        return InternalOnRecvBegin(true, contentLength);
+    return false;
+}
+
+bool Ota::OnReceiveData(char* buf, int len) {
+    ESP_LOGD(LOGTAG, "OnReceiveData(%d)", len);
 
 	esp_err_t err;
+    //ESP_LOGI(LOGTAG, "Before esp_ota_write");
     err = esp_ota_write( mOtaHandle, (const void *)buf, len);
     if (err == ESP_ERR_INVALID_SIZE) {
     	ESP_LOGE(LOGTAG, "Error partition too small for firmware data: %d", muActualDataLength + len );
@@ -107,15 +121,13 @@ bool Ota::OnReceiveData(char* buf, int len) {
     }
     muActualDataLength += len;
     miProgress = 100 * muActualDataLength / muContentLength;
-    ESP_LOGI(LOGTAG, "Have written image length %d, total %d", len, muActualDataLength);
+    ESP_LOGD(LOGTAG, "Have written image length %d, total %d", len, muActualDataLength);
     return err == ESP_OK;
 }
 
 bool Ota::OnReceiveEnd() {
     ESP_LOGI(LOGTAG, "Total Write binary data length : %u", muActualDataLength);
-
-
-    esp_err_t err;
+    //ESP_LOGI(LOGTAG, "DATA: %s", dummy.c_str());
 
     if (esp_ota_end(mOtaHandle) != ESP_OK) {
         ESP_LOGE(LOGTAG, "esp_ota_end failed!");
@@ -124,16 +136,16 @@ bool Ota::OnReceiveEnd() {
         return false;
     }
 
-    ESP_LOGW(LOGTAG, "DEBUGGING CODE ACTIVE ---- NO BOOT PARTITION SET!!!!!");
+    //ESP_LOGW(LOGTAG, "DEBUGGING CODE ACTIVE ---- NO BOOT PARTITION SET!!!!!");
 
-/*    err = esp_ota_set_boot_partition(mpUpdatePartition);
+    esp_err_t err = esp_ota_set_boot_partition(mpUpdatePartition);
     if (err != ESP_OK) {
         ESP_LOGE(LOGTAG, "esp_ota_set_boot_partition failed! err=0x%x", err);
         miProgress = OTA_PROGRESS_FLASHERROR;
         //task_fatal_error();
         return false;
-    }
-*/
+    } 
+    
     ESP_LOGI(LOGTAG, "Prepare to restart system!");
     miProgress = OTA_PROGRESS_FINISHEDSUCCESS;
     return true;
@@ -200,8 +212,7 @@ void task_function_firmwareupdate(void* user_data) {
 	ESP_LOGW(LOGTAG, "Starting Firmware Update Task ....");
 
     Ota ota;
-    //if(ota.UpdateFirmware("https://github.com/flyinggorilla/esp32gong/raw/master/firmware/ufo-esp32.bin")) {
-    if(ota.UpdateFirmware(LATEST_FIRMWARE_URL)) {
+    if(ota.UpdateFirmware((const char*)user_data)) { //url
       	ESP_LOGI(LOGTAG, "Firmware updated. Rebooting now......");
     } else {
 	  	ESP_LOGE(LOGTAG, "OTA update failed!");
@@ -214,9 +225,10 @@ void task_function_firmwareupdate(void* user_data) {
 
 
 
-void Ota::StartUpdateFirmwareTask() {
+void Ota::StartUpdateFirmwareTask(const char* url) {
+    miProgress = 0;
 	//xTaskCreate(&task_function_firmwareupdate, "firmwareupdate", 8192, NULL, 5, NULL);
-	int core = 0;
-	xTaskCreatePinnedToCore(&task_function_firmwareupdate, "firmwareupdate", 8192, NULL, 5, NULL, core);
+    // Pin firmware update task to core 0 --- otherwise we get weird crashes
+   	xTaskCreatePinnedToCore(&task_function_firmwareupdate, "firmwareupdate", 8192, (void*)url, 6, NULL, 0);
 }
 

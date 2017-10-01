@@ -10,6 +10,9 @@
 
 #include "Wav.h"
 
+#include "freertos/FreeRTOS.h"
+#include "freertos/semphr.h"
+
 class I2SPlayer {
 public:
 	I2SPlayer();
@@ -51,6 +54,7 @@ public:
 private:
 	Wav wav;
 	unsigned char volume = 100; // default is max 100% volume
+	SemaphoreHandle_t playerMutex;
 
 };
 

@@ -99,14 +99,14 @@ void Esp32Gong::Start() {
 	ESP_LOGI(LOGTAG, "Welcome to Bernd's ESP32 Gong");
 	ESP_LOGI(LOGTAG, "ESP-IDF version %s", esp_get_idf_version());
 	ESP_LOGI(LOGTAG, "Firmware version %s", FIRMWARE_VERSION);
-
-	mConfig.Read();
-
 	musicPlayer.init();
 	musicPlayer.prepareWav(wavdata_h, sizeof(wavdata_h));
 	//musicPlayer.playAsync();
 
 	mbButtonPressed = !gpio_get_level(GPIO_NUM_0);
+	// perform fast flash of LED	
+mStateDisplay.SetAPMode(mConfig.mbAPMode);
+	mApiStore.Init();
 
 	gpio_pad_select_gpio(10);
 	gpio_set_direction(GPIO_NUM_0, GPIO_MODE_INPUT);
@@ -145,9 +145,9 @@ void Esp32Gong::Start() {
 		//wifi.StartMDNS();
 	}
 
-	//while(!wifi.IsConnected()) {
-	//	vTaskDelay(100/portTICK_PERIOD_MS);
-	//}
+	while(!wifi.IsConnected()) {
+		vTaskDelay(100/portTICK_PERIOD_MS);
+	}
 
 	//xTaskCreate(&task_test_webclient, "Task_TestWebClient", 8192, this, 5, NULL);
 	//ESP_LOGI(LOGTAG, "********************** OTA MAIN VERSION *********************");
@@ -235,13 +235,7 @@ void Esp32Gong::TaskTestWebClient() {
 }
 
 void Esp32Gong::TaskWebServer() {
-	while (true){
-		if (wifi.IsConnected()){
-			ESP_LOGI("Esp32Gong", "starting Webserver");
-			webServer.StartWebServer();
-		}
-		vTaskDelay(1000 / portTICK_PERIOD_MS);
-	}
+	webServer.StartWebServer();
 }
 
 
@@ -256,17 +250,13 @@ void Esp32Gong::TaskResetButton() {
 
 
 
-	while (true) {
+	while (1) {
 		if (wifi.IsConnected() && mbApiCallReceived) {
 			gpio_set_level((gpio_num_t) ONBOARDLED_GPIO, (gpio_mode_t) level);
 			level = !level;
 			ticks = 0;
 		} else {
-			int minticks = 1;
-			if (mConfig.mbAPMode)
-				minticks = 0; // blink fast in APmode
-
-			if (ticks > minticks) { // blink half speed
+			if (ticks > 1) { // blink half speed
 				level = !level;
 				ticks = 0;
 			}

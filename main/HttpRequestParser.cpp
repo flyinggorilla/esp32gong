@@ -1,4 +1,6 @@
 #include "HttpRequestParser.h"
+#include "DownAndUploadHandler.h"
+#include "String.h"
 #include "freertos/FreeRTOS.h"
 #include <esp_log.h>
 
@@ -6,16 +8,21 @@
 HttpRequestParser::HttpRequestParser(int socket) {
 	mSocket = socket;
 
-	Init();
+	Init(NULL);
 }
 
 HttpRequestParser::~HttpRequestParser() {
 }
 
-void HttpRequestParser::Init(){
+void HttpRequestParser::Init(DownAndUploadHandler* pUploadHandler){
 	Clear();
 
+	mpUploadHandler = pUploadHandler;
+	mUrlsToStoreUploadinBodyFor.clear();
+	mbStoreUploadInBody = false;
+
 	muError = 0;
+	mbParseFormBody = false;
 	mbFinished = false;
 	mbConClose = true;
 	mUrlParser.Init();
@@ -40,8 +47,9 @@ bool HttpRequestParser::ParseRequest(char* sBuffer, __uint16_t uLen){
 	__uint16_t uPos = 0;
 	while (uPos < uLen){
 		char c = sBuffer[uPos];
-		uPos++;
 
+		//ESP_LOGD("HttpRequestParser", "St: %d, Char: %c", muParseState, c);	
+		uPos++;
 		switch (muParseState){
 			case STATE_Method:
 				if (c == ' '){
@@ -65,16 +73,16 @@ bool HttpRequestParser::ParseRequest(char* sBuffer, __uint16_t uLen){
 					mStringParser.AddStringToParse("http/1.0");
 					mStringParser.AddStringToParse("http/1.1");
 				}
-				else
+				else{
 					mUrlParser.ConsumeChar(c, mUrl, mpActParam);
-				switch (mUrlParser.GetState()){
-					case STATE_UrlComplete:
-					case STATE_ParamComplete:
-						if (c != ' '){
+
+					switch (mUrlParser.GetState()){
+						case STATE_UrlComplete:
+						case STATE_ParamComplete:
 							mParams.emplace_back();
 							mpActParam = &mParams.back();
-						}
-						break;
+							break;
+					}
 				}
 				break;
 
@@ -112,10 +120,16 @@ bool HttpRequestParser::ParseRequest(char* sBuffer, __uint16_t uLen){
 							return true;
 						}
 						else{
-							if (mBoundary.size()){
+							if (mBoundary.length()){
 							    muParseState = STATE_ProcessMultipartBodyStart;
 								mStringParser.Init();
 								mStringParser.AddStringToParse("\r\n\r\n");
+							}
+							else if (mbParseFormBody){
+								muParseState = STATE_ParseFormBody;
+								mParams.emplace_back();
+								mpActParam = &mParams.back();
+							break;
 							}
 							else
 								muParseState = STATE_CopyBody;
@@ -136,20 +150,21 @@ bool HttpRequestParser::ParseRequest(char* sBuffer, __uint16_t uLen){
 					__uint8_t uFound;
 					if (mStringParser.Found(uFound)){
 						switch (uFound){
-							case 0:
+							case 0: //connection
 								muParseState = STATE_CheckHeaderValue;
 								mStringParser.Init();
 								mStringParser.AddStringToParse("close");
 								mStringParser.AddStringToParse("keep-alive");
 								break;
-							case 1:
+							case 1: //content-length
 								muParseState = STATE_ReadContentLength;
 								muContentLength = 0;
 								break;
-							case 2:
+							case 2: //content-type
 								muParseState = STATE_CheckHeaderValue;
 								mStringParser.Init();
 								mStringParser.AddStringToParse("multipart/form-data");
+								mStringParser.AddStringToParse("application/x-www-form-urlencoded");
 								break;
 						}
 					}
@@ -178,9 +193,17 @@ bool HttpRequestParser::ParseRequest(char* sBuffer, __uint16_t uLen){
 					}
 					else{
 						if (mStringParser.Found(u)){
-							muParseState = STATE_SearchBoundary;
-							mStringParser.Init();
-							mStringParser.AddStringToParse("boundary=");
+							switch (u){
+								case 0: //multipart/form-data
+									muParseState = STATE_SearchBoundary;
+									mStringParser.Init();
+									mStringParser.AddStringToParse("boundary=");
+									break;
+								case 1: //application/x-www-form-urlencoded
+									mbParseFormBody = true;
+									muParseState = STATE_SearchEndOfHeaderLine;
+									break;
+							}
 						}
 					}
 				}
@@ -226,38 +249,79 @@ bool HttpRequestParser::ParseRequest(char* sBuffer, __uint16_t uLen){
 						mBoundary += c;
 				}
 			    break;
+			case STATE_ParseFormBody:
+
+				mUrlParser.ConsumeChar(c, mUrl, mpActParam);
+				muActBodyLength++;
+
+				switch (mUrlParser.GetState()){
+					case STATE_UrlComplete:
+					case STATE_ParamComplete:
+						mParams.emplace_back();
+						mpActParam = &mParams.back();
+						break;
+				}
+				mbFinished = muActBodyLength >= muContentLength;
+				break;
+
 			case STATE_CopyBody:
 				uPos--;
-				mBody.append(sBuffer + uPos, uLen - uPos);
-				mbFinished = mBody.size() >= muContentLength;
+				mBody.concat(sBuffer + uPos, uLen - uPos);
+				mbFinished = mBody.length() >= muContentLength;
 				return true;
 				
 			case STATE_ProcessMultipartBodyStart:
 				mStringParser.ConsumeCharSimple(c);
 				muActBodyLength++;
 				__uint8_t u;
-				if (mStringParser.Found(u))
+				if (mStringParser.Found(u)){
 					muParseState = STATE_ProcessMultipartBody;
+					if (!mpUploadHandler || !mpUploadHandler->OnReceiveBegin(mUrl, muContentLength)){
+						std::list<String>::iterator it = mUrlsToStoreUploadinBodyFor.begin();
+						while (it != mUrlsToStoreUploadinBodyFor.end()){
+							if ((*it).equals(mUrl)){
+								mbStoreUploadInBody = true;
+								break;
+							}
+							it++;
+						}
+						if (!mbStoreUploadInBody)
+							return SetError(5), false;
+					}
+				}
 				mbFinished = muActBodyLength >= muContentLength;
 				break;
 			case STATE_ProcessMultipartBody:
 				uPos--;
-				ProcessMultipartBody(sBuffer + uPos, uLen - uPos);
+				uLen -= uPos;
+
+				if (muActBodyLength + 8 + mBoundary.length() < muContentLength){
+					if (muActBodyLength + 8 + mBoundary.length() + uLen > muContentLength){
+						__uint16_t u = muContentLength - (muActBodyLength + 8 + mBoundary.length());
+						if (!ProcessMultipartBody(sBuffer + uPos, u))
+							return SetError(6), false;
+					}
+					else{
+						if (!ProcessMultipartBody(sBuffer + uPos, uLen))
+							return SetError(6), false;
+					}	
+				}
+				muActBodyLength+= uLen;
 				mbFinished = muActBodyLength >= muContentLength;
+				if (mbFinished && mpUploadHandler && !mbStoreUploadInBody)
+					mpUploadHandler->OnReceiveEnd();
 				return true;
 		}
 	}
 	return true;
 }
 
-void HttpRequestParser::ProcessMultipartBody(char* sBuffer, __uint16_t uLen){
-	if (muActBodyLength + 8 + mBoundary.size() < muContentLength){
-		if (muActBodyLength + 8 + mBoundary.size() + uLen > muContentLength){
-			__uint16_t u = muContentLength - (muActBodyLength + 8 + mBoundary.size());
-			mBody.append(sBuffer, u);
-			return;
-		}
-		mBody.append(sBuffer, uLen);
+bool HttpRequestParser::ProcessMultipartBody(char* sBuffer, __uint16_t uLen){
+	if (mbStoreUploadInBody){
+		mBody.concat(sBuffer, uLen);
+		return true;
 	}
-	muActBodyLength+= uLen;
+	if (mpUploadHandler)
+		return mpUploadHandler->OnReceiveData(sBuffer, uLen);
+	return false;
 }

@@ -16,11 +16,11 @@
 #include <esp_err.h>
 
 
+
 #define I2S_NUM I2S_NUM_0
 
 I2SPlayer::I2SPlayer() {
-	// TODO Auto-generated constructor stub
-
+	playerMutex = xSemaphoreCreateMutex();
 }
 
 I2SPlayer::~I2SPlayer() {
@@ -62,6 +62,9 @@ bool I2SPlayer::play() {
 	if (!wav.isInitialized()) {
 		return false;
 	}
+
+	xSemaphoreTake(playerMutex, portMAX_DELAY);
+
 	unsigned char attenuation = (100 - volume) / 16;
 
 	wav.rewind();
@@ -78,7 +81,7 @@ bool I2SPlayer::play() {
 		i2s_push_sample(I2S_NUM, (char*) &sample_val, portMAX_DELAY);
 	}
 	i2s_stop(I2S_NUM);
-
+	xSemaphoreGive(playerMutex);
 	return true;
 }
 

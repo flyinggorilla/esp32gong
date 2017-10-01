@@ -3,7 +3,7 @@
 
 #include <stdio.h>
 #include <list>
-#include "DownloadHandler.h"
+#include "DownAndUploadHandler.h"
 #include "Url.h"
 #include "HttpResponseParser.h"
 #include "String.h"
@@ -24,6 +24,7 @@ public:
 	 */
 	bool Prepare(Url* pUrl);
 
+	void Clear();
 
 	/*
 	 * Adds HTTP headers to the request - you should have called Prepare() beforehand
@@ -41,7 +42,7 @@ public:
 	 * 		- HTTP response status code
 	 * 		- 0 on error
 	 */
-	void SetDownloadHandler(DownloadHandler* pDownloadHandler);
+	void SetDownloadHandler(DownAndUploadHandler* pDownloadHandler);
 
 
 
@@ -49,7 +50,7 @@ public:
 	 * executes HTTP(S) GET request
 	 * it stores response in internal dynamic memory in case no DownloadHandler is set
 	 * optionally call SetMaxResponseDataSize() in case the default memory allocation limit of 16kB is too small
-	 * optionally call ClearResponseData() to clear the buffer
+	 * optionally call Clear() to clear the buffer
 	 * @return
 	 * 		- HTTP response status code
 	 * 		- 0 on error
@@ -61,7 +62,7 @@ public:
 	 * executes HTTP(S) POST request
 	 * it stores response in internal dynamic memory in case no DownloadHandler is set
 	 * optionally call SetMaxResponseDataSize() in case the default memory allocation limit of 16kB is too small
-	 * optionally call ClearResponseData() to clear the buffer
+	 * optionally call Clear() to clear the buffer
 	 * @param POST data and size
 	 * @return
 	 * 		- HTTP response status code
@@ -74,7 +75,7 @@ public:
 	 * executes HTTP(S) POST request
 	 * it stores response in internal dynamic memory in case no DownloadHandler is set
 	 * optionally call SetMaxResponseDataSize() in case the default memory allocation limit of 16kB is too small
-	 * optionally call ClearResponseData() to clear the buffer
+	 * optionally call Clear() to clear the buffer
 	 * @param POST data (can be binary too)
 	 * @return
 	 * 		- HTTP response status code
@@ -86,7 +87,7 @@ public:
 	 * in case the default max 16kB dynamic buffer limit is too small, you can increase the limit here.
 	 * @param maxBodyBufferSize
 	 * 			- protects from allocating too much memory to store the message body.
-	 * 			  optionally use ClearResponseData() to release message body memory.
+	 * 			  optionally use Clear() to release message body memory.
 	 * @attention	for large data downloads it is recommended to use DownloadHandlers to stream the data without buffering
 	 */
 	void SetMaxResponseDataSize(unsigned int maxResponseDataSize) { muMaxResponseDataSize = maxResponseDataSize; }
@@ -98,11 +99,6 @@ public:
 	 */
 	String& GetResponseData() { return mHttpResponseParser.GetBody(); }
 
-	/*
-	 * optionally clear internal HTTP response content buffer - irrelevant when using DownloadHandler
-	 *
-	 */
-	void ClearResponseData() { mHttpResponseParser.GetBody().clear(); }
 
 	/*
 	 * @returns the HTTP response content-type. returns an empty string of no content-type header was set
@@ -113,7 +109,7 @@ public:
 
 private:
 	HttpResponseParser mHttpResponseParser;
-	DownloadHandler* mpDownloadHandler = NULL;
+	DownAndUploadHandler* mpDownloadHandler = NULL;
 	Url* mpUrl = NULL;
 	std::list<String> mlRequestHeaders;
 	const char* mpPostData = NULL;

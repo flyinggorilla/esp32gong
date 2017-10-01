@@ -1,10 +1,9 @@
 #ifndef MAIN_HTTPREQUESTPARSER_HPP_
 #define MAIN_HTTPREQUESTPARSER_HPP_
 
-//#include <string>
 #include <list>
 
-#include "DownloadHandler.h"
+#include "DownAndUploadHandler.h"
 #include "String.h"
 #include "StringParser.h"
 
@@ -25,8 +24,9 @@ public:
 	 * 			  optionally use Clear() to release message body memory.
 	 * 			- irrelevant if DownloadHandler is set
 	 */
-	void Init(DownloadHandler* pDownloadHandler, unsigned int maxBodyBufferSize = 16*1024);
+	void Init(DownAndUploadHandler* pDownloadHandler, unsigned int maxBodyBufferSize = 16*1024);
 
+	void Clear();
 
 	/*
 	 * feed parser with stream data, in a loop until ResponseFinised() is true
@@ -57,7 +57,7 @@ public:
 	short GetError()  	{ return muError; };
 
 private:
-	void InternalInit(DownloadHandler* pDownloadHandler, unsigned int maxBodyBufferSize);
+	void InternalInit(DownAndUploadHandler* pDownloadHandler, unsigned int maxBodyBufferSize);
 	void SetError(short u) { muError = u; };
 
 private:
@@ -73,7 +73,7 @@ private:
 	unsigned short muStatusCode;
 	String msContentType;
 	String msLocation;
-	DownloadHandler* mpDownloadHandler = NULL;
+	DownAndUploadHandler* mpDownloadHandler = NULL;
 	uint8_t muParseState;
 	StringParser mStringParser;
 	uint8_t muCrlfCount;

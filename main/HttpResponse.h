@@ -1,7 +1,7 @@
 #ifndef MAIN_HTTPRESPONSE_H_
 #define MAIN_HTTPRESPONSE_H_
 
-#include <string>
+#include "String.h"
 #include <list>
 #include <lwip/sockets.h>
 #include "openssl/ssl.h"
@@ -22,6 +22,7 @@ public:
 	void AddHeader(const char* sName, __uint16_t  uValue);
 
 	bool Send(const char* sBody, __uint16_t uBodyLen);
+	bool Send(String& sResponse) { return Send(sResponse.c_str(), sResponse.length()); };
 	bool Send() { return Send(NULL, 0); };
 
 public:
@@ -42,7 +43,7 @@ private:
 	__uint16_t muRetCode;
 	bool mbHttp11;
 	bool mbConnectionClose;
-	std::list<std::string> mHeaders;
+	std::list<String> mHeaders;
 
 };
 
