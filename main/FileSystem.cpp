@@ -8,7 +8,6 @@
 
 #include <stdlib.h>
 #include <stdio.h>
-#include <string.h>
 #include "esp_log.h"
 #include "esp_vfs.h"
 #include "esp_vfs_fat.h"
@@ -53,9 +52,9 @@ void FileSystem::Unmount() {
 }
 
 
-bool FileSystem::Open(std::string s, bool write) {
+bool FileSystem::Open(String filename, bool write) {
 	ESP_LOGI(TAG, "Opening file");
-	s.insert(0, base_path);
+	String s = base_path + filename;
 	mpFileHandle = fopen(s.c_str(), write ? "wb" : "rb");
 	if (mpFileHandle == NULL) {
 	    ESP_LOGE(TAG, "Failed to open file.");
@@ -69,9 +68,9 @@ bool FileSystem::Write(const char* data, unsigned int size) {
 	return fwrite(data, 1, size, mpFileHandle) == size;
 }
 
-bool FileSystem::Write(std::string& writebuffer) {
+bool FileSystem::Write(String& writebuffer) {
 	if (!mpFileHandle) return 0;
-	return Write(writebuffer.data(), writebuffer.size());
+	return Write(writebuffer.c_str(), writebuffer.length());
 }
 
 
@@ -80,9 +79,9 @@ unsigned int FileSystem::Read(char* buf, unsigned int len) {
 	return fread(buf, len, 1, mpFileHandle);
 }
 
-unsigned int FileSystem::Read(std::string& readbuffer, unsigned int maxread) {
+unsigned int FileSystem::Read(String& readbuffer, unsigned int maxread) {
 	readbuffer.resize(maxread);
-	size_t read = Read((char*)readbuffer.data(), maxread);
+	size_t read = Read((char*)readbuffer.c_str(), maxread);
 	if (read != maxread) {
 		readbuffer.resize(read);
 	}

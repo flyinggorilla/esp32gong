@@ -7,14 +7,13 @@
 class HttpRequestParser;
 class HttpResponse;
 class DownAndUploadHandler;
+class UploadHandlerList;
 class String;
 
 class WebServer {
 public:
 	WebServer();
 	virtual ~WebServer();
-
-	void SetUploadHandler(DownAndUploadHandler* pUploadHandler) { mpUploadHandler = pUploadHandler; };
 
 	bool Start(__uint16_t port, bool useSsl, String* pCertificate);
 
@@ -28,12 +27,17 @@ public:
 	void EnterCriticalSection();
 	void LeaveCriticalSection();
 
+	//void AddUploadHandler(String& sUrl, DownAndUploadHandler* pUploadHandler);
+
+	// override this method to set an Upload handler depending on URL
+	virtual DownAndUploadHandler* HandleUploadRequest(String &sUrl) { return NULL; };
+
+	// override this method to handle requests
 	virtual bool HandleRequest(HttpRequestParser& httpParser, HttpResponse& httpResponse) = 0;
 
 
 private:
 	SSL_CTX* mpSslCtx;
-	DownAndUploadHandler* mpUploadHandler;
 
 	portMUX_TYPE myMutex;
 	bool mbFree;

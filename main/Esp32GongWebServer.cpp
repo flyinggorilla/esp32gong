@@ -17,8 +17,10 @@
 #include "indexhtml.h"
 #include "keypem.h"
 #include "certpem.h"
+#include "Storage.h"
 
 extern Esp32Gong esp32gong;
+extern Storage storage;
 
 static char tag[] = "Esp32GongWebServer";
 
@@ -26,7 +28,6 @@ static char tag[] = "Esp32GongWebServer";
 
 Esp32GongWebServer::Esp32GongWebServer() {
 	mbRestart = false;
-	SetUploadHandler(&mOta);
 }
 
 Esp32GongWebServer::~Esp32GongWebServer() {
@@ -42,9 +43,22 @@ bool Esp32GongWebServer::StartWebServer(){
 		port = esp32gong.GetConfig().muWebServerPort;
 	else
 		port = esp32gong.GetConfig().mbWebServerUseSsl ? 443 : 80;
+
+	
 	
 	return Start(port, esp32gong.GetConfig().mbWebServerUseSsl, &(esp32gong.GetConfig().msWebServerCert));		
 }
+
+DownAndUploadHandler* Esp32GongWebServer::HandleUploadRequest(String& sUrl) {
+	if (sUrl.compareTo("/update")) {
+		return &mOta;
+	}
+	if (sUrl.compareTo("/fileupload")) {
+		return &storage;
+	}
+	return NULL;
+}
+
 
 
 bool Esp32GongWebServer::HandleRequest(HttpRequestParser& httpParser, HttpResponse& httpResponse){

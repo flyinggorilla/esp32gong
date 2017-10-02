@@ -19,11 +19,10 @@
 
 #include "Config.h"
 #include "I2SPlayer.h"
-#include "temperature.h"
 #include "wavdata.h"
 #include "Esp32GongWebServer.h"
 #include "Wifi.h"
-#include "FileSystem.h"
+#include "Storage.h"
 #include "Url.h"
 #include "WebClient.h"
 #include "Ota.h"
@@ -34,7 +33,7 @@
 I2SPlayer musicPlayer;
 Esp32GongWebServer webServer;
 Esp32Gong esp32gong;
-FileSystem fileSystem;
+Storage storage;
 Wifi wifi;
 
 
@@ -101,6 +100,8 @@ void Esp32Gong::Start() {
 	ESP_LOGI(LOGTAG, "Firmware version %s", FIRMWARE_VERSION);
 
 	mConfig.Read();
+
+	storage.Mount();
 
 	musicPlayer.init();
 	musicPlayer.prepareWav(wavdata_h, sizeof(wavdata_h));
@@ -252,9 +253,6 @@ void Esp32Gong::TaskDnsServer() {
 void Esp32Gong::TaskResetButton() {
 	int level = 0;
 	int ticks = 0;
-	int tempticks = 0;
-
-
 
 	while (true) {
 		if (wifi.IsConnected() && mbApiCallReceived) {
@@ -272,12 +270,6 @@ void Esp32Gong::TaskResetButton() {
 			}
 		}
 		ticks++;
-		tempticks++;
-		if (tempticks > 1*60) {
-			float t = esp32_temperature();
-			ESP_LOGI(LOGTAG, "Temperature %3.1f", t);
-			tempticks = 0;
-		}
 
 		gpio_set_level((gpio_num_t) ONBOARDLED_GPIO, (gpio_mode_t) level);
 		vTaskDelay(500 / portTICK_PERIOD_MS);

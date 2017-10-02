@@ -8,14 +8,12 @@
 #ifndef MAIN_FILESYSTEM_H_
 #define MAIN_FILESYSTEM_H_
 
-#include <string>
 #include <stdlib.h>
-
 #include <stdio.h>
-#include <string.h>
 #include "esp_vfs.h"
 #include "esp_vfs_fat.h"
 #include "esp_system.h"
+#include "String.h"
 
 /*
  * @brief
@@ -32,11 +30,11 @@ public:
 	bool Mount();
 	void Unmount();
 
-	bool Open(std::string s, bool write = true);
+	bool Open(String s, bool write = true);
 	bool Write(const char* data, unsigned int size);
 	unsigned int Read(char* buf, unsigned int maxlen);
-	unsigned int Read(std::string& readbuffer, unsigned int maxread);
-	bool Write(std::string& writebuffer);
+	unsigned int Read(String& readbuffer, unsigned int maxread);
+	bool Write(String& writebuffer);
 	void Close();
 	const char* LastError();
 	unsigned int getBytesWritten() { return bytesWritten; }

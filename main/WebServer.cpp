@@ -232,8 +232,8 @@ void WebServer::WebRequestHandler(int socket, int conNumber){
 	ESP_LOGD(tag, "<%d> WebRequestHandler after - heapfree: %d", conNumber, esp_get_free_heap_size());
    
     while (1){
-		httpParser.Init(mpUploadHandler);
-		//httpParser.AddUploadUrl("/updatecert");
+		httpParser.Init();
+		//httpParser.AddUploadHandler("/update", );
 
 		while(1) {
 
@@ -255,10 +255,16 @@ void WebServer::WebRequestHandler(int socket, int conNumber){
 			ESP_LOGD(tag, "<%d> received %d bytes", conNumber, sizeRead);
 			receivedSomething = true;
 				
-			if (!httpParser.ParseRequest(data, sizeRead)){
-				ESP_LOGW(tag, "<%d> HTTP Parsing error: %d", conNumber, httpParser.GetError());
+			if (!httpParser.ParseRequestHeader(data, sizeRead)){
+				ESP_LOGW(tag, "<%d> HTTP Parsing of header error: %d", conNumber, httpParser.GetError());
 				goto EXIT;
 			}
+
+			if (!httpParser.ParseRequestBody(HandleUploadRequest(httpParser.GetUrl()))){
+				ESP_LOGW(tag, "<%d> HTTP Parsing of body error: %d", conNumber, httpParser.GetError());
+				goto EXIT;
+			}
+			
 			if (httpParser.RequestFinished()){
 				break;
 			}
@@ -306,4 +312,6 @@ bool WebServer::WaitForData(int socket, __uint8_t timeoutS){
 	tv.tv_sec = timeoutS;
 	return select(FD_SETSIZE, &readfds, 0, 0, &tv);
 }
+
+
 

@@ -8,6 +8,7 @@
 #include "String.h"
 #include "WebClient.h"
 #include "Wifi.h"
+#include "temperature.h"
 
 
 static char tag[] = "DynamicRequestHandler";
@@ -102,8 +103,9 @@ bool DynamicRequestHandler::HandleInfoRequest(std::list<TParam>& params, HttpRes
 
 	sBody.printf("\"macaddress\":\"%x:%x:%x:%x:%x:%x\",", sHelp[0], sHelp[1], sHelp[2], sHelp[3], sHelp[4], sHelp[5]);
 	sBody.printf("\"firmwareversion\":\"%s\",", FIRMWARE_VERSION);
-	//sBody.printf("\"ufoid\":\"%s\",", esp32gong.GetConfig().msUfoId.c_str());
-	//sBody.printf("\"ufoname\":\"%s\",", esp32gong.GetConfig().msUfoName.c_str());
+	sBody.printf("\"temperature\":\"%3.1f\",", esp32_temperature());
+	//sBody.printf("\"deviceid\":\"%s\",", esp32gong.GetConfig().msUfoId.c_str());
+	//sBody.printf("\"devicename\":\"%s\",", esp32gong.GetConfig().msUfoName.c_str());
 	sBody.printf("\"organization\":\"%s\",", esp32gong.GetConfig().msOrganization.c_str());
 	sBody.printf("\"department\":\"%s\",", esp32gong.GetConfig().msDepartment.c_str());
 	sBody.printf("\"location\":\"%s\"", esp32gong.GetConfig().msLocation.c_str());

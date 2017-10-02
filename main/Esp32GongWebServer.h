@@ -16,6 +16,7 @@ public:
 	bool StartWebServer();
 
 	virtual bool HandleRequest(HttpRequestParser& httpParser, HttpResponse& httpResponse);
+	virtual DownAndUploadHandler* HandleUploadRequest(String& sUrl);
 
 
 private:

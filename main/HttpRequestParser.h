@@ -31,12 +31,11 @@ public:
 	HttpRequestParser(int socket);
 	virtual ~HttpRequestParser();
 
-	void Init(DownAndUploadHandler* pUploadHandler);
+	void Init();
 	void Clear();
-	void AddUploadUrl(const char* sUrl) { mUrlsToStoreUploadinBodyFor.push_back(sUrl); };
 
-	bool ParseRequest(char* sBuffer, __uint16_t uLen);
-	bool ProcessMultipartBody(char* sBuffer, __uint16_t uLen);
+	bool ParseRequestHeader(char* sBuffer, __uint16_t uLen);
+	bool ParseRequestBody(DownAndUploadHandler* pUploadHandler = NULL);
 
 	bool RequestFinished() 	{ return mbFinished; };
 	bool IsHttp11() 		{ return mbHttp11; };
@@ -52,18 +51,23 @@ public:
 	__uint8_t GetError()  	{ return muError; };
 
 private:
-	std::list<String> mUrlsToStoreUploadinBodyFor;
+	bool ProcessMultipartBody(char* sBuffer, __uint16_t uLen, DownAndUploadHandler* pUploadHandler);
+
 	int mSocket;
 	UrlParser mUrlParser;
 	String mUrl;
 	std::list<TParam> mParams;
 	TParam* mpActParam;
 
+	
+	__uint16_t muLen;
+	__uint16_t muPos;
+	char* msBuffer;
+	
 	String mBody;
 	String mBoundary;
 	__uint32_t muContentLength;
 	__uint32_t muActBodyLength;
-	DownAndUploadHandler* mpUploadHandler;
 	
 	bool mbParseFormBody;
 	bool mbStoreUploadInBody;

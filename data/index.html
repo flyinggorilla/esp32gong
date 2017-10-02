@@ -92,6 +92,7 @@
 				<li class="divider">System</li>
 				<!-- TODO class=pull-right doesnt work for wider strings -->
 				<li class="padded-list">Heap: <span id="infoheap">-</span></li>
+				<li class="padded-list">Temperature: <span id="infotemperature">-</span></li>
 				<li class="padded-list">Firmware: <span id="infofirmwareversion">-</span></li>
 				<li class="divider" id="networkmode">Network</li>
 				<li class="padded-list" id="liinfolastiptoap">Last IP from DHCP: <span id="infolastiptoap">-</span></li>
@@ -524,9 +525,10 @@
 						console.log(xhr.response);
 						var result = JSON.parse(xhr.response);
 						//document.getElementById('esp32id').innerHTML = result.esp32id;
-						//document.getElementById('infoheap').innerHTML = result.heap;
+						document.getElementById('infoheap').innerHTML = result.heap;
 						document.getElementById('infofirmwareversion').innerHTML = result.firmwareversion;
 						document.getElementById('infomacaddress').innerHTML = result.macaddress;
+						document.getElementById('infotemperature').innerHTML = result.temperature;
 						if (result.apmode == '1')
 							document.getElementById('networkmode').innerHTML = 'Network - Access Point mode';
 						else
@@ -579,6 +581,8 @@
 						}
 						else
 							document.getElementById('liapchannel').style = 'Display:None';
+
+
 
 					},
 					error: function (res, flagError, xhr) {
