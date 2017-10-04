@@ -35,6 +35,9 @@ Esp32GongWebServer::~Esp32GongWebServer() {
 
 bool Esp32GongWebServer::StartWebServer(){
 
+	AddUploadHandler("/update", &mOta);
+	AddUploadHandler("/fileupload", &storage);
+
 	if (esp32gong.GetConfig().mbAPMode)
 		return Start(80, false, NULL);	
 	
@@ -44,22 +47,8 @@ bool Esp32GongWebServer::StartWebServer(){
 	else
 		port = esp32gong.GetConfig().mbWebServerUseSsl ? 443 : 80;
 
-	
-	
 	return Start(port, esp32gong.GetConfig().mbWebServerUseSsl, &(esp32gong.GetConfig().msWebServerCert));		
 }
-
-DownAndUploadHandler* Esp32GongWebServer::HandleUploadRequest(String& sUrl) {
-	if (sUrl.compareTo("/update")) {
-		return &mOta;
-	}
-	if (sUrl.compareTo("/fileupload")) {
-		return &storage;
-	}
-	return NULL;
-}
-
-
 
 bool Esp32GongWebServer::HandleRequest(HttpRequestParser& httpParser, HttpResponse& httpResponse){
 

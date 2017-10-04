@@ -26,16 +26,21 @@
 class DownAndUploadHandler;
 
 
+class UploadHandler {
+public:
+	String mUrl;
+	DownAndUploadHandler* mpUploadHandler;
+};
+
 class HttpRequestParser {
 public:
 	HttpRequestParser(int socket);
 	virtual ~HttpRequestParser();
 
-	void Init();
+	void Init(std::list<UploadHandler>* pUploadHandlerList);
 	void Clear();
 
-	bool ParseRequestHeader(char* sBuffer, __uint16_t uLen);
-	bool ParseRequestBody(DownAndUploadHandler* pUploadHandler = NULL);
+	bool ParseRequest(char* sBuffer, __uint16_t uLen);
 
 	bool RequestFinished() 	{ return mbFinished; };
 	bool IsHttp11() 		{ return mbHttp11; };
@@ -51,7 +56,7 @@ public:
 	__uint8_t GetError()  	{ return muError; };
 
 private:
-	bool ProcessMultipartBody(char* sBuffer, __uint16_t uLen, DownAndUploadHandler* pUploadHandler);
+	bool ProcessMultipartBody(char* sBuffer, __uint16_t uLen);
 
 	int mSocket;
 	UrlParser mUrlParser;
@@ -59,11 +64,9 @@ private:
 	std::list<TParam> mParams;
 	TParam* mpActParam;
 
-	
-	__uint16_t muLen;
-	__uint16_t muPos;
-	char* msBuffer;
-	
+	std::list<UploadHandler>* mpUploadHandlerList;
+	DownAndUploadHandler* mpUploadHandler;
+
 	String mBody;
 	String mBoundary;
 	__uint32_t muContentLength;

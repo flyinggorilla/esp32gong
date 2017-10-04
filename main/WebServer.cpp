@@ -85,6 +85,12 @@ void WebServer::LeaveCriticalSection(){
 }
 
 
+void WebServer::AddUploadHandler(String url, DownAndUploadHandler* pUploadHandler){
+	mUploadHandlerList.emplace_back();
+	mUploadHandlerList.back().mUrl = url;
+	mUploadHandlerList.back().mpUploadHandler = pUploadHandler;
+};
+
 bool WebServer::Start(__uint16_t port, bool useSsl, String* pCertificate){
 	struct sockaddr_in clientAddress;
 	struct sockaddr_in serverAddress;
@@ -232,8 +238,7 @@ void WebServer::WebRequestHandler(int socket, int conNumber){
 	ESP_LOGD(tag, "<%d> WebRequestHandler after - heapfree: %d", conNumber, esp_get_free_heap_size());
    
     while (1){
-		httpParser.Init();
-		//httpParser.AddUploadHandler("/update", );
+		httpParser.Init(&mUploadHandlerList);
 
 		while(1) {
 
@@ -255,17 +260,12 @@ void WebServer::WebRequestHandler(int socket, int conNumber){
 			ESP_LOGD(tag, "<%d> received %d bytes", conNumber, sizeRead);
 			receivedSomething = true;
 				
-			if (!httpParser.ParseRequestHeader(data, sizeRead)){
+			if (!httpParser.ParseRequest(data, sizeRead)){
 				ESP_LOGW(tag, "<%d> HTTP Parsing of header error: %d", conNumber, httpParser.GetError());
 				goto EXIT;
 			}
 
-			if (!httpParser.ParseRequestBody(HandleUploadRequest(httpParser.GetUrl()))){
-				ESP_LOGW(tag, "<%d> HTTP Parsing of body error: %d", conNumber, httpParser.GetError());
-				goto EXIT;
-			}
-			
-			if (httpParser.RequestFinished()){
+ 			if (httpParser.RequestFinished()){
 				break;
 			}
 		}
