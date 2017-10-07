@@ -758,7 +758,6 @@
 			if (evt.detail.page == "pagestorage") {
 				var uploadFile = function(){
 					input = document.getElementById('filename');
-		console.log("Hey there!");
 					if (input && input.files && !input.files[0]) 
 						document.getElementById('fileuploadererror').innerText = "Please select a file before clicking 'Upload'";
 						//input.files[0].size > 10240...
@@ -781,6 +780,14 @@
 						if (result.totalbytes){
 							document.getElementById('storage.totalbytes').innerHTML = result.totalbytes;
 							document.getElementById('storage.freebytes').innerHTML = result.freebytes;
+
+							var files = result.files;
+							for(var i in files)
+							{
+								console.log(files[i].filename);
+								console.log(files[i].bytes);
+							}
+
 							//document.getElementById('filesdisplay').innerText = result.newversion;
 						}
 						else{

@@ -10,6 +10,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <list>
 #include "esp_vfs.h"
 #include "esp_vfs_fat.h"
 #include "esp_system.h"
@@ -22,6 +23,12 @@
  *
  */
 
+struct TDirEntry {
+	String name;
+	unsigned long size;
+};
+
+
 class FileSystem {
 public:
 	FileSystem();
@@ -29,6 +36,7 @@ public:
 
 	bool Mount();
 	void Unmount();
+	bool ListDirectory(std::list<TDirEntry>& dirList);
 
 	bool Open(String s, bool write = true);
 	bool Write(const char* data, unsigned int size);
@@ -41,6 +49,8 @@ public:
 
 	unsigned int FreeBytes();
 	unsigned int TotalBytes();
+
+
 
 
 private:

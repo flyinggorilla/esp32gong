@@ -144,8 +144,20 @@ bool DynamicRequestHandler::HandleStorageRequest(std::list<TParam>& params, Http
 			sBody.printf("{\"freebytes\":\"%u\",", storage.FreeBytes());
 			sBody.printf("\"totalbytes\":\"%u\",", storage.TotalBytes());
 			sBody.printf("\"files\": [ ");
-			sBody.printf("]");
-			sBody += '}';
+
+			std::list<TDirEntry> dir;
+			storage.ListDirectory(dir);
+			std::list<TDirEntry>::iterator dit = dir.begin();
+			
+			while (dit != dir.end()) {
+				if (dit != dir.begin()) {
+					sBody += ", ";
+				}
+				sBody.printf("{\"filename\":\"%s\", \"bytes\":\"%li\"}", (*dit).name.c_str(), (*dit).size);
+				dit++;
+			}
+
+			sBody += "]}";
 
 		} else {
 			sBody = "{ }";
