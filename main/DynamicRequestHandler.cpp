@@ -1,6 +1,7 @@
 #include "DynamicRequestHandler.h"
 #include "Esp32Gong.h"
 #include "Config.h"
+#include "Storage.h"
 #include "I2SPlayer.h"
 #include "esp_system.h"
 #include <esp_log.h>
@@ -16,6 +17,7 @@ static char tag[] = "DynamicRequestHandler";
 extern Esp32Gong esp32gong;
 extern I2SPlayer musicPlayer;
 extern Wifi wifi;
+extern Storage storage;
 
 
 #define OTA_LATEST_FIRMWARE_JSON_URL "http://surpro5:9999/version.json"  // testing with local go server
@@ -117,7 +119,44 @@ bool DynamicRequestHandler::HandleInfoRequest(std::list<TParam>& params, HttpRes
 	return rResponse.Send(sBody.c_str(), sBody.length());
 }
 
+bool DynamicRequestHandler::HandleStorageRequest(std::list<TParam>& params, HttpResponse& rResponse){
+	
+		String sBody;
 
+		std::list<TParam>::iterator it = params.begin();
+
+		bool bInfo = false;
+		while (it != params.end()) {
+	
+			if ((*it).paramName == "info") {
+				ESP_LOGI(tag, "requesting storage info");
+				bInfo = true;
+				break;
+			} else if ((*it).paramName == "deletefile") {
+				// delete file: (*it).paramValue;
+				break;
+			}
+			it++;
+		}
+			
+		if (bInfo) {
+			sBody.reserve(512);
+			sBody.printf("{\"freebytes\":\"%u\",", storage.FreeBytes());
+			sBody.printf("\"totalbytes\":\"%u\",", storage.TotalBytes());
+			sBody.printf("\"files\": [ ");
+			sBody.printf("]");
+			sBody += '}';
+
+		} else {
+			sBody = "{ }";
+		}
+
+		rResponse.AddHeader(HttpResponse::HeaderContentTypeJson);
+		rResponse.AddHeader(HttpResponse::HeaderNoCache);
+		rResponse.SetRetCode(200);
+		return rResponse.Send(sBody.c_str(), sBody.length());
+	}
+	
 
 bool DynamicRequestHandler::HandleConfigRequest(std::list<TParam>& params, HttpResponse& rResponse){
 

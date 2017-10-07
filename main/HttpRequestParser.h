@@ -7,20 +7,22 @@
 #include <list>
 
 
-#define STATE_Method					0
-#define STATE_ParseUrl					1
-#define STATE_HttpType					2
-#define STATE_SearchEndOfHeaderLine 	3
-#define STATE_SkipHeader				4
-#define STATE_CheckHeaderName			5
-#define STATE_CheckHeaderValue			6
-#define STATE_ReadContentLength			7
-#define STATE_SearchBoundary			8
-#define STATE_ParseBoundary				9
-#define STATE_ParseFormBody				10
-#define STATE_CopyBody					11
-#define STATE_ProcessMultipartBodyStart	12
-#define STATE_ProcessMultipartBody		13
+#define STATE_Method					   0
+#define STATE_ParseUrl					   1
+#define STATE_HttpType					   2
+#define STATE_SearchEndOfHeaderLine 	   3
+#define STATE_SkipHeader				   4
+#define STATE_CheckHeaderName			   5
+#define STATE_CheckHeaderValue			   6
+#define STATE_ReadContentLength			   7
+#define STATE_SearchBoundary			   8
+#define STATE_ParseBoundary				   9
+#define STATE_ParseFormBody				   10
+#define STATE_CopyBody					   11
+#define STATE_ProcessMultipartBodyHeaders  12
+#define STATE_ProcessMultipartBodyStart	   13
+#define STATE_ProcessMultipartBody		   14
+#define STATE_ProcessMultipartBodyFilename 15
 
 
 class DownAndUploadHandler;
@@ -61,6 +63,7 @@ private:
 	int mSocket;
 	UrlParser mUrlParser;
 	String mUrl;
+	String mFilename;
 	std::list<TParam> mParams;
 	TParam* mpActParam;
 

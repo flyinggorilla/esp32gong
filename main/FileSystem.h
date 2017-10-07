@@ -39,6 +39,9 @@ public:
 	const char* LastError();
 	unsigned int getBytesWritten() { return bytesWritten; }
 
+	unsigned int FreeBytes();
+	unsigned int TotalBytes();
+
 
 private:
 	FILE* mpFileHandle = NULL;

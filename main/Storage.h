@@ -38,7 +38,7 @@ protected:
 
 public:
 	bool OnReceiveBegin(unsigned short int httpStatusCode, bool isContentLength, unsigned int contentLength);
-	bool OnReceiveBegin(String& sUrl, unsigned int contentLength);
+	bool OnReceiveBegin(String& sFilename, unsigned int contentLength);
 	bool OnReceiveEnd();
 	bool OnReceiveData(char* buf, int len); // override DownloadHandler virtual method
 
@@ -50,6 +50,7 @@ private:
 	unsigned int muContentLength = 0;
 	static volatile int miProgress; 
 	static volatile unsigned int muTimestamp;
+	String mFilename;
 };
 
 #endif /* MAIN_STORAGEHANDLER_H_ */

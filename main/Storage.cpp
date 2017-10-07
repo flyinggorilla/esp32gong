@@ -25,7 +25,7 @@
 #include "String.h"
 #include "WebClient.h"
 
-static const char* LOGTAG = "storage";
+static const char* LOGTAG = "Storage";
 
 
 volatile int Storage::miProgress = STORAGE_PROGRESS_NOTYETSTARTED;
@@ -46,6 +46,9 @@ Storage::~Storage() {
 
 bool Storage::InternalOnRecvBegin(bool isContentLength, unsigned int contentLength){
     
+
+    ESP_LOGI(LOGTAG, "InternalOnRecvBegin(%i)", isContentLength ? contentLength : -1);
+
     if (isContentLength) {
         muContentLength = contentLength;
     } else {
@@ -54,6 +57,8 @@ bool Storage::InternalOnRecvBegin(bool isContentLength, unsigned int contentLeng
         muContentLength = 1536*1024; // we use Storage partition size when we dont have exact firmware size
     }
     miProgress = 0;
+    muActualDataLength = 0;
+    
 
 	/*esp_err_t err;
     const esp_partition_t *configured = esp_ota_get_boot_partition();
@@ -76,7 +81,7 @@ bool Storage::InternalOnRecvBegin(bool isContentLength, unsigned int contentLeng
 
     */
     
-    if (!Open("test.wav")) {
+    if (!Open(mFilename)) {
         ESP_LOGE(LOGTAG, "could not open test.wav");
         miProgress = STORAGE_PROGRESS_FLASHERROR;
         return false;
@@ -86,23 +91,25 @@ bool Storage::InternalOnRecvBegin(bool isContentLength, unsigned int contentLeng
 }
 
 bool Storage::OnReceiveBegin(unsigned short int httpStatusCode, bool isContentLength, unsigned int contentLength) {
-    ESP_LOGD(LOGTAG, "OnReceiveBegin(%u, %u)", httpStatusCode, contentLength);
+    ESP_LOGI(LOGTAG, "OnReceiveBegin(%u, %u)", httpStatusCode, contentLength);
 
     if (httpStatusCode != 200)
         return false;
     return InternalOnRecvBegin(isContentLength, contentLength);
 }
 
-bool Storage::OnReceiveBegin(String& sUrl, unsigned int contentLength){
-    ESP_LOGD(LOGTAG, "OnReceiveBegin(%s, %u)", sUrl.c_str(), contentLength);
-    
-    if (sUrl.equals("/update"))
-        return InternalOnRecvBegin(true, contentLength);
-    return false;
+bool Storage::OnReceiveBegin(String& sFilename, unsigned int contentLength){
+    ESP_LOGI(LOGTAG, "OnReceiveBegin(%s, %u)", sFilename.c_str(), contentLength);
+    mFilename = sFilename;
+    return InternalOnRecvBegin(true, contentLength);
 }
 
 bool Storage::OnReceiveData(char* buf, int len) {
-    ESP_LOGD(LOGTAG, "OnReceiveData(%d)", len);
+    ESP_LOGI(LOGTAG, "OnReceiveData(%d)", len);
+    String sbuf;
+    sbuf.concat(buf, len);
+    ESP_LOGI(LOGTAG, ">>DATA>>%s<<DATA<<", sbuf.c_str());
+
 
     if (!Write(buf, len)) {
     	ESP_LOGE(LOGTAG, "Error writing - partition too small or full? size %d", muActualDataLength + len );
@@ -112,8 +119,8 @@ bool Storage::OnReceiveData(char* buf, int len) {
     
     muActualDataLength += len;
     miProgress = 100 * muActualDataLength / muContentLength;
-    ESP_LOGD(LOGTAG, "Have written image length %d, total %d", len, muActualDataLength);
-    return ESP_OK;
+    ESP_LOGI(LOGTAG, "Have written image length %d, total %d", len, muActualDataLength);
+    return true;
 }
 
 bool Storage::OnReceiveEnd() {

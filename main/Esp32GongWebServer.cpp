@@ -92,6 +92,10 @@ bool Esp32GongWebServer::HandleRequest(HttpRequestParser& httpParser, HttpRespon
 		if (!requestHandler.HandleConfigRequest(httpParser.GetParams(), httpResponse))
 			return false;
 	} 
+	else if (httpParser.GetUrl().equals("/storage")){
+		if (!requestHandler.HandleStorageRequest(httpParser.GetParams(), httpResponse))
+			return false;
+	} 
 	else if (httpParser.GetUrl().equals("/srvconfig")){
 		if (!requestHandler.HandleSrvConfigRequest(httpParser.GetParams(), httpResponse))
 			return false;

@@ -41,7 +41,7 @@ public:
 
 public:
 	bool OnReceiveBegin(unsigned short int httpStatusCode, bool isContentLength, unsigned int contentLength);
-	bool OnReceiveBegin(String& sUrl, unsigned int contentLength);
+	bool OnReceiveBegin(String& sFilename, unsigned int contentLength);
 	bool OnReceiveEnd();
 	bool OnReceiveData(char* buf, int len); // override DownloadHandler virtual method
 

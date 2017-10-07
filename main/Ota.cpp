@@ -56,6 +56,8 @@ bool Ota::InternalOnRecvBegin(bool isContentLength, unsigned int contentLength){
         muContentLength = 1536*1024; // we use Ota partition size when we dont have exact firmware size
     }
     miProgress = 0;
+    muActualDataLength = 0;
+    
 
 	esp_err_t err;
     const esp_partition_t *configured = esp_ota_get_boot_partition();
@@ -96,12 +98,12 @@ bool Ota::OnReceiveBegin(unsigned short int httpStatusCode, bool isContentLength
     return InternalOnRecvBegin(isContentLength, contentLength);
 }
 
-bool Ota::OnReceiveBegin(String& sUrl, unsigned int contentLength){
-    ESP_LOGD(LOGTAG, "OnReceiveBegin(%s, %u)", sUrl.c_str(), contentLength);
+bool Ota::OnReceiveBegin(String& sFilename, unsigned int contentLength){
+    ESP_LOGD(LOGTAG, "OnReceiveBegin(%s, %u)", sFilename.c_str(), contentLength);
     
-    if (sUrl.equals("/update"))
+    //if (sFilename.equals("esp32gong.bin"))
         return InternalOnRecvBegin(true, contentLength);
-    return false;
+    //return false;
 }
 
 bool Ota::OnReceiveData(char* buf, int len) {

@@ -1,57 +1,45 @@
 {
     "configurations": [
         {
-            "name": "Mac",
+            "name": "Win64",
             "includePath": [
-                "/usr/include",
-                "/usr/local/include"
-            ],
-            "browse": {
-                "limitSymbolsToIncludedHeaders": true,
-                "databaseFilename": "",
-                "path": [
-                    "/usr/include",
-                    "/usr/local/include",
-                    "${workspaceRoot}"
-                ]
-            },
-            "intelliSenseMode": "clang-x64",
-            "macFrameworkPath": [
-                "/System/Library/Frameworks",
-                "/Library/Frameworks"
-            ]
-        },
-        {
-            "name": "Linux",
-            "includePath": [
-                "/usr/include",
-                "/usr/local/include"
-            ],
-            "browse": {
-                "limitSymbolsToIncludedHeaders": true,
-                "databaseFilename": "",
-                "path": [
-                    "/usr/include",
-                    "/usr/local/include",
-                    "${workspaceRoot}"
-                ]
-            },
-            "intelliSenseMode": "clang-x64"
-        },
-        {
-            "name": "Win32",
-            "includePath": [
+                "C:/Users/Bernd/Documents/GitHub/esp-idf/components/spi_flash/include",
+                "C:/Users/Bernd/Documents/GitHub/esp-idf/components/spiffs/include",
+                "C:/Users/Bernd/Documents/GitHub/esp-idf/components/freertos/include",
+                "C:/Users/Bernd/Documents/GitHub/esp-idf/components/json/include",
+                "C:/Users/Bernd/Documents/GitHub/esp-idf/components/app_update/include",
+                "C:/Users/Bernd/Documents/GitHub/esp-idf/components/esp32/include",
+                "C:/Users/Bernd/Documents/GitHub/esp-idf/components/nvs_flash/include",
+                "C:/Users/Bernd/Documents/GitHub/esp-idf/components/vfs/include",
+                "C:/Users/Bernd/Documents/GitHub/esp-idf/components/fatfs/src",
+                "C:/Users/Bernd/Documents/GitHub/esp-idf/components/log/include",
+                "C:/Users/Bernd/Documents/GitHub/esp-idf/components/newlib/include",
+                "C:/Users/Bernd/Documents/GitHub/esp-idf/components/newlib/include/sys",
                 "C:/Users/Bernd/Documents/GitHub/esp-idf",
-                "C:/msys32/opt/xtensa-esp32-elf/xtensa-esp32-elf/include"
+                "/msys32/opt/xtensa-esp32-elf/xtensa-esp32-elf/include/c++/5.2.0",
+                "/msys32/opt/xtensa-esp32-elf/lib/gcc/xtensa-esp32-elf/5.2.0",
+                "/msys32/opt/xtensa-esp32-elf/xtensa-esp32-elf/include",
+                "${workspaceRoot}"
             ],
             "browse": {
                 "limitSymbolsToIncludedHeaders": true,
                 "databaseFilename": "",
                 "path": [
                     "C:/Users/Bernd/Documents/GitHub/esp-idf",
-                    "C:/msys32/opt/xtensa-esp32-elf/xtensa-esp32-elf/include",
+                    "C:/Users/Bernd/Documents/GitHub/esp-idf/components/spiffs/include",
+                    "C:/Users/Bernd/Documents/GitHub/esp-idf/components/freertos/include",
+                    "C:/Users/Bernd/Documents/GitHub/esp-idf/components/json/include",
+                    "C:/Users/Bernd/Documents/GitHub/esp-idf/components/app_update/include",
+                    "C:/Users/bernd/Documents/GitHub/esp-idf/components/esp32/include",
+                    "C:/Users/Bernd/Documents/GitHub/esp-idf/components/nvs_flash/include",
+                    "C:/Users/Bernd/Documents/GitHub/esp-idf/components/vfs/include",
+                    "C:/Users/Bernd/Documents/GitHub/esp-idf/components/fatfs/src",
+                    "C:/Users/Bernd/Documents/GitHub/esp-idf/components/log/include",
+                    "/msys32/opt/xtensa-esp32-elf/xtensa-esp32-elf/include/c++/5.2.0",
+                    "/msys32/opt/xtensa-esp32-elf/lib/gcc/xtensa-esp32-elf/5.2.0",
+                    "/msys32/opt/xtensa-esp32-elf/xtensa-esp32-elf/include",
                     "${workspaceRoot}"
-                ]
+                    ]
             },
             "intelliSenseMode": "msvc-x64"
         }

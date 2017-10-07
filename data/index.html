@@ -61,6 +61,9 @@
 					<a href="#!pageinfo" class="padded-list">Info</a>
 				</li>
 				<li>
+					<a href="#!pagestorage" class="padded-list">Storage</a>
+				</li>
+				<li>
 					<a href="#!pagefirmwareupdate" class="padded-list">Firmware update</a>
 				</li>
 				<li>
@@ -162,9 +165,43 @@
 					</li>
 				</form>
 			</div>
-
 		</div>
 	</pagefirmwareupdate>
+
+	<pagestorage data-page="true">
+		<header class="header-bar">
+			<button class="btn icon icon-arrow-back pull-left" data-navigation="$previous-page"></button>
+			<div class="center">
+				<h1 class="title">Storage</h1>
+			</div>
+		</header>
+		<div class="content">
+			<div class="input-wrapper list">
+				<ul class="list">
+					<li class="divider">storage</li>
+					<li class="padded-list">
+						<div id="storage.displayloading">Checking for storage information...</div>
+						<div id="storage.display">Total storage: <span id="storage.totalbytes">-</span>   Free storage: <span id="storage.freebytes">-</span></div>
+						<div><font color="red" id="storageerror" style="Display:None">error retrieving storage info!</font></div>
+					</li>
+					<li class="divider">file upload</li>
+				</ul>
+
+				<form method='POST' action='/fileupload' enctype='multipart/form-data' id='fileuploadform'>
+					<span class="padded-list">Select file to upload. Available space <span id="storage.freebytes">-</span></span>
+					<li>
+						<input class="padded-full" type="file" name="upload" id="filename" accept=".bin"/>
+					</li>
+					<li>
+						<span class="padded-list"><font color="red" id="fileuploadererror"></font></span>
+						<button class="btn btn-submit fit-parent primary" type='button' id='uploadfile'>Update</button>
+					</li>
+				</form>
+			</div>
+
+		</div>
+	</pagestorage>
+
 
 	<pagewifisettings data-page="true">
 		<header class="header-bar">
@@ -679,6 +716,7 @@
 					}
 				});
 			}
+
 			if (evt.detail.page == "pagefirmwareupdate") {
 				var uploadFirmware = function(){
 					input = document.getElementById('firmwarefilename');
@@ -716,6 +754,48 @@
 					}
 				});
 			}
+
+			if (evt.detail.page == "pagestorage") {
+				var uploadFile = function(){
+					input = document.getElementById('filename');
+		console.log("Hey there!");
+					if (input && input.files && !input.files[0]) 
+						document.getElementById('fileuploadererror').innerText = "Please select a file before clicking 'Upload'";
+						//input.files[0].size > 10240...
+					else{
+						document.getElementById('fileuploadererror').innerText = "";
+						document.getElementById('fileuploadform').submit();
+					}
+				}
+				document.querySelector('#uploadfile').on('tap', uploadFile);
+				document.querySelector('#uploadfile').on('click', uploadFile);
+
+				var req = phonon.ajax({
+					method: 'GET',
+					url: 'storage?info',
+					//crossDomain: false,
+					dataType: 'text/json',
+					success: function (res, xhr) {
+						//console.log(xhr.response);
+						var result = JSON.parse(xhr.response);
+						if (result.totalbytes){
+							document.getElementById('storage.totalbytes').innerHTML = result.totalbytes;
+							document.getElementById('storage.freebytes').innerHTML = result.freebytes;
+							//document.getElementById('filesdisplay').innerText = result.newversion;
+						}
+						else{
+							document.getElementById('filesdisplay').innerText = '*****something didnt work****!';
+						}
+					},
+					error: function (res, flagError, xhr) {
+						document.getElementById('filesdisplay').style.display  = 'None';
+						document.getElementById('fileserror').style.display = '';
+
+					}
+				});
+			}
+
+
 		});
 
 		app.on({ page: 'pageinfo', preventClose: false, content: null }, function (activity) {

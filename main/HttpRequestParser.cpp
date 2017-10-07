@@ -48,6 +48,16 @@ bool HttpRequestParser::ParseRequest(char* sBuffer, __uint16_t uLen){
 	while (uPos < uLen){
 		char c = sBuffer[uPos];
 
+		if (c >= 32 && c < 126) {
+			putchar(c);
+		} else if (c == 13) {
+			printf("<CR>");
+		} else if (c == 10) {
+			printf("<LF>");
+		} else {
+			putchar('_');
+		}
+
 		//ESP_LOGD("HttpRequestParser", "St: %d, Char: %c", muParseState, c);	
 		uPos++;
 		switch (muParseState){
@@ -108,8 +118,10 @@ bool HttpRequestParser::ParseRequest(char* sBuffer, __uint16_t uLen){
 					mStringParser.Init();
 					mStringParser.AddStringToParse("connection");
 					if (!mbIsGet){
+	ESP_LOGE("X", "POSTHEADERCHECK");   //*********************************
 						mStringParser.AddStringToParse("content-length");
 						mStringParser.AddStringToParse("content-type");
+mStringParser.AddStringToParse("content-disposition");
 					}
 					uPos--;
 				}
@@ -121,9 +133,13 @@ bool HttpRequestParser::ParseRequest(char* sBuffer, __uint16_t uLen){
 						}
 						else{
 							if (mBoundary.length()){
-							    muParseState = STATE_ProcessMultipartBodyStart;
+								muParseState = STATE_ProcessMultipartBodyHeaders;
+ESP_LOGE("X", "SET STATE PROCESSMULTIPARTBODYHEADERS");   //*********************************
+								
 								mStringParser.Init();
-								mStringParser.AddStringToParse("\r\n\r\n");
+								mStringParser.AddStringToParse("filename=\"");
+								mFilename.clear();
+								//mStringParser.AddStringToParse("\r\n\r\n");
 							}
 							else if (mbParseFormBody){
 								muParseState = STATE_ParseFormBody;
@@ -269,29 +285,44 @@ bool HttpRequestParser::ParseRequest(char* sBuffer, __uint16_t uLen){
 				mBody.concat(sBuffer + uPos, uLen - uPos);
 				mbFinished = mBody.length() >= muContentLength;
 				return true;
+
+			case STATE_ProcessMultipartBodyHeaders:
+				mStringParser.ConsumeCharSimple(c);
+				muActBodyLength++;
+				__uint8_t u;
+				if (mStringParser.Found(u)) {
+					muParseState = STATE_ProcessMultipartBodyFilename;
+					ESP_LOGE("X", "SET STATE PROCESSMULTIPARTBODYFILENAME");   //*********************************
+				}
+				break;
+
+			case STATE_ProcessMultipartBodyFilename:
+				muActBodyLength++;
+				if (c == '"') {
+					muParseState = STATE_ProcessMultipartBodyStart;
+					ESP_LOGE("X", "SET STATE PROCESSMULTIPARTBODYSTART FILENAME(%s)", mFilename.c_str());   //*********************************
+					mStringParser.Init();
+					mStringParser.AddStringToParse("\r\n\r\n");
+				} else {
+					mFilename += c;
+				}
+				break;
 				
 			case STATE_ProcessMultipartBodyStart:
 				mStringParser.ConsumeCharSimple(c);
 				muActBodyLength++;
-				__uint8_t u;
+				//__uint8_t u;
 				if (mStringParser.Found(u)){
 					muParseState = STATE_ProcessMultipartBody;
-					ESP_LOGI("HttpRequestParser", "MULTIPARTBODY DETECTED for URL %s", mUrl.c_str());	
+					ESP_LOGI("HttpRequestParser", "MULTIPARTBODY DETECTED for URL %s Found(%i)", mUrl.c_str(), u);	
 
-					String path;
-					int queryPos = mUrl.indexOf('?');
-					if (queryPos < 0) {
-						queryPos = mUrl.length();
-					}
-					ESP_LOGI("HttpRequestParser", "QUERYPOS %i", queryPos);	
-					
 					mpUploadHandler = NULL;
 					std::list<UploadHandler>::iterator it = mpUploadHandlerList->begin();
 					while (it != mpUploadHandlerList->end()){
 
 						ESP_LOGI("HttpRequestParser", "Registered URL %s compares %s", (*it).mUrl.c_str(), mUrl.c_str());	
 						
-						if (((*it).mUrl.length() == queryPos) && mUrl.startsWith((*it).mUrl)){
+						if ((*it).mUrl == mUrl ){
 							ESP_LOGI("HttpRequestParser", "Registered URL %s matches %s!", (*it).mUrl.c_str(), mUrl.c_str());	
 							mpUploadHandler = (*it).mpUploadHandler;
 							mbStoreUploadInBody = !mpUploadHandler;
@@ -301,7 +332,7 @@ bool HttpRequestParser::ParseRequest(char* sBuffer, __uint16_t uLen){
 					}
 
 					if (mpUploadHandler) {
-						if(!mpUploadHandler->OnReceiveBegin(mUrl, muContentLength)) {
+						if(!mpUploadHandler->OnReceiveBegin(mFilename, muContentLength)) {
 							return SetError(5), false;
 						}
 					}
@@ -314,6 +345,7 @@ bool HttpRequestParser::ParseRequest(char* sBuffer, __uint16_t uLen){
 
 				if (muActBodyLength + 8 + mBoundary.length() < muContentLength){
 					if (muActBodyLength + 8 + mBoundary.length() + uLen > muContentLength){
+						// end of multi-part content reached, substracting boundary
 						__uint16_t u = muContentLength - (muActBodyLength + 8 + mBoundary.length());
 						if (!ProcessMultipartBody(sBuffer + uPos, u))
 							return SetError(6), false;
