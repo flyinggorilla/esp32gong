@@ -8,15 +8,19 @@ ESP32 based Gong with embedded webserver, Audio/Sound player, OTA and more - e.g
 * Captive webserver in Access Point mode (needs improvement for true captive capabilities)
 * Responsive Web UI based on Phonon 1.4.5
 * Data embedding (such as HTML, CSS, font files, audio...)
-* WAV decoder
+* WAV decoder (e.g. 8 or 16bit mono wav files 16khz work very well, but some other rates work too)
 * Audio player to I2S devices (e.g. Adafruit MAX98357A) 
 * C++, ESP-IDF
 * Wifi AP/STA mode (GPIO0 button will toggle mode)
 * Stores config in NVS
+* Storage class to wrap SPIFFS read/write access for storing uploaded files on flash on dedicated data partition
 
 todo:
-* Basic SPIFFS read/write access for storing uploaded files on flash on dedicated data partition
 * mp3 support
+
+## screenshots
+
+![storage](storage.png)
 
 ## build
 
