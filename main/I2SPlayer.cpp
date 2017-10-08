@@ -15,7 +15,7 @@
 #include <esp_log.h>
 #include <esp_err.h>
 
-
+static const char TAG[] = "I2SPlayer";
 
 #define I2S_NUM I2S_NUM_0
 
@@ -50,24 +50,23 @@ void I2SPlayer::init() {
 
 }
 
-bool I2SPlayer::prepareWav(const char* wavdata, unsigned int size) {
-	if (wav.init(wavdata, size)) {
-		ESP_ERROR_CHECK(i2s_set_sample_rates(I2S_NUM, wav.getSampleRate()));
-		return true;
-	}
-	return false;
-}
-
 bool I2SPlayer::play() {
-	if (!wav.isInitialized()) {
-		return false;
-	}
+
+	DataStream* ds = mpDataStream;
+	mpDataStream = NULL;
 
 	xSemaphoreTake(playerMutex, portMAX_DELAY);
 
+	if(!ds->Open() || !wav.init(ds) || (i2s_set_sample_rates(I2S_NUM, wav.getSampleRate()) != ESP_OK)) {
+		ESP_LOGE(TAG, "Cannot open stream or sampling rate is incompatible");
+		ds->Close();
+		delete ds;
+		return false;
+	}
+
 	unsigned char attenuation = (100 - volume) / 16;
 
-	wav.rewind();
+	//wav.rewind();
 
 	i2s_start(I2S_NUM);
 
@@ -81,22 +80,32 @@ bool I2SPlayer::play() {
 		i2s_push_sample(I2S_NUM, (char*) &sample_val, portMAX_DELAY);
 	}
 	i2s_stop(I2S_NUM);
+
+	ds->Close();
+	delete ds;
+
 	xSemaphoreGive(playerMutex);
 	return true;
 }
+
 
 void task_function_play(void *pvParameter)
 {
 	((I2SPlayer*)pvParameter)->play();
 	vTaskDelete(NULL);
 }
-void I2SPlayer::playAsync() {
+void I2SPlayer::playAsync(DataStream* pDataStream) {
+	// avoid concurrent audio streams (and causing memory leaks)
+	if (mpDataStream && pDataStream) {
+		delete pDataStream;
+		return;
+	}
+
+	mpDataStream = pDataStream;
 	TaskHandle_t xHandle = NULL;
 	xTaskCreate(&task_function_play, "I2SPlay", 4096, this, 5, &xHandle);
 	//xTaskCreate(&task_function_play, "I2SPlay", 4096, this, 5, NULL);
 }
-
-
 
 void I2SPlayer::setVolume(unsigned char volume) {
 	if (volume > 100) {

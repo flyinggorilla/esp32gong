@@ -70,19 +70,19 @@ bool FileSystem::Mount()
 	}
 	else
 	{
-		ESP_LOGI(TAG, "Partition size: total: %d, used: %d", total, used);
+		ESP_LOGI(TAG, "SPIFFS file-system: total: %d, used: %d", total, used);
 	}
 
 	return true;
 }
 
-
-bool FileSystem::ListDirectory(std::list<TDirEntry>& dirList) {
+bool FileSystem::ListDirectory(std::list<TDirEntry> &dirList)
+{
 
 	DIR *dir;
 	struct dirent *entry;
 
-	ESP_LOGI(TAG, "Directory Listing");
+	ESP_LOGD(TAG, "Directory Listing");
 
 	if (!(dir = opendir(BASE_PATH)))
 	{
@@ -113,7 +113,7 @@ bool FileSystem::ListDirectory(std::list<TDirEntry>& dirList) {
 			dirList.emplace_back();
 			dirList.back().name = entry->d_name;
 			dirList.back().size = stbuf.st_size;
-			ESP_LOGI(TAG, "  File: %s size: %li", entry->d_name, stbuf.st_size);
+			ESP_LOGD(TAG, "  File: %s size: %li", entry->d_name, stbuf.st_size);
 		}
 	}
 	closedir(dir);
@@ -130,7 +130,7 @@ void FileSystem::Unmount()
 
 bool FileSystem::Open(String filename, bool write)
 {
-	ESP_LOGI(TAG, "Opening file");
+	ESP_LOGI(TAG, "Opening file for %s", write ? "WRITING" : "READING");
 	String s = BASE_PATH + String("/") + filename;
 	mpFileHandle = fopen(s.c_str(), write ? "wb" : "rb");
 	if (mpFileHandle == NULL)
@@ -159,7 +159,7 @@ unsigned int FileSystem::Read(char *buf, unsigned int len)
 {
 	if (!mpFileHandle)
 		return 0;
-	return fread(buf, len, 1, mpFileHandle);
+	return fread(buf, 1, len, mpFileHandle);
 }
 
 unsigned int FileSystem::Read(String &readbuffer, unsigned int maxread)
@@ -171,6 +171,17 @@ unsigned int FileSystem::Read(String &readbuffer, unsigned int maxread)
 		readbuffer.resize(read);
 	}
 	return read;
+}
+
+bool FileSystem::Delete(String filename)
+{
+	String s = BASE_PATH + String("/") + filename;
+	if (remove(s.c_str()))
+	{
+		ESP_LOGE(TAG, "Failed to delete file %s. %s", s.c_str(), strerror(errno));
+		return false;
+	}
+	return true;
 }
 
 void FileSystem::Close()

@@ -59,39 +59,16 @@ bool Storage::InternalOnRecvBegin(bool isContentLength, unsigned int contentLeng
     miProgress = 0;
     muActualDataLength = 0;
     
-
-	/*esp_err_t err;
-    const esp_partition_t *configured = esp_ota_get_boot_partition();
-    const esp_partition_t *running = esp_ota_get_running_partition();
-
-    ESP_LOGI(LOGTAG, "Running partition type %d subtype %d (offset 0x%08x)",
-             running->type, running->subtype, running->address);
-    ESP_LOGI(LOGTAG, "Configured boot partition type %d subtype %d (offset 0x%08x)",
-             configured->type, configured->subtype, configured->address);
-
-    mpUpdatePartition = esp_ota_get_next_update_partition(NULL);
-    if (mpUpdatePartition == NULL) {
-        ESP_LOGE(LOGTAG, "could not get next update partition");
-        miProgress = STORAGE_PROGRESS_FLASHERROR;
-    	return false;
-    }
-
-    ESP_LOGI(LOGTAG, "Writing to partition subtype %d at offset 0x%x",
-             mpUpdatePartition->subtype, mpUpdatePartition->address);
-
-    */
-    
     if (!Open(mFilename)) {
         ESP_LOGE(LOGTAG, "could not open test.wav");
         miProgress = STORAGE_PROGRESS_FLASHERROR;
         return false;
     }
-    ESP_LOGI(LOGTAG, "opened test.wav for writing");
     return true;
 }
 
 bool Storage::OnReceiveBegin(unsigned short int httpStatusCode, bool isContentLength, unsigned int contentLength) {
-    ESP_LOGI(LOGTAG, "OnReceiveBegin(%u, %u)", httpStatusCode, contentLength);
+    ESP_LOGD(LOGTAG, "OnReceiveBegin(%u, %u)", httpStatusCode, contentLength);
 
     if (httpStatusCode != 200)
         return false;
@@ -99,16 +76,16 @@ bool Storage::OnReceiveBegin(unsigned short int httpStatusCode, bool isContentLe
 }
 
 bool Storage::OnReceiveBegin(String& sFilename, unsigned int contentLength){
-    ESP_LOGI(LOGTAG, "OnReceiveBegin(%s, %u)", sFilename.c_str(), contentLength);
+    ESP_LOGD(LOGTAG, "OnReceiveBegin(%s, %u)", sFilename.c_str(), contentLength);
     mFilename = sFilename;
     return InternalOnRecvBegin(true, contentLength);
 }
 
 bool Storage::OnReceiveData(char* buf, int len) {
-    ESP_LOGI(LOGTAG, "OnReceiveData(%d)", len);
+    ESP_LOGD(LOGTAG, "OnReceiveData(%d)", len);
     String sbuf;
     sbuf.concat(buf, len);
-    ESP_LOGI(LOGTAG, ">>DATA>>%s<<DATA<<", sbuf.c_str());
+    //ESP_LOGD(LOGTAG, ">>DATA>>%s<<DATA<<", sbuf.c_str());
 
 
     if (!Write(buf, len)) {
@@ -119,7 +96,7 @@ bool Storage::OnReceiveData(char* buf, int len) {
     
     muActualDataLength += len;
     miProgress = 100 * muActualDataLength / muContentLength;
-    ESP_LOGI(LOGTAG, "Have written image length %d, total %d", len, muActualDataLength);
+    ESP_LOGD(LOGTAG, "Have written image length %d, total %d", len, muActualDataLength);
     return true;
 }
 
@@ -136,7 +113,7 @@ bool Storage::OnReceiveEnd() {
 
     Close();
 
-    ESP_LOGI(LOGTAG, "File Writtenn successfully!");
+    ESP_LOGD(LOGTAG, "File Writtenn successfully!");
     miProgress = STORAGE_PROGRESS_FINISHEDSUCCESS;
     return true;
 }

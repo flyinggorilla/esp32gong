@@ -19,7 +19,6 @@
 
 #include "Config.h"
 #include "I2SPlayer.h"
-#include "wavdata.h"
 #include "Esp32GongWebServer.h"
 #include "Wifi.h"
 #include "Storage.h"
@@ -104,8 +103,6 @@ void Esp32Gong::Start() {
 	storage.Mount();
 
 	musicPlayer.init();
-	musicPlayer.prepareWav(wavdata_h, sizeof(wavdata_h));
-	//musicPlayer.playAsync();
 
 	mbButtonPressed = !gpio_get_level(GPIO_NUM_0);
 

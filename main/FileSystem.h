@@ -38,7 +38,7 @@ public:
 	void Unmount();
 	bool ListDirectory(std::list<TDirEntry>& dirList);
 
-	bool Open(String s, bool write = true);
+	bool Open(String filename, bool write = true);
 	bool Write(const char* data, unsigned int size);
 	unsigned int Read(char* buf, unsigned int maxlen);
 	unsigned int Read(String& readbuffer, unsigned int maxread);
@@ -46,6 +46,8 @@ public:
 	void Close();
 	const char* LastError();
 	unsigned int getBytesWritten() { return bytesWritten; }
+
+	bool Delete(String filename);
 
 	unsigned int FreeBytes();
 	unsigned int TotalBytes();

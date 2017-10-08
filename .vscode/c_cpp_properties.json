@@ -9,6 +9,7 @@
                 "C:/Users/Bernd/Documents/GitHub/esp-idf/components/json/include",
                 "C:/Users/Bernd/Documents/GitHub/esp-idf/components/app_update/include",
                 "C:/Users/Bernd/Documents/GitHub/esp-idf/components/esp32/include",
+                "C:/Users/Bernd/Documents/GitHub/esp-idf/components/esp32/include/rom",
                 "C:/Users/Bernd/Documents/GitHub/esp-idf/components/nvs_flash/include",
                 "C:/Users/Bernd/Documents/GitHub/esp-idf/components/vfs/include",
                 "C:/Users/Bernd/Documents/GitHub/esp-idf/components/fatfs/src",
@@ -17,8 +18,11 @@
                 "C:/Users/Bernd/Documents/GitHub/esp-idf/components/newlib/include/sys",
                 "C:/Users/Bernd/Documents/GitHub/esp-idf",
                 "/msys32/opt/xtensa-esp32-elf/xtensa-esp32-elf/include/c++/5.2.0",
+                "/msys32/opt/xtensa-esp32-elf/lib/gcc/xtensa-esp32-elf/5.2.0/include",
                 "/msys32/opt/xtensa-esp32-elf/lib/gcc/xtensa-esp32-elf/5.2.0",
                 "/msys32/opt/xtensa-esp32-elf/xtensa-esp32-elf/include",
+                "C:/Users/bernd/Documents/GitHub/esp32gong/build/include", 
+                "${workspaceRoot}/main",
                 "${workspaceRoot}"
             ],
             "browse": {
@@ -38,6 +42,8 @@
                     "/msys32/opt/xtensa-esp32-elf/xtensa-esp32-elf/include/c++/5.2.0",
                     "/msys32/opt/xtensa-esp32-elf/lib/gcc/xtensa-esp32-elf/5.2.0",
                     "/msys32/opt/xtensa-esp32-elf/xtensa-esp32-elf/include",
+                    "C:/Users/bernd/Documents/GitHub/esp32gong/build/include", 
+                    "${workspaceRoot}/main",
                     "${workspaceRoot}"
                     ]
             },

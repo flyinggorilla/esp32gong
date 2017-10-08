@@ -184,6 +184,7 @@
 						<div id="storage.display">Total storage: <span id="storage.totalbytes">-</span>   Free storage: <span id="storage.freebytes">-</span></div>
 						<div><font color="red" id="storageerror" style="Display:None">error retrieving storage info!</font></div>
 					</li>
+					<span id="storage.dirlist"></span>
 					<li class="divider">file upload</li>
 				</ul>
 
@@ -194,8 +195,9 @@
 					</li>
 					<li>
 						<span class="padded-list"><font color="red" id="fileuploadererror"></font></span>
-						<button class="btn btn-submit fit-parent primary" type='button' id='uploadfile'>Update</button>
+						<button class="btn btn-submit fit-parent primary" type='button' id='uploadfile'>Upload</button>
 					</li>
+					note: 8bit-pcm encoded 16khz wav files work well
 				</form>
 			</div>
 
@@ -780,13 +782,23 @@
 						if (result.totalbytes){
 							document.getElementById('storage.totalbytes').innerHTML = result.totalbytes;
 							document.getElementById('storage.freebytes').innerHTML = result.freebytes;
+							
+							var dirList = "";
 
 							var files = result.files;
 							for(var i in files)
 							{
-								console.log(files[i].filename);
-								console.log(files[i].bytes);
+
+//            <a href="#action" class="pull-right icon icon-edit"></a>
+//            <a href="#item" class="padded-list">Link</a>
+								dirList += '<li>';
+								dirList += 		'<a href="/api?gong&file=' + files[i].filename + '&volume=10" class="padded-list">' + files[i].filename  
+								dirList += 			' (' + files[i].bytes + ' bytes)</a>';
+								dirList += 		'<a href="/storage?deletefile=' + files[i].filename + '" class="pull-right ">DELETE</a>';
+								dirList += '</li>';
+								document.getElementById('storage.dirlist').innerHTML = dirList;
 							}
+							document.getElementById('storage.dirlist').innerHTML = dirList;
 
 							//document.getElementById('filesdisplay').innerText = result.newversion;
 						}

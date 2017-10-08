@@ -48,7 +48,7 @@ bool HttpRequestParser::ParseRequest(char* sBuffer, __uint16_t uLen){
 	while (uPos < uLen){
 		char c = sBuffer[uPos];
 
-		if (c >= 32 && c < 126) {
+		/*if (c >= 32 && c < 126) {
 			putchar(c);
 		} else if (c == 13) {
 			printf("<CR>");
@@ -56,7 +56,7 @@ bool HttpRequestParser::ParseRequest(char* sBuffer, __uint16_t uLen){
 			printf("<LF>");
 		} else {
 			putchar('_');
-		}
+		}*/
 
 		//ESP_LOGD("HttpRequestParser", "St: %d, Char: %c", muParseState, c);	
 		uPos++;
@@ -118,10 +118,8 @@ bool HttpRequestParser::ParseRequest(char* sBuffer, __uint16_t uLen){
 					mStringParser.Init();
 					mStringParser.AddStringToParse("connection");
 					if (!mbIsGet){
-	ESP_LOGE("X", "POSTHEADERCHECK");   //*********************************
 						mStringParser.AddStringToParse("content-length");
 						mStringParser.AddStringToParse("content-type");
-mStringParser.AddStringToParse("content-disposition");
 					}
 					uPos--;
 				}
@@ -134,12 +132,9 @@ mStringParser.AddStringToParse("content-disposition");
 						else{
 							if (mBoundary.length()){
 								muParseState = STATE_ProcessMultipartBodyHeaders;
-ESP_LOGE("X", "SET STATE PROCESSMULTIPARTBODYHEADERS");   //*********************************
-								
 								mStringParser.Init();
 								mStringParser.AddStringToParse("filename=\"");
 								mFilename.clear();
-								//mStringParser.AddStringToParse("\r\n\r\n");
 							}
 							else if (mbParseFormBody){
 								muParseState = STATE_ParseFormBody;
@@ -292,7 +287,6 @@ ESP_LOGE("X", "SET STATE PROCESSMULTIPARTBODYHEADERS");   //********************
 				__uint8_t u;
 				if (mStringParser.Found(u)) {
 					muParseState = STATE_ProcessMultipartBodyFilename;
-					ESP_LOGE("X", "SET STATE PROCESSMULTIPARTBODYFILENAME");   //*********************************
 				}
 				break;
 
@@ -300,7 +294,6 @@ ESP_LOGE("X", "SET STATE PROCESSMULTIPARTBODYHEADERS");   //********************
 				muActBodyLength++;
 				if (c == '"') {
 					muParseState = STATE_ProcessMultipartBodyStart;
-					ESP_LOGE("X", "SET STATE PROCESSMULTIPARTBODYSTART FILENAME(%s)", mFilename.c_str());   //*********************************
 					mStringParser.Init();
 					mStringParser.AddStringToParse("\r\n\r\n");
 				} else {
@@ -311,19 +304,12 @@ ESP_LOGE("X", "SET STATE PROCESSMULTIPARTBODYHEADERS");   //********************
 			case STATE_ProcessMultipartBodyStart:
 				mStringParser.ConsumeCharSimple(c);
 				muActBodyLength++;
-				//__uint8_t u;
 				if (mStringParser.Found(u)){
 					muParseState = STATE_ProcessMultipartBody;
-					ESP_LOGI("HttpRequestParser", "MULTIPARTBODY DETECTED for URL %s Found(%i)", mUrl.c_str(), u);	
-
 					mpUploadHandler = NULL;
 					std::list<UploadHandler>::iterator it = mpUploadHandlerList->begin();
 					while (it != mpUploadHandlerList->end()){
-
-						ESP_LOGI("HttpRequestParser", "Registered URL %s compares %s", (*it).mUrl.c_str(), mUrl.c_str());	
-						
 						if ((*it).mUrl == mUrl ){
-							ESP_LOGI("HttpRequestParser", "Registered URL %s matches %s!", (*it).mUrl.c_str(), mUrl.c_str());	
 							mpUploadHandler = (*it).mpUploadHandler;
 							mbStoreUploadInBody = !mpUploadHandler;
 							break;

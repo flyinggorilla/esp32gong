@@ -12,6 +12,7 @@
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
+#include "String.h"
 
 class I2SPlayer {
 public:
@@ -42,7 +43,7 @@ public:
 	/*
 	 * @brief 	plays the audio file in a separate thread
 	*/
-	void playAsync();
+	void playAsync(DataStream* pDataStream);
 
 	/*
 	 * @brief 	sets the player volume in 0..100% (default is 100%)
@@ -55,6 +56,7 @@ private:
 	Wav wav;
 	unsigned char volume = 100; // default is max 100% volume
 	SemaphoreHandle_t playerMutex;
+	DataStream* mpDataStream = NULL;
 
 };
 
