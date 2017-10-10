@@ -1,20 +1,18 @@
-## Extended **multipart/form-data** parsing in **HttpRequestParser**
+# Extended **multipart/form-data** parsing in **HttpRequestParser**
+
+
+## Usage
+
+1. Prepare form in html
+2. Receive POST data from the form
+3. Process POST data in **DynamicRequestHandler**
 
 ---
 
-### Usage
+### Prepare form in html
 
-1. `Prepare form in html`_.
-2. `Receive POST data from the form`_.
-3. `Process POST data in **DynamicRequestHandler**`_.
+There are three ``input type`` fields in the following form example. The ``file`` field must be the **last** field in the form. The ``curdir`` field can be used for sending *current directory* to the server. The ``dummy`` field is just an example extra field. There is **phonon** example page with form::
 
----
-
-#### Prepare form in html
-
-There are three ``input type`` fields in the following form example. The ``file`` field must be the **last** field in the form. The ``curdir`` field can be used for sending *current directory* to the server. The ``dummy`` field is just an example extra field. There is **phonon** example page with form:
-
-`
 <pagesdcard data-page="true">
 	<header class="header-bar">
 		<button class="btn icon icon-arrow-back pull-left" data-navigation="$previous-page"></button>
@@ -52,9 +50,10 @@ There are three ``input type`` fields in the following form example. The ``file`
 		</div>
 	</div>
 </pagesdcard>
-`
 
-#### Receive POST data from the form
+---
+
+### Receive POST data from the form
 
 To receive POST data add ``handler`` to the ``HandleRequest`` mwthod in *Esp32GongWebServer.cpp*::
 
@@ -65,12 +64,14 @@ To receive POST data add ``handler`` to the ``HandleRequest`` mwthod in *Esp32Go
 
 The ``handler`` processes the path ``/uploadtodev`` which is set as an ``action`` in the form tag.
 
-#### Process POST data in **DynamicRequestHandler**
 
-Release ``HandleUploadToDevRequest`` method in *DynamicRequestHandler.cpp* using template:
+---
 
-`
-bool DynamicRequestHandler::HandleUploadToDevRequest(std::list<TParam>& params, HttpResponse& rResponse){
+### Process POST data in **DynamicRequestHandler**
+
+Release ``HandleUploadToDevRequest`` method in *DynamicRequestHandler.cpp* using template::
+
+    bool DynamicRequestHandler::HandleUploadToDevRequest(std::list<TParam>& params, HttpResponse& rResponse){
 	String sCurDir;
 	String sFileName;
 	String sDummy;
@@ -107,9 +108,10 @@ bool DynamicRequestHandler::HandleUploadToDevRequest(std::list<TParam>& params, 
 	rResponse.AddHeader(sLocation.c_str());
 	rResponse.SetRetCode(302);
 	return rResponse.Send();
-}
-`
+    }
 
+
+---
 
 ### How to build
 
