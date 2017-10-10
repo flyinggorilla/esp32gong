@@ -6,6 +6,13 @@
 #include "String.h"
 #include <list>
 
+//MVA
+//extra boundary sections analise
+#define EXTRA_PARSING	1	// 1-enable, 0-disable
+//MVA
+//dump boundary header
+#define DUMP_HEADER	1	// 1-enable, 0-disable
+
 
 #define STATE_Method					   0
 #define STATE_ParseUrl					   1
@@ -19,10 +26,26 @@
 #define STATE_ParseBoundary				   9
 #define STATE_ParseFormBody				   10
 #define STATE_CopyBody					   11
+#if (EXTRA_PARSING == 0) //old cases
 #define STATE_ProcessMultipartBodyHeaders  12
 #define STATE_ProcessMultipartBodyStart	   13
 #define STATE_ProcessMultipartBody		   14
 #define STATE_ProcessMultipartBodyFilename 15
+#endif
+#if (EXTRA_PARSING == 1)
+#define STATE_ProcessBoundaryInstance			100
+#define STATE_SearchEndOfBoundaryLine			101
+#define STATE_SkipRestOfBoundary			102
+#define STATE_CheckBoundaryContent			103
+#define STATE_CheckBoundaryData				104
+#define STATE_SearchBoundaryName			105
+#define STATE_ParseBoundaryName				106
+#define STATE_ParseBoundaryFilenameValue		107
+#define STATE_SearchEndOfBoundaryBody			108
+#define STATE_ParseBoundaryBody				109
+#define STATE_ProcessMultipartBodyStart2		110
+#define STATE_ProcessMultipartBody2			111
+#endif
 
 
 class DownAndUploadHandler;
@@ -35,6 +58,10 @@ public:
 };
 
 class HttpRequestParser {
+public:
+    //static
+    constexpr static char TAG[] = "HttpReqParser";
+
 public:
 	HttpRequestParser(int socket);
 	virtual ~HttpRequestParser();
@@ -74,6 +101,18 @@ private:
 	String mBoundary;
 	__uint32_t muContentLength;
 	__uint32_t muActBodyLength;
+#if (DUMP_HEADER == 1)
+	String mHeader;
+	bool bAccumInHeader;
+#endif
+#if (EXTRA_PARSING == 1)
+	String mBoundaryName;
+	String mBoundaryFilename;
+	bool bBoundaryValueIsAdjourned; // parameter's value is adjourned on new line
+	uint32_t muActBoundaryLength;
+	String boundaryInstance;
+	uint32_t muSizeOfBoundaryTail;
+#endif
 	
 	bool mbParseFormBody;
 	bool mbStoreUploadInBody;
