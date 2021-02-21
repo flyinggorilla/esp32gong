@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <list>
 
-#include "String.h"
+#include "EspString.h"
 
 struct TQueryParam{
 	String paramName;

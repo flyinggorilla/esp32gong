@@ -1,7 +1,7 @@
 #include "WebServer.h"
 #include "HttpRequestParser.h"
 #include "HttpResponse.h"
-#include "String.h"
+#include "EspString.h"
 #include <lwip/sockets.h>
 #include <esp_log.h>
 #include <esp_system.h>

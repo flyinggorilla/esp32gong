@@ -1,8 +1,8 @@
 #ifndef MAIN_CONFIG_H_
 #define MAIN_CONFIG_H_
 
-#include "nvs.h"
-#include "String.h"
+#include <nvs.h>
+#include "EspString.h"
 
 class Config {
 public:

@@ -1,7 +1,7 @@
 #ifndef MAIN_HTTPRESPONSE_H_
 #define MAIN_HTTPRESPONSE_H_
 
-#include "String.h"
+#include "EspString.h"
 #include <list>
 #include <lwip/sockets.h>
 #include "openssl/ssl.h"

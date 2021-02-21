@@ -12,7 +12,7 @@
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
-#include "String.h"
+#include "EspString.h"
 
 class I2SPlayer {
 public:

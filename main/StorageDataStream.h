@@ -1,5 +1,5 @@
 #include "Wav.h"
-#include "String.h"
+#include "EspString.h"
 
 #ifndef MAIN_STORAGEDATASTREAM_H_
 #define MAIN_STORAGEDATASTREAM_H_

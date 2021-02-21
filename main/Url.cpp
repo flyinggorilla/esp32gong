@@ -257,6 +257,7 @@ bool Url::ParseUrl(String& u) {
 			}
 			state = STATE_Http;
 			// dont break here;
+			[[fallthrough]];
 
 		case STATE_Http:
 			if (c == ' ') { // skip leading spaces
@@ -277,7 +278,8 @@ bool Url::ParseUrl(String& u) {
 			c = u[it];
 			state = STATE_Host;
 			// dont break here
-
+			[[fallthrough]];
+			
 		case STATE_Host:
 			if (c == ':') {
 				state = STATE_Port;

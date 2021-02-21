@@ -14,7 +14,7 @@
 #include "esp_vfs.h"
 #include "esp_vfs_fat.h"
 #include "esp_system.h"
-#include "String.h"
+#include "EspString.h"
 
 /*
  * @brief

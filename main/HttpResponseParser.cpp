@@ -164,6 +164,7 @@ bool HttpResponseParser::ParseResponse(char* sBuffer, unsigned int uLen) {
 				break;
 			}
 			//No break here, fall through to STATE_CheckHeaderName!;
+			[[fallthrough]];
 
 		case STATE_CheckHeaderName:
 			if (c == ':') {

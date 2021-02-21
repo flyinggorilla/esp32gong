@@ -6,10 +6,10 @@
 #ifndef MAIN_OTA_H_
 #define MAIN_OTA_H_
 
-#include <esp_ota_ops.h>
+#include "esp_ota_ops.h"
 //#include <string>
 #include "DownAndUploadHandler.h"
-#include "String.h"
+#include "EspString.h"
 #include "WebClient.h"
 
 #define OTA_PROGRESS_NOTYETSTARTED      -1

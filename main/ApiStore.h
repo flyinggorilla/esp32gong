@@ -8,8 +8,9 @@
 #ifndef MAIN_APISTORE_H_
 #define MAIN_APISTORE_H_
 
+#include "esp_system.h"
 #include "nvs.h"
-#include "String.h"
+#include "EspString.h"
 #include <list>
 
 class ApiStore {

@@ -2,7 +2,7 @@ import gzip
 import shutil
 import sys
 import binascii
-import cStringIO
+from io import StringIO
 import io
 import os
 
@@ -73,7 +73,7 @@ try:
         convert_file(sys.argv[1], sys.argv[2])
     
 except IOError:
-    print "cannot open ", sys.argv[1], "for reading or ", sys.argv[2], " for writing"
+    print("cannot open ", sys.argv[1], "for reading or ", sys.argv[2], " for writing")
 
 
 

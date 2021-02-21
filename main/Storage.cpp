@@ -22,7 +22,7 @@
 #include <nvs.h>
 #include <nvs_flash.h>
 
-#include "String.h"
+#include "EspString.h"
 #include "WebClient.h"
 
 static const char* LOGTAG = "Storage";
@@ -136,7 +136,7 @@ bool Storage::DownloadFile(String& sUrl)
         if (miProgress == STORAGE_PROGRESS_NOTYETSTARTED || miProgress >= 0) {
             miProgress = STORAGE_PROGRESS_CONNECTIONERROR;
         }
-      	ESP_LOGE(LOGTAG, "Storage update failed - error %u", statuscode)
+      	ESP_LOGE(LOGTAG, "Storage update failed - error %u", statuscode);
         // esp_reboot();
       	return false;
     }

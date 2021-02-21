@@ -1,9 +1,8 @@
 #include "sdkconfig.h"
 #include "Wifi.h"
 #include "Config.h"
-#include "String.h"
+#include "EspString.h"
 #include <esp_event.h>
-#include <esp_event_loop.h>
 #include <esp_log.h>
 #include <esp_wifi.h>
 #include <esp_wpa2.h>
@@ -13,7 +12,8 @@
 #include <lwip/dns.h>
 #include <lwip/netdb.h>
 #include <lwip/sockets.h>
-#include <tcpip_adapter.h>
+//deprecated: #include <tcpip_adapter.h>
+#include <esp_netif.h>
 
 static char tag[] = "Wifi";
 
@@ -118,7 +118,10 @@ void Wifi::Connect()
 	ESP_LOGD(tag, "-----------------------");
 
 	nvs_flash_init();
-	tcpip_adapter_init();
+	//DEPRECATED 
+	esp_netif_init();
+
+
 	if (ip.length() > 0 && gw.length() > 0 && netmask.length() > 0)
 	{
 		tcpip_adapter_dhcpc_stop(TCPIP_ADAPTER_IF_STA);
@@ -148,7 +151,7 @@ void Wifi::Connect()
 		esp_wifi_sta_wpa2_ent_set_identity((__uint8_t *)msUser.c_str(), msUser.length());
 		esp_wifi_sta_wpa2_ent_set_username((__uint8_t *)msUser.c_str(), msUser.length());
 		esp_wifi_sta_wpa2_ent_set_password((__uint8_t *)msPass.c_str(), msPass.length());
-		esp_wifi_sta_wpa2_ent_enable(NULL); //!!!!!!!!!!!!!!!!!!!!!!! SHOULD GET CRYPTOFUNC!!!
+		esp_wifi_sta_wpa2_ent_enable(); //!!!!!!!!!!!!!!!!!!!!!!! SHOULD GET CRYPTOFUNC!!!
 	}
 
 	esp_wifi_start();
@@ -161,7 +164,7 @@ void Wifi::StartAP()
 {
 	ESP_LOGD(tag, "  StartAP(<%s>)", msSsid.c_str());
 	nvs_flash_init();
-	tcpip_adapter_init();
+	esp_netif_init();
 	esp_event_loop_init(eventHandler, this);
 	wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
 	esp_wifi_init(&cfg);

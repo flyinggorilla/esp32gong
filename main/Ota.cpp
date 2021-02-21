@@ -23,7 +23,7 @@
 #include <nvs.h>
 #include <nvs_flash.h>
 
-#include "String.h"
+#include "EspString.h"
 #include "WebClient.h"
 
 //#define BUFFSIZE 1024
@@ -169,7 +169,7 @@ bool Ota::UpdateFirmware(String sUrl)
         if (miProgress == OTA_PROGRESS_NOTYETSTARTED || miProgress >= 0) {
             miProgress = OTA_PROGRESS_CONNECTIONERROR;
         }
-      	ESP_LOGE(LOGTAG, "Ota update failed - error %u", statuscode)
+      	ESP_LOGE(LOGTAG, "Ota update failed - error %u", statuscode);
         // esp_reboot();
       	return false;
     }

@@ -6,7 +6,7 @@
 #include "DownAndUploadHandler.h"
 #include "Url.h"
 #include "HttpResponseParser.h"
-#include "String.h"
+#include "EspString.h"
 
 class WebClient {
 public:

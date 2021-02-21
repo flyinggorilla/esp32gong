@@ -14,7 +14,7 @@
 #include "freertos/event_groups.h"
 #include "esp_system.h"
 #include "esp_wifi.h"
-#include "esp_event_loop.h"
+#include "esp_event.h"
 #include "esp_log.h"
 #include "nvs_flash.h"
 #include <netdb.h>
@@ -171,8 +171,8 @@ unsigned short WebClient::HttpExecute() {
 	ESP_LOGD(LOGTAG, "DNS lookup succeeded. IP=%s", inet_ntoa(*addr));
 
 	// Socket
-	int socket = socket(res->ai_family, res->ai_socktype, 0);
-	if (socket < 0) {
+	int clientSocket = socket(res->ai_family, res->ai_socktype, 0);
+	if (clientSocket < 0) {
 		ESP_LOGE(LOGTAG, "... Failed to allocate socket.");
 		freeaddrinfo(res);
 		return 1004;
@@ -180,9 +180,9 @@ unsigned short WebClient::HttpExecute() {
 	ESP_LOGD(LOGTAG, "... allocated socket\r\n");
 
 	// CONNECT
-	if (connect(socket, res->ai_addr, res->ai_addrlen) != 0) {
+	if (connect(clientSocket, res->ai_addr, res->ai_addrlen) != 0) {
 		ESP_LOGE(LOGTAG, "... socket connect failed errno=%d", errno);
-		close(socket);
+		close(clientSocket);
 		freeaddrinfo(res);
 		return 1005;
 	}
@@ -196,18 +196,18 @@ unsigned short WebClient::HttpExecute() {
 
 	// send HTTP request
 	ESP_LOGD(LOGTAG, "sRequest: %s", sRequest.c_str());
-	if (write(socket, sRequest.c_str(), sRequest.length()) < 0) {
+	if (write(clientSocket, sRequest.c_str(), sRequest.length()) < 0) {
 		ESP_LOGE(LOGTAG, "... socket send failed");
-		close(socket);
+		close(clientSocket);
 		return 1006;
 	}
 	sRequest.clear(); // free memory
 
 
 	if (mpPostData) {
-		if (write(socket, mpPostData, muPostDataSize) < 0) {
+		if (write(clientSocket, mpPostData, muPostDataSize) < 0) {
 			ESP_LOGE(LOGTAG, "... socket send post data failed");
-			close(socket);
+			close(clientSocket);
 			return 1007;
 		}
 	}
@@ -222,17 +222,17 @@ unsigned short WebClient::HttpExecute() {
 	String sReceiveBuf;
 	sReceiveBuf.resize(RECEIVE_BUFFER_SIZE);
 	while (!mHttpResponseParser.ResponseFinished()) {
-		size_t sizeRead = read(socket, (char*)sReceiveBuf.c_str(), sReceiveBuf.length());
+		size_t sizeRead = read(clientSocket, (char*)sReceiveBuf.c_str(), sReceiveBuf.length());
 		if (!mHttpResponseParser.ParseResponse((char*)sReceiveBuf.c_str(), sizeRead)) {
 			ESP_LOGE(LOGTAG, "HTTP Response error: %d", mHttpResponseParser.GetError());
-			close(socket);
+			close(clientSocket);
 			return 1008;
 		}
 	}
 
 	//ESP_LOGI(LOGTAG, "data %i bytes: %s", mHttpResponseParser.GetContentLength(), mHttpResponseParser.GetBody().c_str());
 
-	close(socket);
+	close(clientSocket);
 
 	return mHttpResponseParser.GetStatusCode();
 }

@@ -4,7 +4,7 @@
 #include <list>
 
 #include "DownAndUploadHandler.h"
-#include "String.h"
+#include "EspString.h"
 #include "StringParser.h"
 
 

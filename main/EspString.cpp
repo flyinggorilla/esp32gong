@@ -25,7 +25,7 @@
 #include "stdlib.h"
 
 #include "esp_log.h"
-#include "String.h"
+#include "EspString.h"
 
 static const char LOGTAG[] = "String";
 

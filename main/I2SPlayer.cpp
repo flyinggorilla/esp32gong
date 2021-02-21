@@ -33,7 +33,7 @@ void I2SPlayer::init() {
 	i2s_config.sample_rate = 16 * 1024; // 16kHz -- override later
 	i2s_config.bits_per_sample = I2S_BITS_PER_SAMPLE_16BIT; //16-bit per channel
 	i2s_config.channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT;         //2-channels
-	i2s_config.communication_format = I2S_COMM_FORMAT_I2S; //| I2S_COMM_FORMAT_I2S_MSB,
+	i2s_config.communication_format = I2S_COMM_FORMAT_STAND_I2S; //I2S_COMM_FORMAT_I2S; //| I2S_COMM_FORMAT_I2S_MSB,
 	i2s_config.dma_buf_count = 16;
 	i2s_config.dma_buf_len = 128;                          //
 	i2s_config.intr_alloc_flags = ESP_INTR_FLAG_LEVEL1;      //Interrupt level 1
@@ -72,12 +72,14 @@ bool I2SPlayer::play() {
 
 	unsigned int sample_val;
 	int sample = 0;
+	size_t bytesWritten = 0;
 	while (wav.nextSample(&sample)) {
 		sample_val = 0;
 		sample_val += (short) sample >> attenuation;
 		sample_val = sample_val << 16;
 		sample_val += (short) sample >> attenuation;
-		i2s_push_sample(I2S_NUM, (char*) &sample_val, portMAX_DELAY);
+		#pragma message ("the next function call has been migrated from old function; needs to be validated")
+		i2s_write(I2S_NUM, (char*) &sample_val, sizeof(sample_val), &bytesWritten, portMAX_DELAY); //TODO VERIFY whether the change from deprecated function is CORRECT
 	}
 	i2s_stop(I2S_NUM);
 

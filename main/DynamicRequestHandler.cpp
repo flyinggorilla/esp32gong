@@ -6,7 +6,7 @@
 #include "esp_system.h"
 #include <esp_log.h>
 #include "Ota.h"
-#include "String.h"
+#include "EspString.h"
 #include "WebClient.h"
 #include "Wifi.h"
 #include "temperature.h"

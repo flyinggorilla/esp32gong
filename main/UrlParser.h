@@ -2,7 +2,7 @@
 #define MAIN_URL_PARSER_H_
 
 #include "freertos/FreeRTOS.h"
-#include "String.h"
+#include "EspString.h"
 
 
 #define MAX_Params		10

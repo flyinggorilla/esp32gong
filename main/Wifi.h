@@ -8,7 +8,7 @@
 #include "sdkconfig.h"
 #include "esp_wifi.h"
 #include "esp_err.h"
-#include "String.h"
+#include "EspString.h"
 #include <vector>
 
 class Config;

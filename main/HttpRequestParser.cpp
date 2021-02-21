@@ -1,7 +1,7 @@
 
 #include "HttpRequestParser.h"
 #include "DownAndUploadHandler.h"
-#include "String.h"
+#include "EspString.h"
 #include "freertos/FreeRTOS.h"
 #include <esp_log.h>
 

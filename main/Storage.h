@@ -6,7 +6,7 @@
 #define MAIN_STORAGEHANDLER_H_
 
 #include "DownAndUploadHandler.h"
-#include "String.h"
+#include "EspString.h"
 #include "FileSystem.h"
 //#include "WebClient.h"
 
