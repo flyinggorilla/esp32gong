@@ -4,5 +4,6 @@ idf_component_register(SRCS "Esp32Gong.cpp" "stdlib_noniso.c" "ApiStore.cpp" "Cr
 "StringParser.cpp" "Url.cpp" "UrlParser.cpp" "Wav.cpp" "WebClient.cpp" "WebServer.cpp" "Wifi.cpp" "Config.cpp" 
     INCLUDE_DIRS "." 
     REQUIRES esp_wifi wpa_supplicant mbedtls esp_https_ota openssl vfs fatfs spiffs app_update driver esp_netif lwip
-    PRIV_REQUIRES nvs_flash)
+    PRIV_REQUIRES nvs_flash
+    EMBED_TXTFILES "certkey.pem")
 

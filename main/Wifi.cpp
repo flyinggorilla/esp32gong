@@ -1,4 +1,7 @@
 #include "sdkconfig.h"
+
+#define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
+
 #include "Wifi.h"
 #include "Config.h"
 #include "EspString.h"
@@ -164,7 +167,7 @@ void Wifi::StartAP()
 {
 	ESP_LOGD(tag, "  StartAP(<%s>)", msSsid.c_str());
 	nvs_flash_init();
-	esp_netif_init();
+	ESP_ERROR_CHECK(esp_netif_init());
 	esp_event_loop_init(eventHandler, this);
 	wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
 	esp_wifi_init(&cfg);

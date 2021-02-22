@@ -29,5 +29,6 @@
         "tuple": "cpp",
         "type_traits": "cpp",
         "typeinfo": "cpp"
-    }
+    },
+    "idf.flashType": "UART"
 }

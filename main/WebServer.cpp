@@ -12,8 +12,6 @@
 #include "fontsvg.h"
 #include "fonteot.h"
 #include "indexhtml.h"
-#include "keypem.h"
-#include "certpem.h"
 
 static char tag[] = "WebServer";
 
