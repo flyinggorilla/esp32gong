@@ -50,8 +50,8 @@ void app_main();
 }
 
 void app_main() {
-	nvs_flash_init();
-	esp_netif_init();
+	ESP_ERROR_CHECK(nvs_flash_init());
+	ESP_ERROR_CHECK(esp_netif_init());
 	esp32gong.Start();
 }
 
@@ -101,7 +101,7 @@ void Esp32Gong::Start() {
 
 	storage.Mount();
 
-//******************************	musicPlayer.init();
+	//***************************************  musicPlayer.init();
 
 	mbButtonPressed = !gpio_get_level(GPIO_NUM_0);
 
@@ -126,7 +126,6 @@ void Esp32Gong::Start() {
 		}
 
 		wifi.StartAPMode(mConfig.msAPSsid, mConfig.msAPPass, mConfig.msHostname);
-		//wifi.StartAPMode(*new String("testssid"), *new String("testpass"), *new String("huhuhost"));
 		// start DNS server to always redirect any domain to 192.168.4.1
 //		xTaskCreate(&task_function_dnsserver, "Task_DnsServer", 8192, this, 5, NULL);
 	} else {

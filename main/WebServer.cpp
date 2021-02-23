@@ -11,7 +11,7 @@
 #include "fontttf.h"
 #include "fontsvg.h"
 #include "fonteot.h"
-#include "indexhtml.h"
+// #include "indexhtml.h"
 
 static char tag[] = "WebServer";
 

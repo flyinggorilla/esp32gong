@@ -39,11 +39,16 @@ public:
 	struct in_addr getHostByName(String& hostName);
 	void setIPInfo(String& ip, String& gw, String& netmask);
 
+	[[deprecated]]
 	esp_err_t OnEvent(system_event_t *event);
+
+	void OnEvent(esp_event_base_t base, int32_t id, void* event_data);
+	
 
 private:
 	void Connect();
 	void StartAP();
+	void Init();
 
 private:
 	Config* mpConfig;
@@ -65,6 +70,10 @@ private:
 
 	int dnsCount=0;
 	char *dnsServer = nullptr;
+
+	esp_event_handler_instance_t instance_any_id;
+    esp_event_handler_instance_t instance_got_ip;
+
 };
 
 #endif /* MAIN_WIFI_H_ */

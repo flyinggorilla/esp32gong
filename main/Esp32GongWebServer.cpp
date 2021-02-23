@@ -15,8 +15,6 @@
 #include "fontsvg.h"
 #include "fonteot.h"
 #include "indexhtml.h"
-#include "keypem.h"
-#include "certpem.h"
 #include "Storage.h"
 
 extern Esp32Gong esp32gong;
@@ -68,6 +66,7 @@ bool Esp32GongWebServer::HandleRequest(HttpRequestParser &httpParser, HttpRespon
 	else if (httpParser.GetUrl().equals("/fonts/material-design-icons.woff"))
 	{
 		httpResponse.AddHeader(HttpResponse::HeaderContentTypeBinary);
+		//if (!httpResponse.Send(fontwoff_h, sizeof(fontwoff_h)))
 		if (!httpResponse.Send(fontwoff_h, sizeof(fontwoff_h)))
 			return false;
 	}
