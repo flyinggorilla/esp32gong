@@ -1,13 +1,13 @@
 #include <freertos/FreeRTOS.h>
 #include "Config.h"
-#include "nvs_flash.h"
+#include <nvs_flash.h>
 #include <esp_log.h>
 
 
 #define WIFI_SSID CONFIG_WIFI_SSID
 #define WIFI_PASS CONFIG_WIFI_PASSWORD
 
-#define NVS_NAME "esp32gong"
+#define NVS_NAME "Config"
 
 Config::Config() {
 	mbAPMode = true;

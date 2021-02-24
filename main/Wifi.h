@@ -73,6 +73,7 @@ private:
 
 	esp_event_handler_instance_t instance_any_id;
     esp_event_handler_instance_t instance_got_ip;
+	esp_netif_t* netif = nullptr;
 
 };
 

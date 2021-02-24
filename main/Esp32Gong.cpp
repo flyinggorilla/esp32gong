@@ -86,7 +86,7 @@ void task_function_restart(void* user_data) {
 }
 
 void Esp32Gong::Restart(int seconds) {
-	xTaskCreate(&task_function_restart, "restartTask", 2048, &seconds, 5, NULL);
+	xTaskCreate(&task_function_restart, "restartTask", 2048*2, &seconds, 5, NULL);
 }
 
 //----------------------------------------------------------------------------------------
@@ -112,11 +112,14 @@ void Esp32Gong::Start() {
 	gpio_pad_select_gpio((gpio_num_t) ONBOARDLED_GPIO);
 	gpio_set_direction((gpio_num_t) ONBOARDLED_GPIO, (gpio_mode_t) GPIO_MODE_OUTPUT);
 
-//	xTaskCreate(&task_function_webserver, "Task_WebServer", 8192*2, this, 5, NULL);
-	xTaskCreate(&task_function_webserver, "Task_WebServer", 8192, this, 5, NULL);
-	xTaskCreate(&task_function_resetbutton, "Task_ResetButton", 2048, this, 5, NULL);
+	xTaskCreate(&task_function_webserver, "Task_WebServer", 8192*4, this, 5, NULL);
+	xTaskCreate(&task_function_resetbutton, "Task_ResetButton", 2048*2, this, 5, NULL);
 
 	ESP_LOGI(LOGTAG, "CONFIG HOSTNAME: %s", mConfig.msHostname.c_str() == NULL ? "NULL" : mConfig.msHostname.c_str());
+
+//#################################################
+ESP_LOGI(LOGTAG, "APMode from config %d", mConfig.mbAPMode);
+//mConfig.mbAPMode = true; 
 
 	if (mConfig.mbAPMode) {
 		if (mConfig.muLastSTAIpAddress) {
@@ -133,12 +136,6 @@ void Esp32Gong::Start() {
 			wifi.StartSTAModeEnterprise(mConfig.msSTASsid, mConfig.msSTAENTUser, mConfig.msSTAPass, mConfig.msSTAENTCA, mConfig.msHostname);
 		else
 			wifi.StartSTAMode(mConfig.msSTASsid, mConfig.msSTAPass, mConfig.msHostname);
-		const char* hostname;
-		tcpip_adapter_get_hostname(TCPIP_ADAPTER_IF_STA, &hostname);
-		ESP_LOGI(LOGTAG, "Station hostname: %s", hostname);
-		tcpip_adapter_get_hostname(TCPIP_ADAPTER_IF_AP, &hostname);
-		ESP_LOGI(LOGTAG, "AP hostname: %s", hostname);
-		ESP_LOGI(LOGTAG, "MDNS feature is disabled - no use found for it so far -- SSDP more interesting");
 		//wifi.StartMDNS();
 	}
 

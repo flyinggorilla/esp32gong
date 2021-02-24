@@ -1,6 +1,10 @@
 # Name,   Type, SubType, Offset,   Size
 nvs,      data, nvs,     0x9000,    20K
 otadata,  data, ota,           ,     8K
-ota_0,    app,  ota_0,  0x10000,  1408K
-ota_1,    app,  ota_1,         ,  1408K
-data, 	  data, spiffs,        ,  1216k 
+ota_0,    app,  ota_0,  0x10000,  1600K
+ota_1,    app,  ota_1,         ,  1600K
+data, 	  data, spiffs,        ,  832k 
+# ota_0,    app,  ota_0,  0x10000,  1408K   # 44*32kb
+# ota_1,    app,  ota_1,         ,  1408K   # 44*32kb
+# data, 	  data, spiffs,        ,  1216k # 38*32kb
+# ota0 + ota1 + data = 126*32kb

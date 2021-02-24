@@ -39,13 +39,6 @@ Wifi::Wifi()
 	mbConnected = false;
 }
 
-//OLD
-esp_err_t eventHandler(void *ctx, system_event_t *event)
-{
-	return ((Wifi *)ctx)->OnEvent(event);
-}
-
-// NEW 
 void wifiEventHandler(void* ctx, esp_event_base_t base, int32_t id, void* event_data)
 {
 	return ((Wifi *)ctx)->OnEvent(base, id, event_data);
@@ -151,6 +144,8 @@ void Wifi::Connect()
    	//s_wifi_event_group = xEventGroupCreate();
 
 	Init();
+	netif = esp_netif_create_default_wifi_sta();
+	ESP_ERROR_CHECK_WITHOUT_ABORT(esp_netif_set_hostname(netif, msHostname.c_str()));
 
 	if (ip.length() > 0 && gw.length() > 0 && netmask.length() > 0)
 	{
@@ -187,9 +182,6 @@ void Wifi::Connect()
 	}
 
 	ESP_ERROR_CHECK(esp_wifi_start());
-	ESP_LOGD(tag, "SETTING HOSTNAME: %s", msHostname.c_str() == NULL ? "NULL" : msHostname.c_str());
-	ESP_ERROR_CHECK(tcpip_adapter_set_hostname(TCPIP_ADAPTER_IF_STA, msHostname.c_str()));
-	ESP_ERROR_CHECK(esp_wifi_connect());
 }
 
 void Wifi::StartAP()
@@ -198,10 +190,11 @@ void Wifi::StartAP()
 	Init();
 	
 	wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
-	ESP_ERROR_CHECK(esp_wifi_init(&cfg));
-    esp_netif_create_default_wifi_ap(); // NEW NEW NEW NEW ESP IDF 4.2
-	ESP_ERROR_CHECK(esp_wifi_set_storage(WIFI_STORAGE_RAM));
-	ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_AP));
+	ESP_ERROR_CHECK_WITHOUT_ABORT(esp_wifi_init(&cfg));
+    netif = esp_netif_create_default_wifi_ap(); // NEW NEW NEW NEW ESP IDF 4.2
+	ESP_ERROR_CHECK_WITHOUT_ABORT(esp_netif_set_hostname(netif, msHostname.c_str()));
+	ESP_ERROR_CHECK_WITHOUT_ABORT(esp_wifi_set_storage(WIFI_STORAGE_RAM));
+	ESP_ERROR_CHECK_WITHOUT_ABORT(esp_wifi_set_mode(WIFI_MODE_AP));
 	wifi_config_t config;
 	memset(&config, 0, sizeof(config));
 	memcpy(config.ap.ssid, msSsid.c_str(), msSsid.length());
@@ -212,8 +205,8 @@ void Wifi::StartAP()
 	config.ap.ssid_hidden = 0;
 	config.ap.max_connection = 4;
 	config.ap.beacon_interval = 100;
-	ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_AP, &config));
-	ESP_ERROR_CHECK(esp_wifi_start());
+	ESP_ERROR_CHECK_WITHOUT_ABORT(esp_wifi_set_config(WIFI_IF_AP, &config));
+	ESP_ERROR_CHECK_WITHOUT_ABORT(esp_wifi_start());
 
     //NEW REALLY UNREGISTER??? BETTER MOVE TO INIT / SHUTDOWN METHODS????***********************************
 	//************************************************
@@ -255,66 +248,6 @@ void Wifi::setIPInfo(String& ip, String& gw, String& netmask)
 	this->netmask = netmask;
 }
 
-esp_err_t Wifi::OnEvent(system_event_t *event)
-{
-
-	esp_err_t rc = ESP_OK;
-	switch (event->event_id)
-	{
-
-	case SYSTEM_EVENT_AP_START:
-		ESP_LOGD(tag, "--- SYSTEM_EVENT_AP_START");
-		mbConnected = true;
-		break;
-	case SYSTEM_EVENT_AP_STOP:
-		ESP_LOGD(tag, "--- SYSTEM_EVENT_AP_STOP");
-		mbConnected = false;
-		break;
-	case SYSTEM_EVENT_AP_STACONNECTED:
-		muConnectedClients++;
-		ESP_LOGD(tag, "--- SYSTEM_EVENT_AP_STACONNECTED - %d clients", muConnectedClients);
-		//if (mpStateDisplay)
-		//	mpStateDisplay->SetConnected(true, this);
-		break;
-	case SYSTEM_EVENT_AP_STADISCONNECTED:
-		if (muConnectedClients)
-			muConnectedClients--;
-		ESP_LOGD(tag, "--- SYSTEM_EVENT_AP_STADISCONNECTED - %d clients", muConnectedClients);
-		//if (!muConnectedClients && mpStateDisplay)
-		//	mpStateDisplay->SetConnected(false, this);
-		break;
-	case SYSTEM_EVENT_STA_CONNECTED:
-		ESP_LOGD(tag, "--- SYSTEM_EVENT_STA_CONNECTED");
-		break;
-	case SYSTEM_EVENT_STA_DISCONNECTED:
-		ESP_LOGD(tag, "--- SYSTEM_EVENT_STA_DISCONNECTED");
-		mbConnected = false;
-		//if (mpStateDisplay)
-		//	mpStateDisplay->SetConnected(false, this);
-		esp_wifi_connect();
-		break;
-	case SYSTEM_EVENT_STA_GOT_IP:
-		ESP_LOGD(tag, "--- SYSTEM_EVENT_STA_GOT_IP");
-		mbConnected = true;
-		//if (mpStateDisplay)
-		//	mpStateDisplay->SetConnected(true, this);
-		tcpip_adapter_ip_info_t ip;
-		tcpip_adapter_get_ip_info(TCPIP_ADAPTER_IF_STA, &ip);
-		if (mpConfig)
-			mpConfig->muLastSTAIpAddress = ip.ip.addr;
-		break;
-	case SYSTEM_EVENT_STA_START:
-		ESP_LOGD(tag, "--- SYSTEM_EVENT_STA_START");
-		break;
-	case SYSTEM_EVENT_STA_STOP:
-		ESP_LOGD(tag, "--- SYSTEM_EVENT_STA_STOP");
-		break;
-	default:
-		break;
-	}
-	return rc;
-}
-
 
 void Wifi::OnEvent(esp_event_base_t base, int32_t id, void* event_data)
 {
@@ -354,13 +287,23 @@ void Wifi::OnEvent(esp_event_base_t base, int32_t id, void* event_data)
 			//	mpStateDisplay->SetConnected(false, this);
 			esp_wifi_connect();
 			break;
-		case WIFI_EVENT_STA_START:
+		case WIFI_EVENT_STA_START: {
 			ESP_LOGD(tag, "--- WIFI_EVENT_STA_START");
-			//??????????????????????? NEED esp_wifi_connect()??????????????????
-			//esp_wifi_connect(); /// NEW NEW NEW NEW
-
-			mbConnected = true;
+			//ESP_LOGD(tag, "SETTING HOSTNAME: %s", msHostname.c_str() == NULL ? "NULL" : msHostname.c_str());
+			//ESP_ERROR_CHECK(tcpip_adapter_set_hostname(TCPIP_ADAPTER_IF_STA, msHostname.c_str()));
+			esp_err_t errConnect = esp_wifi_connect();
+			switch (errConnect) {
+				case 0 : 
+					break;
+				case ESP_ERR_WIFI_SSID : 
+					ESP_LOGW(tag, "Invalid SSID: %s", msSsid.c_str() == NULL ? "NULL" : msSsid.c_str());
+					break;
+				default: 
+					ESP_LOGE(tag, "Error connecting Wifi: %s", esp_err_to_name(errConnect));
+					break;
+			}
 			break;
+		}
 		case WIFI_EVENT_STA_STOP:
 			ESP_LOGD(tag, "--- WIFI_EVENT_STA_STOP");
 			break;
