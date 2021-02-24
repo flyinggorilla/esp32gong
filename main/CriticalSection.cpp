@@ -12,13 +12,13 @@ CriticalSection::~CriticalSection() {
 
 bool CriticalSection::Enter(__uint16_t ticks){
 	while (true){
-		taskENTER_CRITICAL(&myMutex);
+		portENTER_CRITICAL(&myMutex);
 		if (mbFree){
 			mbFree = false;
-			taskEXIT_CRITICAL(&myMutex);
+			portEXIT_CRITICAL(&myMutex);
 			return true;
 		}
-		taskEXIT_CRITICAL(&myMutex);
+		portEXIT_CRITICAL(&myMutex);
 		if (ticks && !--ticks)
 			return false;
 		vTaskDelay(1);
@@ -26,8 +26,8 @@ bool CriticalSection::Enter(__uint16_t ticks){
 }
 
 void CriticalSection::Leave(){
-	taskENTER_CRITICAL(&myMutex);
+	portENTER_CRITICAL(&myMutex);
 	mbFree = true;
-	taskEXIT_CRITICAL(&myMutex);
+	portEXIT_CRITICAL(&myMutex);
 }
 

@@ -10,7 +10,7 @@
 #include "WebClient.h"
 #include "Wifi.h"
 #include "temperature.h"
-#include "wavdata.h"
+//#include "wavdata.h"
 #include "MemoryDataStream.h"
 #include "StorageDataStream.h"
 
@@ -80,7 +80,8 @@ bool DynamicRequestHandler::HandleApiRequest(std::list<TParam> &params, HttpResp
 		if (file.length()) {
 			musicPlayer.playAsync(new StorageDataStream(file));
 		} else {
-			musicPlayer.playAsync(new MemoryDataStream(wavdata_h, sizeof(wavdata_h)));
+			ESP_LOGW(tag, "No WAV file to play");
+			//musicPlayer.playAsync(new MemoryDataStream(wavdata_h, sizeof(wavdata_h)));
 		}
 		sBody = "<html><body>api call - lets play music</html></body>";
 	}

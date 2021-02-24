@@ -10,10 +10,6 @@
 #include <String.h>
 
 #include "sdkconfig.h"
-#include "fontwoff.h"
-#include "fontttf.h"
-#include "fontsvg.h"
-#include "fonteot.h"
 #include "indexhtml.h"
 #include "Storage.h"
 
@@ -21,6 +17,27 @@ extern Esp32Gong esp32gong;
 extern Storage storage;
 
 static char tag[] = "Esp32GongWebServer";
+
+extern const unsigned char font_ttf_start[] asm("_binary_material_design_icons_ttf_start");
+extern const unsigned char font_ttf_end[]   asm("_binary_material_design_icons_ttf_end");
+unsigned int uiFontTtfLength = font_ttf_end - font_ttf_start;
+const unsigned char* bFontTtf = font_ttf_start;
+
+extern const unsigned char font_eot_start[] asm("_binary_material_design_icons_eot_start");
+extern const unsigned char font_eot_end[]   asm("_binary_material_design_icons_eot_end");
+unsigned int uiFontEotLength = font_eot_end - font_eot_start;
+const unsigned char* bFontEot = font_eot_start;
+
+extern const unsigned char font_svg_start[] asm("_binary_material_design_icons_svg_start");
+extern const unsigned char font_svg_end[]   asm("_binary_material_design_icons_svg_end");
+unsigned int uiFontSvgLength = font_svg_end - font_svg_start;
+const unsigned char* bFontSvg = font_svg_start;
+
+extern const unsigned char font_woff_start[] asm("_binary_material_design_icons_woff_start");
+extern const unsigned char font_woff_end[]   asm("_binary_material_design_icons_woff_end");
+unsigned int uiFontWoffLength = font_woff_end - font_woff_start;
+const unsigned char* bFontWoff = font_woff_start;
+
 
 //------------------------------------------------------------------
 
@@ -56,6 +73,8 @@ bool Esp32GongWebServer::HandleRequest(HttpRequestParser &httpParser, HttpRespon
 
 	DynamicRequestHandler requestHandler;
 
+	ESP_LOGI(tag, "TTF Length %d", uiFontTtfLength);
+
 	if (httpParser.GetUrl().equals("/") || httpParser.GetUrl().equals("/index.html"))
 	{
 		httpResponse.AddHeader(HttpResponse::HeaderContentTypeHtml);
@@ -67,25 +86,26 @@ bool Esp32GongWebServer::HandleRequest(HttpRequestParser &httpParser, HttpRespon
 	{
 		httpResponse.AddHeader(HttpResponse::HeaderContentTypeBinary);
 		//if (!httpResponse.Send(fontwoff_h, sizeof(fontwoff_h)))
-		if (!httpResponse.Send(fontwoff_h, sizeof(fontwoff_h)))
+		if (!httpResponse.Send((const char*)bFontWoff, uiFontWoffLength))
 			return false;
 	}
 	else if (httpParser.GetUrl().equals("/fonts/material-design-icons.ttf"))
 	{
 		httpResponse.AddHeader(HttpResponse::HeaderContentTypeBinary);
-		if (!httpResponse.Send(fontttf_h, sizeof(fontttf_h)))
+		//if (!httpResponse.Send(fontttf_h, sizeof(fontttf_h)))
+		if (!httpResponse.Send((const char*)bFontTtf, uiFontTtfLength))
 			return false;
 	}
 	else if (httpParser.GetUrl().equals("/fonts/material-design-icons.eot"))
 	{
 		httpResponse.AddHeader(HttpResponse::HeaderContentTypeBinary);
-		if (!httpResponse.Send(fonteot_h, sizeof(fonteot_h)))
+		if (!httpResponse.Send((const char*)bFontEot, uiFontEotLength))
 			return false;
 	}
 	else if (httpParser.GetUrl().equals("/fonts/material-design-icons.svg"))
 	{
 		httpResponse.AddHeader(HttpResponse::HeaderContentTypeBinary);
-		if (!httpResponse.Send(fontsvg_h, sizeof(fontsvg_h)))
+		if (!httpResponse.Send((const char*)bFontSvg, uiFontSvgLength))
 			return false;
 	}
 	else if (httpParser.GetUrl().equals("/api"))

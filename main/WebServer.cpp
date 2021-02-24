@@ -1,17 +1,13 @@
+#include "sdkconfig.h"
+#include <esp_log.h>
+#include <esp_system.h>
+#include <lwip/sockets.h>
+
 #include "WebServer.h"
 #include "HttpRequestParser.h"
 #include "HttpResponse.h"
 #include "EspString.h"
-#include <lwip/sockets.h>
-#include <esp_log.h>
-#include <esp_system.h>
 
-#include "sdkconfig.h"
-#include "fontwoff.h"
-#include "fontttf.h"
-#include "fontsvg.h"
-#include "fonteot.h"
-// #include "indexhtml.h"
 
 static char tag[] = "WebServer";
 
@@ -43,43 +39,43 @@ WebServer::~WebServer() {
 
 __uint8_t WebServer::GetConcurrentConnections(){
 	__uint8_t u;
-	//taskENTER_CRITICAL(&myMutex);
+	//portENTER_CRITICAL(&myMutex);
 	u = muConcurrentConnections;
-	//taskEXIT_CRITICAL(&myMutex);
+	//portEXIT_CRITICAL(&myMutex);
 	return u;
 }
 
 void WebServer::SignalConnection(){
-	//taskENTER_CRITICAL(&myMutex);
+	//portENTER_CRITICAL(&myMutex);
 	muConcurrentConnections++;
-	//taskEXIT_CRITICAL(&myMutex);
+	//portEXIT_CRITICAL(&myMutex);
 }
 
 void WebServer::SignalConnectionExit(){
-	//taskENTER_CRITICAL(&myMutex);
+	//portENTER_CRITICAL(&myMutex);
 	if (muConcurrentConnections)
 	 	muConcurrentConnections--;
-	//taskEXIT_CRITICAL(&myMutex);
+	//portEXIT_CRITICAL(&myMutex);
 }
 
 void WebServer::EnterCriticalSection(){
 	while (true){
-		taskENTER_CRITICAL(&myMutex);
+		portENTER_CRITICAL(&myMutex);
 		if (mbFree){
 			mbFree = false;
-			taskEXIT_CRITICAL(&myMutex);
+			portEXIT_CRITICAL(&myMutex);
 			return;
 		}
-		taskEXIT_CRITICAL(&myMutex);
+		portEXIT_CRITICAL(&myMutex);
 		vTaskDelay(10);
 	}
 
 }
 
 void WebServer::LeaveCriticalSection(){
-	taskENTER_CRITICAL(&myMutex);
+	portENTER_CRITICAL(&myMutex);
 	mbFree = true;
-	taskEXIT_CRITICAL(&myMutex);
+	portEXIT_CRITICAL(&myMutex);
 }
 
 

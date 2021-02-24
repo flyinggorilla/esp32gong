@@ -15,7 +15,6 @@
 #include <lwip/dns.h>
 #include <lwip/netdb.h>
 #include <lwip/sockets.h>
-//deprecated: #include <tcpip_adapter.h>
 #include <esp_netif.h>
 
 static char tag[] = "Wifi";
