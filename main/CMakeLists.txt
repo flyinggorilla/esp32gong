@@ -7,7 +7,7 @@ idf_component_register(SRCS "Esp32Gong.cpp" "stdlib_noniso.c" "ApiStore.cpp" "Cr
     REQUIRES esp_wifi wpa_supplicant mbedtls esp_https_ota openssl vfs fatfs spiffs app_update driver esp_netif lwip
     PRIV_REQUIRES nvs_flash
     EMBED_TXTFILES "certkey.pem"
-    EMBED_FILES "../data/material-design-icons.woff" "../data/material-design-icons.eot" "../data/material-design-icons.ttf" "../data/material-design-icons.svg"
+    EMBED_FILES "../data/gong.wav" "../data/material-design-icons.woff" "../data/material-design-icons.eot" "../data/material-design-icons.ttf" "../data/material-design-icons.svg"
     )
 
 add_custom_command(OUTPUT indexhtml.h

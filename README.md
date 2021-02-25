@@ -24,11 +24,15 @@ todo:
 
 ## build
 
-* Setup ESP-IDF toolchain according to [http://esp-idf.readthedocs.io/en/latest/](http://esp-idf.readthedocs.io/en/latest/)
-* run `make menuconfig` and adjust serial port 
-* change partition setting to custom and choose `partitions.csv`. the partition table `partitions.csv`setup assumes that the ESP32 has at least 4MB flash available, so that their is a remaining of 896MB flash for SPIFFS data area
-*  
+Updated to ESP-IDF 4.2. Works now also with Visual Code as editor.
+Install Python 3.8.x. ESP-IDF 4.2 did fail in visual code with Python 3.9.x.
 
+* Setup ESP-IDF toolchain according to [http://esp-idf.readthedocs.io/en/latest/](http://esp-idf.readthedocs.io/en/latest/)
+* run `idf.py menuconfig`
+    * adjust flash to 4MB (assuming your ESP32 has at least 4MB flash)
+    * change partition setting to custom and choose `partitions.csv`. 
+    * Sparkfun thing requires 26Mhz XTAL frequency (vs. 40MHz is default); Huzzah32 work fine at 40MHz
+  
 ## hardware
 
 * SparkFun thing
@@ -38,6 +42,10 @@ todo:
 
 ![gong speaker-box](gong.jpg)
 
+
+## start
+
+* once your ESP32 is flashed and started the wifi and webserver, it launches an accesspoint called "esp32gong" by default. connect to it and launch http://192.168.4.1/ to configure wifi and upload wav files.
 
 
 

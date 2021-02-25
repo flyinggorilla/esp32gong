@@ -86,7 +86,7 @@ void task_function_restart(void* user_data) {
 }
 
 void Esp32Gong::Restart(int seconds) {
-	xTaskCreate(&task_function_restart, "restartTask", 2048*2, &seconds, 5, NULL);
+	xTaskCreate(&task_function_restart, "restartTask", 2048, &seconds, 5, NULL);
 }
 
 //----------------------------------------------------------------------------------------
@@ -97,29 +97,26 @@ void Esp32Gong::Start() {
 	ESP_LOGI(LOGTAG, "ESP-IDF version %s", esp_get_idf_version());
 	ESP_LOGI(LOGTAG, "Firmware version %s", FIRMWARE_VERSION);
 
+	musicPlayer.init();
+
 	mConfig.Read();
 
 	storage.Mount();
 
-	//***************************************  musicPlayer.init();
-
 	mbButtonPressed = !gpio_get_level(GPIO_NUM_0);
 
-	gpio_pad_select_gpio(10);
+	gpio_pad_select_gpio(10); // TODO ********************* 
 	gpio_set_direction(GPIO_NUM_0, GPIO_MODE_INPUT);
 	gpio_set_pull_mode(GPIO_NUM_0, GPIO_PULLUP_ONLY);
 
 	gpio_pad_select_gpio((gpio_num_t) ONBOARDLED_GPIO);
 	gpio_set_direction((gpio_num_t) ONBOARDLED_GPIO, (gpio_mode_t) GPIO_MODE_OUTPUT);
 
-	xTaskCreate(&task_function_webserver, "Task_WebServer", 8192*4, this, 5, NULL);
-	xTaskCreate(&task_function_resetbutton, "Task_ResetButton", 2048*2, this, 5, NULL);
+	xTaskCreate(&task_function_webserver, "Task_WebServer", 8192, this, 5, NULL);
+	xTaskCreate(&task_function_resetbutton, "Task_ResetButton", 2048, this, 5, NULL);
 
-	ESP_LOGI(LOGTAG, "CONFIG HOSTNAME: %s", mConfig.msHostname.c_str() == NULL ? "NULL" : mConfig.msHostname.c_str());
-
-//#################################################
-ESP_LOGI(LOGTAG, "APMode from config %d", mConfig.mbAPMode);
-//mConfig.mbAPMode = true; 
+	//ESP_LOGI(LOGTAG, "CONFIG HOSTNAME: %s", mConfig.msHostname.c_str() == NULL ? "NULL" : mConfig.msHostname.c_str());
+	//ESP_LOGI(LOGTAG, "APMode from config %d", mConfig.mbAPMode);
 
 	if (mConfig.mbAPMode) {
 		if (mConfig.muLastSTAIpAddress) {
@@ -150,7 +147,8 @@ ESP_LOGI(LOGTAG, "APMode from config %d", mConfig.mbAPMode);
 	//ESP_LOGI(LOGTAG, "********************** OTA THREAD VERSION PINNED TO CORE *********************");
 	//Ota::StartUpdateFirmwareTask();
 
-
+	// keep this thread alive, otherwise I2S will die
+	ESP_LOGI(LOGTAG, "---------- Startup completed -----------");
 }
 
 void Esp32Gong::TaskTestWebClient() {

@@ -27,27 +27,41 @@ I2SPlayer::~I2SPlayer() {
 
 }
 
+#define I2S_BCK_IO      (GPIO_NUM_26)
+#define I2S_WS_IO       (GPIO_NUM_25)
+#define I2S_DO_IO       (GPIO_NUM_22)
+
+
 void I2SPlayer::init() {
+
 	i2s_config_t i2s_config;
 	i2s_config.mode = (i2s_mode_t) (I2S_MODE_MASTER | I2S_MODE_TX); // Only TX
-	i2s_config.sample_rate = 16 * 1024; // 16kHz -- override later
+	i2s_config.sample_rate = 16 * 1024; //1024; // 16kHz -- override later
 	i2s_config.bits_per_sample = I2S_BITS_PER_SAMPLE_16BIT; //16-bit per channel
-	i2s_config.channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT;         //2-channels
+	i2s_config.channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT; //  I2S_CHANNEL_FMT_RIGHT_LEFT;         //2-channels
 	i2s_config.communication_format = I2S_COMM_FORMAT_STAND_I2S; //I2S_COMM_FORMAT_I2S; //| I2S_COMM_FORMAT_I2S_MSB,
 	i2s_config.dma_buf_count = 16;
 	i2s_config.dma_buf_len = 128;                          //
-	i2s_config.intr_alloc_flags = ESP_INTR_FLAG_LEVEL1;      //Interrupt level 1
+    i2s_config.intr_alloc_flags = ESP_INTR_FLAG_LEVEL1;      //Interrupt level 1
+	i2s_config.use_apll = false;
+
+	const bool bInternalI2SDAC = false;
+	if(bInternalI2SDAC) {
+		i2s_config.mode = (i2s_mode_t) (I2S_MODE_MASTER | I2S_MODE_TX | I2S_MODE_DAC_BUILT_IN);
+		i2s_config.communication_format = (i2s_comm_format_t)0;
+    	i2s_config.intr_alloc_flags = ESP_INTR_FLAG_LEVEL1; 
+		i2s_config.channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT; 
+	}
+
 
 	i2s_pin_config_t pin_config;
-	pin_config.bck_io_num = 26; // blue BCL Bus Clock
-	pin_config.ws_io_num = 25; // yellow LRC
-	pin_config.data_out_num = 22; // white DataIn on Amp
-	pin_config.data_in_num = -1;                                      //Not used
+	pin_config.bck_io_num = I2S_BCK_IO; // blue BCL Bus Clock
+	pin_config.ws_io_num = I2S_WS_IO; // yellow LRC
+	pin_config.data_out_num = I2S_DO_IO; // white DataIn on Amp
+	pin_config.data_in_num = I2S_PIN_NO_CHANGE;                                      //Not used
 
 	i2s_driver_install(I2S_NUM, &i2s_config, 0, NULL);
-	i2s_set_pin(I2S_NUM, &pin_config);
-//	i2s_
-
+	i2s_set_pin(I2S_NUM, bInternalI2SDAC ? NULL : &pin_config);
 }
 
 bool I2SPlayer::play() {

@@ -14,6 +14,12 @@
 #include "MemoryDataStream.h"
 #include "StorageDataStream.h"
 
+extern const unsigned char gong_wav_start[] asm("_binary_gong_wav_start");
+extern const unsigned char gong_wav_end[]   asm("_binary_gong_wav_end");
+unsigned int uiGongWavLength = gong_wav_end - gong_wav_start;
+const unsigned char* bGongWav = gong_wav_start;
+
+
 
 static char tag[] = "DynamicRequestHandler";
 
@@ -81,7 +87,7 @@ bool DynamicRequestHandler::HandleApiRequest(std::list<TParam> &params, HttpResp
 			musicPlayer.playAsync(new StorageDataStream(file));
 		} else {
 			ESP_LOGW(tag, "No WAV file to play");
-			//musicPlayer.playAsync(new MemoryDataStream(wavdata_h, sizeof(wavdata_h)));
+			musicPlayer.playAsync(new MemoryDataStream(bGongWav, uiGongWavLength));
 		}
 		sBody = "<html><body>api call - lets play music</html></body>";
 	}

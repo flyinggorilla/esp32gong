@@ -6,8 +6,7 @@
                 "${workspaceFolder}/**",
                 "${env:IDF_PATH}/components/**"
             ],
-            "compilerPath": "xtensa-esp32-elf-gcc",
-            "configurationProvider": "C:\\Users\\bernd\\.espressif\\tools\\cmake\\3.16.4\\bin\\cmake.exe"
+            "compilerPath": "xtensa-esp32-elf-gcc"
         },
         {
             "name": "Win32",
