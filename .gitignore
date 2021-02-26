@@ -14,6 +14,11 @@ main/wavdata.h
 sdkconfig.old
 parked
 
+#certificates
+certificates/**
+**/*.pem
+**/*.der
+
 #go
 go/pkg
 go/bin
