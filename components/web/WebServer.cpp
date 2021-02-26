@@ -11,15 +11,15 @@ static char tag[] = "WebServer";
 //#define EMBED_SERVERCERTIFICATE 
 #ifdef EMBED_SERVERCERTIFICATE
 	// if enabled, provide certificates/cerkey.pem to the certificates folder and 
-	// update CMakeLists.txt to embed the .pem file
+	// update CMakeLists.txt to embed the certkey.pem file with EMBED_TXTFILES "certkey.pem"
 	extern const unsigned char certkey_pem_start[] asm("_binary_certkey_pem_start");
 	extern const unsigned char certkey_pem_end[]   asm("_binary_certkey_pem_end");
 	unsigned int uWsCertLength = certkey_pem_end - certkey_pem_start;
 	const unsigned char* sWsCert = certkey_pem_start;
 #else
 	// provide server certificate at runtime in WebServer::Start(...) method
-	const unsigned char* sWsCert = ""; // invalid/empty certificate
-	unsigned int uWsCertLength = sizeof(sWsCert);
+	const unsigned char* sWsCert = nullptr; // invalid/empty certificate
+	unsigned int uWsCertLength = 0;
 #endif
 
 struct TServerSocketPair{
@@ -109,19 +109,27 @@ bool WebServer::Start(__uint16_t port, bool useSsl, String* pCertificate){
 				sWsCert = (unsigned char*)pCertificate->c_str();
 				uWsCertLength = pCertificate->length();
 			}
-			if (!SSL_CTX_use_certificate_ASN1(mpSslCtx,  uWsCertLength, sWsCert)){
-				ESP_LOGE(tag, "SSL_CTX_use_certificate_ASN1: %s", strerror(errno));
+			if (sWsCert) {
+				if (!SSL_CTX_use_certificate_ASN1(mpSslCtx,  uWsCertLength, sWsCert)){
+					ESP_LOGE(tag, "SSL_CTX_use_certificate_ASN1: %s", strerror(errno));
+					SSL_CTX_free(mpSslCtx);
+					mpSslCtx = NULL;
+					return false;
+				}
+				if (!SSL_CTX_use_PrivateKey_ASN1(0, mpSslCtx, sWsCert,  uWsCertLength)){
+					ESP_LOGE(tag, "SSL_CTX_use_PrivateKey_ASN1: %s", strerror(errno));
+					SSL_CTX_free(mpSslCtx);
+					mpSslCtx = NULL;
+					return false;
+				}
+			} else {
+				ESP_LOGW(tag, "Server certificate missing. Reverting to HTTP on port 80!");
+				port = 80;
+				useSsl = false;
 				SSL_CTX_free(mpSslCtx);
 				mpSslCtx = NULL;
-				return false;
 			}
-			if (!SSL_CTX_use_PrivateKey_ASN1(0, mpSslCtx, sWsCert,  uWsCertLength)){
-				ESP_LOGE(tag, "SSL_CTX_use_PrivateKey_ASN1: %s", strerror(errno));
-				SSL_CTX_free(mpSslCtx);
-				mpSslCtx = NULL;
-				return false;
-			}
-			port = 443;
+			if (!port) port = 443;
 		}
 	}
 

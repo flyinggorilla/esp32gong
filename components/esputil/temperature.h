@@ -22,7 +22,7 @@ uint8_t temprature_sens_read();
 #endif
 
 
-/* The temperature sensor has a range of -40°C to 125°C.
+/* The temperature sensor has a range of -40C to 125C.
  * The absolute sensor results vary by chip. User calibration increases precision.
  */
 

@@ -1,8 +1,6 @@
-#include <freertos/FreeRTOS.h>
+//#include <freertos/FreeRTOS.h>
 #include "DotstarStripe.h"
-#include "esp_system.h"
-#include "nvs_flash.h"
-#include <esp_log.h>
+//#include "esp_system.h"
 
 DotstarStripe::DotstarStripe(__uint8_t count, gpio_num_t cl, gpio_num_t dt) {
 	clock = cl;

@@ -5,7 +5,6 @@
 #include "Ota.h"
 
 #include "sdkconfig.h"
-//#include <string.h>
 #include <sys/socket.h>
 #include <netdb.h>
 
@@ -14,20 +13,14 @@
 #include "freertos/event_groups.h"
 
 #include <esp_system.h>
-#include <esp_wifi.h>
 #include <esp_event.h>
 #include <esp_log.h>
 #include <esp_partition.h>
 #include <esp_system.h>
 
-#include <nvs.h>
-#include <nvs_flash.h>
 
 #include "EspString.h"
 #include "WebClient.h"
-
-//#define BUFFSIZE 1024
-//#define TEXT_BUFFSIZE 1024
 
 static const char* LOGTAG = "ota";
 

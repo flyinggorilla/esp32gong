@@ -6,25 +6,24 @@
 #include "sdkconfig.h"
 
 #include "Storage.h"
-#include <sys/socket.h>
-#include <netdb.h>
+//#include <sys/socket.h>
+//#include <netdb.h>
 
 #include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
-#include "freertos/event_groups.h"
+//#include "freertos/task.h"
+//#include "freertos/event_groups.h"
 
 #include <esp_system.h>
-#include <esp_wifi.h>
+//#include <esp_wifi.h>
 #include <esp_event.h>
 #include <esp_log.h>
 #include <esp_partition.h>
-#include <esp_system.h>
 
-#include <nvs.h>
-#include <nvs_flash.h>
+//#include <nvs.h>
+//#include <nvs_flash.h>
 
 #include "EspString.h"
-#include "WebClient.h"
+//#include "WebClient.h"
 
 static const char* LOGTAG = "Storage";
 
@@ -120,7 +119,7 @@ bool Storage::OnReceiveEnd() {
 }
 
 
-
+/*
 bool Storage::DownloadFile(String& sUrl)
 {
 	Url url;
@@ -146,31 +145,4 @@ bool Storage::DownloadFile(String& sUrl)
 
     return true;
 
-}
-
-
-/*
-void task_function_firmwareupdate(void* user_data) {
-	ESP_LOGW(LOGTAG, "Starting Firmware Update Task ....");
-
-    Storage ota;
-    if(ota.UpdateFirmware((const char*)user_data)) { //url
-      	ESP_LOGI(LOGTAG, "Firmware updated. Rebooting now......");
-    } else {
-	  	ESP_LOGE(LOGTAG, "OTA update failed!");
-    }
-  
-    // wait 10 seconds before rebooting to make sure client gets success info
-    vTaskDelay(10*1000 / portTICK_PERIOD_MS);
-	esp_restart();
-}
-
-
-
-void Storage::StartUpdateFirmwareTask(const char* url) {
-    miProgress = 0;
-	//xTaskCreate(&task_function_firmwareupdate, "firmwareupdate", 8192, NULL, 5, NULL);
-    // Pin firmware update task to core 0 --- otherwise we get weird crashes
-   	xTaskCreatePinnedToCore(&task_function_firmwareupdate, "firmwareupdate", 8192, (void*)url, 6, NULL, 0);
 }*/
-

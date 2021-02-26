@@ -1,10 +1,10 @@
 
-idf_component_register(SRCS "Esp32Gong.cpp" "ApiStore.cpp" "CriticalSection.cpp" "DotstarStripe.cpp" 
-"DynamicRequestHandler.cpp" "Esp32GongWebServer.cpp" "FileSystem.cpp"
-"I2SPlayer.cpp" "IPAddress.cpp" "MemoryDataStream.cpp" "Ota.cpp" "Storage.cpp" "StorageDataStream.cpp"
-"Wav.cpp" "Wifi.cpp" "Config.cpp" 
+idf_component_register(SRCS "Esp32Gong.cpp" "ApiStore.cpp" "Storage.cpp" 
+"DynamicRequestHandler.cpp" "Esp32GongWebServer.cpp" "Wifi.cpp" "Config.cpp" 
+"MemoryDataStream" "StorageDataStream"
     INCLUDE_DIRS "." 
-    REQUIRES espweb espstring esp_wifi esp_https_ota vfs fatfs spiffs app_update driver esp_netif lwip
+    REQUIRES filesystem ota web i2splayer espstring esp_wifi app_update driver esp_netif lwip
+    dotstarstripe  
     PRIV_REQUIRES nvs_flash
     EMBED_FILES "../data/gong.wav" "../data/material-design-icons.woff" "../data/material-design-icons.eot" "../data/material-design-icons.ttf" "../data/material-design-icons.svg"
     )
