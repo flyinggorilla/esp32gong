@@ -79,7 +79,7 @@ func main() {
 		log.Println("server runs at: https://localhost:9999")
 		http.HandleFunc("/", rootHandler)
 		http.HandleFunc("/getfirmware", firmwareHandler)
-		log.Fatal(http.ListenAndServeTLS(":9999", "server.crt", "server.key", nil))
+		log.Fatal(http.ListenAndServeTLS(":9999", "server.crt.fortesting", "server.key.fortesting", nil))
 	} else {
 		log.Println("server runs at: http://localhost:9999")
 		http.HandleFunc("/", rootHandler)
