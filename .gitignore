@@ -5,19 +5,17 @@ components/mongoose/docs
 
 #generated header files
 wifiaccess.h
-main/fontwoff.h
-main/fontsvg.h
-main/fontttf.h
-main/fonteot.h
-main/indexhtml.h
-main/wavdata.h
 sdkconfig.old
 parked
+main/index.html.gzip
 
 #certificates
 certificates/**
 **/*.pem
 **/*.der
+
+#python
+__pycache__
 
 #go
 go/pkg

@@ -9,14 +9,19 @@
 #include <esp_system.h>
 #include <String.h>
 
-#include "sdkconfig.h"
-#include "indexhtml.h"
+//#include "sdkconfig.h"
 #include "Storage.h"
 
 extern Esp32Gong esp32gong;
 extern Storage storage;
 
 static char tag[] = "Esp32GongWebServer";
+
+extern const unsigned char index_html_gzip_start[] asm("_binary_index_html_gzip_start");
+extern const unsigned char index_html_gzip_end[]   asm("_binary_index_html_gzip_end");
+unsigned int uiIndexHtmlGzipLength = index_html_gzip_end - index_html_gzip_start;
+const unsigned char* bIndexHtmlGzip = index_html_gzip_start;
+
 
 extern const unsigned char font_ttf_start[] asm("_binary_material_design_icons_ttf_start");
 extern const unsigned char font_ttf_end[]   asm("_binary_material_design_icons_ttf_end");
@@ -79,7 +84,7 @@ bool Esp32GongWebServer::HandleRequest(HttpRequestParser &httpParser, HttpRespon
 	{
 		httpResponse.AddHeader(HttpResponse::HeaderContentTypeHtml);
 		httpResponse.AddHeader("Content-Encoding: gzip");
-		if (!httpResponse.Send(indexhtml_h, sizeof(indexhtml_h)))
+		if (!httpResponse.Send((const char*)bIndexHtmlGzip, uiIndexHtmlGzipLength))
 			return false;
 	}
 	else if (httpParser.GetUrl().equals("/fonts/material-design-icons.woff"))
