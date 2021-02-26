@@ -1,5 +1,5 @@
 
-idf_component_register(SRCS "Esp32Gong.cpp" "ApiStore.cpp" "Storage.cpp" 
+idf_component_register(SRCS "Esp32Gong.cpp" "Storage.cpp" 
 "DynamicRequestHandler.cpp" "Esp32GongWebServer.cpp" "Wifi.cpp" "Config.cpp" 
 "MemoryDataStream" "StorageDataStream"
     INCLUDE_DIRS "." 

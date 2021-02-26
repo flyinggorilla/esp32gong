@@ -4,13 +4,13 @@
  */
 #include "Ota.h"
 
-#include "sdkconfig.h"
-#include <sys/socket.h>
-#include <netdb.h>
+//#include "sdkconfig.h"
+//#include <sys/socket.h>
+//#include <netdb.h>
 
 #include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
-#include "freertos/event_groups.h"
+//#include "freertos/task.h"
+//#include "freertos/event_groups.h"
 
 #include <esp_system.h>
 #include <esp_event.h>
