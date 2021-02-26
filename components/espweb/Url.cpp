@@ -2,8 +2,8 @@
 #include <esp_log.h>
 #include <sstream>
 #include <iomanip>
-#include <stdlib.h>
-#include <stdio.h>
+#include <cstdlib>
+#include <cstdio>
 #include <list>
 
 static const char LOGTAG[] = "Url";

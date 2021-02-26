@@ -291,6 +291,9 @@ void Wifi::OnEvent(esp_event_base_t base, int32_t id, void* event_data)
 			ESP_LOGD(tag, "--- WIFI_EVENT_STA_START");
 			//ESP_LOGD(tag, "SETTING HOSTNAME: %s", msHostname.c_str() == NULL ? "NULL" : msHostname.c_str());
 			//ESP_ERROR_CHECK(tcpip_adapter_set_hostname(TCPIP_ADAPTER_IF_STA, msHostname.c_str()));
+			const char* csActualHostname = nullptr;
+			ESP_ERROR_CHECK_WITHOUT_ABORT(esp_netif_get_hostname(netif, &csActualHostname));
+			ESP_LOGI(tag, "hostname: \"%s\"", csActualHostname == nullptr ? "<error, no hostname set!>" : csActualHostname);
 			esp_err_t errConnect = esp_wifi_connect();
 			switch (errConnect) {
 				case 0 : 

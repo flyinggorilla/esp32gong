@@ -1,3 +1,8 @@
 {
-    "idf.flashType": "UART"
+    "idf.flashType": "UART",
+    "files.associations": {
+        "sdkconfig": "cpp",
+        "sstream": "cpp"
+    },
+    "idf.portWin": "COM6"
 }

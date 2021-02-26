@@ -1,14 +1,14 @@
 #include "HttpResponseParser.h"
 
-#include "sdkconfig.h"
+//#include "sdkconfig.h"
 #include "freertos/FreeRTOS.h"
 #include <algorithm>
 #include <esp_log.h>
 
 //TEMP
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+//#include <cstdio>
+//#include <cstdlib>
+//#include <cstring>
 
 #define STATE_HttpType				0
 #define STATE_StatusCode			1

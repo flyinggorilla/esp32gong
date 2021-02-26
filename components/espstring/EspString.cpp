@@ -22,7 +22,7 @@
  */
 
 #include "stdlib_noniso.h"
-#include "stdlib.h"
+#include <cstdlib>
 
 #include "esp_log.h"
 #include "EspString.h"

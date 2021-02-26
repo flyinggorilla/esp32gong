@@ -1,12 +1,11 @@
 
-idf_component_register(SRCS "Esp32Gong.cpp" "stdlib_noniso.c" "ApiStore.cpp" "CriticalSection.cpp" "DotstarStripe.cpp" 
-"DynamicRequestHandler.cpp" "Esp32GongWebServer.cpp" "EspString.cpp" "FileSystem.cpp" "HttpRequestParser.cpp" "HttpResponse.cpp"
-"HttpResponseParser.cpp" "I2SPlayer.cpp" "IPAddress.cpp" "MemoryDataStream.cpp" "Ota.cpp" "Storage.cpp" "StorageDataStream.cpp"
-"StringParser.cpp" "Url.cpp" "UrlParser.cpp" "Wav.cpp" "WebClient.cpp" "WebServer.cpp" "Wifi.cpp" "Config.cpp" 
+idf_component_register(SRCS "Esp32Gong.cpp" "ApiStore.cpp" "CriticalSection.cpp" "DotstarStripe.cpp" 
+"DynamicRequestHandler.cpp" "Esp32GongWebServer.cpp" "FileSystem.cpp"
+"I2SPlayer.cpp" "IPAddress.cpp" "MemoryDataStream.cpp" "Ota.cpp" "Storage.cpp" "StorageDataStream.cpp"
+"Wav.cpp" "Wifi.cpp" "Config.cpp" 
     INCLUDE_DIRS "." 
-    REQUIRES esp_wifi wpa_supplicant mbedtls esp_https_ota openssl vfs fatfs spiffs app_update driver esp_netif lwip
+    REQUIRES espweb espstring esp_wifi esp_https_ota vfs fatfs spiffs app_update driver esp_netif lwip
     PRIV_REQUIRES nvs_flash
-    EMBED_TXTFILES "certkey.pem"
     EMBED_FILES "../data/gong.wav" "../data/material-design-icons.woff" "../data/material-design-icons.eot" "../data/material-design-icons.ttf" "../data/material-design-icons.svg"
     )
 

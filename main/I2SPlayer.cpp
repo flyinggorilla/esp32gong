@@ -92,8 +92,7 @@ bool I2SPlayer::play() {
 		sample_val += (short) sample >> attenuation;
 		sample_val = sample_val << 16;
 		sample_val += (short) sample >> attenuation;
-		#pragma message ("the next function call has been migrated from old function; needs to be validated")
-		i2s_write(I2S_NUM, (char*) &sample_val, sizeof(sample_val), &bytesWritten, portMAX_DELAY); //TODO VERIFY whether the change from deprecated function is CORRECT
+		i2s_write(I2S_NUM, (char*) &sample_val, sizeof(sample_val), &bytesWritten, portMAX_DELAY); 
 	}
 	i2s_stop(I2S_NUM);
 

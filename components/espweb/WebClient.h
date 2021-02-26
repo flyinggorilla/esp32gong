@@ -1,7 +1,7 @@
 #ifndef MAIN_WEBCLIENT_H_
 #define MAIN_WEBCLIENT_H_
 
-#include <stdio.h>
+#include <cstdio>
 #include <list>
 #include "DownAndUploadHandler.h"
 #include "Url.h"

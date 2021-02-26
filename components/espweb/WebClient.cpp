@@ -1,24 +1,10 @@
 #include "WebClient.h"
 
 #include "Url.h"
-#include <esp_log.h>
-#include "sdkconfig.h"
-#include <string.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <list>
-#include <string>
+#include "esp_log.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/event_groups.h"
-#include "esp_system.h"
-#include "esp_wifi.h"
-#include "esp_event.h"
-#include "esp_log.h"
-#include "nvs_flash.h"
-#include <netdb.h>
-
 #include "HttpResponseParser.h"
 #include "lwip/err.h"
 #include "lwip/sockets.h"
@@ -26,9 +12,10 @@
 #include "lwip/netdb.h"
 #include "lwip/dns.h"
 
+// TODO**************************** Port to ESP_TLS APIs
+
 #include "mbedtls/platform.h"
 #include "mbedtls/net.h"
-//#include "mbedtls/esp_debug.h"
 #include "mbedtls/ssl.h"
 #include "mbedtls/entropy.h"
 #include "mbedtls/ctr_drbg.h"

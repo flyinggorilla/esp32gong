@@ -1,7 +1,7 @@
 #include "UrlParser.h"
 #include "EspString.h"
 #include <_ansi.h>
-#include <ctype.h>
+#include <cctype>
 
 
 //---------------------------------------------------------

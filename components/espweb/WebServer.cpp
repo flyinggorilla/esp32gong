@@ -1,8 +1,5 @@
-#include "sdkconfig.h"
-#include <esp_log.h>
-#include <esp_system.h>
-#include <lwip/sockets.h>
-
+#include "esp_log.h"
+#include "esp_system.h"
 #include "WebServer.h"
 #include "HttpRequestParser.h"
 #include "HttpResponse.h"
