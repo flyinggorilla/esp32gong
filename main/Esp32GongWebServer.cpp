@@ -7,7 +7,7 @@
 #include <lwip/sockets.h>
 #include <esp_log.h>
 #include <esp_system.h>
-#include <String.h>
+#include <string.h>
 
 //#include "sdkconfig.h"
 #include "Storage.h"
