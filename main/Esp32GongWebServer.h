@@ -1,7 +1,7 @@
 #ifndef MAIN_Esp32GongWebServer_H_
 #define MAIN_Esp32GongWebServer_H_
 
-#include "ota.h"
+#include "Ota.h"
 #include "freertos/FreeRTOS.h"
 #include "openssl/ssl.h"
 #include "WebServer.h"
