@@ -25,6 +25,7 @@ public:
 	String GetLocalAddress();
 	void GetLocalAddress(char* sBuf);
 	void GetGWAddress(char* sBuf);
+	ip4_addr_t GetGWAddress();
 	void GetNetmask(char* sBuf);
 	void GetMac(__uint8_t uMac[6]);
 	void GetApInfo(int8_t& riRssi, uint8_t& ruChannel);

@@ -4,7 +4,7 @@ idf_component_register(SRCS "Esp32Gong.cpp" "Storage.cpp"
 "MemoryDataStream" "StorageDataStream"
     INCLUDE_DIRS "." 
     REQUIRES filesystem ota web i2splayer espstring esp_wifi app_update driver esp_netif lwip
-    dotstarstripe nvs_flash 
+    dotstarstripe nvs_flash pingwatchdog
     EMBED_FILES "gong.wav" "material-design-icons.woff" "material-design-icons.eot" "material-design-icons.ttf" "material-design-icons.svg"
     EMBED_FILES ${PROJECT_DIR}/main/index.html.gzip
     )

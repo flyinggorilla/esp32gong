@@ -65,6 +65,14 @@ void Wifi::GetGWAddress(char *sBuf)
 	sprintf(sBuf, "%d.%d.%d.%d", IP2STR(&ip.gw));
 }
 
+ip4_addr_t Wifi::GetGWAddress()
+{
+	tcpip_adapter_ip_info_t ip;
+	tcpip_adapter_get_ip_info(TCPIP_ADAPTER_IF_STA, &ip);
+	return ip.gw;
+}
+
+
 void Wifi::GetNetmask(char *sBuf)
 {
 	tcpip_adapter_ip_info_t ip;
@@ -74,7 +82,7 @@ void Wifi::GetNetmask(char *sBuf)
 
 void Wifi::GetMac(__uint8_t uMac[6])
 {
-	esp_wifi_get_mac(ESP_IF_WIFI_STA, uMac);
+	esp_wifi_get_mac(WIFI_IF_STA, uMac);
 }
 
 void Wifi::GetApInfo(int8_t& riRssi, uint8_t& ruChannel)

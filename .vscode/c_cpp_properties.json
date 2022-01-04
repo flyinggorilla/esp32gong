@@ -1,11 +1,9 @@
 {
     "configurations": [
         {
-            "name": "ESP-IDF",
+            "name": "Win32",
             "includePath": [
-                "${default}",
-                "${env:IDF_PATH}/components/**",
-                "${workspaceFolder}/**"
+                "${default}"
             ],
             "defines": [
                 "_DEBUG",
@@ -14,10 +12,6 @@
             ],
             "cStandard": "c17",
             "cppStandard": "c++17",
-            "compilerPath": "xtensa-esp32-elf-gcc.exe",
-            "compilerArgs": [
-                "${env:IDF_PATH}/**"
-            ],
             "compileCommands": "${workspaceFolder}/build/compile_commands.json"
         }
     ],

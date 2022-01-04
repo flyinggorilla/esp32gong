@@ -1,8 +1,4 @@
 {
-    "idf.flashType": "UART",
-    "files.associations": {
-        "sdkconfig": "cpp",
-        "sstream": "cpp"
-    },
-    "idf.portWin": "COM6"
+    "idf.adapterTargetName": "esp32",
+    "idf.portWin": "COM8"
 }
