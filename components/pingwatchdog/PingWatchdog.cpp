@@ -5,7 +5,7 @@
 #include "Config.h"
 #include "PingWatchdog.h"
 
-const char tag[] = "ping";
+const char tag[] = "PingWatchdog";
 
 void fPingWatchdogTask(void *pvParameter)
 {
@@ -45,7 +45,7 @@ void PingWatchdog::Start(ip4_addr_t ipAddress)
   mPingConfig = ESP_PING_DEFAULT_CONFIG();
   mPingConfig.target_addr.u_addr.ip4 = ipAddress;
   mPingConfig.target_addr.type = IPADDR_TYPE_V4; // target IP address
-  mPingConfig.count = 100;
+  mPingConfig.count = 60; // try for 60 seconds
 
   mPingCallbacks.on_ping_success = onPingSuccess;
   mPingCallbacks.on_ping_timeout = onPingTimeout;
@@ -62,41 +62,39 @@ PingWatchdog::PingWatchdog()
 
 void PingWatchdog::Success()
 {
-  ESP_LOGI(tag, "ping success");
+  ESP_LOGD(tag, "ping success");
   muSuccess++;
   esp_ping_stop(mhPingSession);
 }
 
 void PingWatchdog::Timeout()
 {
-  ESP_LOGI(tag, "ping timeout");
+  ESP_LOGD(tag, "ping timeout");
 }
 
 void PingWatchdog::End()
 {
-  ESP_LOGI(tag, "ping end");
+  ESP_LOGD(tag, "ping end");
 }
 
 void PingWatchdog::PingWatchdogTask()
 {
   ESP_LOGI(tag, "Watchdog Task Started");
-	vTaskDelay(1000 / portTICK_PERIOD_MS);
-  ESP_LOGI(tag, "before esp ping new session");
+	//vTaskDelay(1000 / portTICK_PERIOD_MS);
 
   esp_err_t err = ESP_OK;
   if (ESP_OK != (err = esp_ping_new_session(&mPingConfig, &mPingCallbacks, &mhPingSession))) {
     ESP_LOGE(tag, "error creating  ping session: %d, %s", err, esp_err_to_name(err));
   }
-  ESP_LOGI(tag, "after esp ping new session");
   
   while (true)
   {
     esp_ping_start(mhPingSession);
-		vTaskDelay(10 * 1000 / portTICK_PERIOD_MS);
+		vTaskDelay(60 * 1000 / portTICK_PERIOD_MS);
     esp_ping_stop(mhPingSession);
     if (muSuccess) {
       muSuccess = 0;
-      ESP_LOGI(tag, "Resetting watchdog.");
+      ESP_LOGD(tag, "Resetting watchdog.");
     } else {
       ESP_LOGW(tag, "Could not ping Gateway. Rebooting.");
       esp_restart();

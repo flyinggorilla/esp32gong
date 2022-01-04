@@ -14,6 +14,7 @@ ESP32 based Gong with embedded webserver, Audio/Sound player, OTA and more - e.g
 * Wifi AP/STA mode (GPIO0 button will toggle mode)
 * Stores config in NVS
 * Storage class to wrap SPIFFS read/write access for storing uploaded files on flash on dedicated data partition
+* ICMP Ping to Gateway address is used for a watchdog implementation that resets ESP32 in case of broken wifi
 
 todo:
 * mp3 support
@@ -24,8 +25,7 @@ todo:
 
 ## build
 
-Updated to ESP-IDF 4.2. Works now also with Visual Code as editor.
-Install Python 3.8.x. ESP-IDF 4.2 did fail in visual code with Python 3.9.x.
+Updated to ESP-IDF 4.3. Works now also with Visual Code as editor and ESP-IDF plug-in.
 
 * Setup ESP-IDF toolchain according to [http://esp-idf.readthedocs.io/en/latest/](http://esp-idf.readthedocs.io/en/latest/)
 * run `idf.py menuconfig`
