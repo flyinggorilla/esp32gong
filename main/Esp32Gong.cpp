@@ -279,20 +279,20 @@ void Esp32Gong::TaskResetButton()
 
 	while (true)
 	{
-		if (wifi.IsConnected() && mbApiCallReceived)
+		if (wifi.IsConnected())
 		{
 			gpio_set_level((gpio_num_t)ONBOARDLED_GPIO, (gpio_mode_t)level);
-			level = !level;
+			level = 0;
 			ticks = 0;
 		}
 		else
 		{
-			int minticks = 1;
+			int minticks = 0;
 			if (mConfig.mbAPMode)
-				minticks = 0; // blink fast in APmode
+				minticks = 1; // blink slow in APmode
 
 			if (ticks > minticks)
-			{ // blink half speed
+			{ // blink fast when no wifi connection
 				level = !level;
 				ticks = 0;
 			}
