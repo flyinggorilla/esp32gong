@@ -120,8 +120,6 @@ void Esp32Gong::Start()
 		gpio_set_pull_mode(GPIO_NUM_0, GPIO_PULLUP_ONLY);
 
 	#else
-		gpio_pad_select_gpio(GPIO_NUM_0); // TODO *********************
-		gpio_set_direction(GPIO_NUM_0, GPIO_MODE_OUTPUT);
 		mbButtonPressed = false;
 	#endif
 
