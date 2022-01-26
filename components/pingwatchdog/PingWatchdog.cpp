@@ -87,16 +87,26 @@ void PingWatchdog::PingWatchdogTask()
     ESP_LOGE(tag, "error creating  ping session: %d, %s", err, esp_err_to_name(err));
   }
   
+  int couldNotPing = 0;
   while (true)
   {
-    esp_ping_start(mhPingSession);
+    if (ESP_OK != esp_ping_start(mhPingSession)) {
+      couldNotPing++;
+      ESP_LOGE(tag, "Could not start ping.");
+      if (couldNotPing > 5) {
+        ESP_LOGE(tag, "Could not start ping even after retries . Rebooting.");
+        esp_restart();
+      }
+    } else {
+      couldNotPing = 0;
+    }
 		vTaskDelay(60 * 1000 / portTICK_PERIOD_MS);
     esp_ping_stop(mhPingSession);
     if (muSuccess) {
       muSuccess = 0;
       ESP_LOGD(tag, "Resetting watchdog.");
     } else {
-      ESP_LOGW(tag, "Could not ping Gateway. Rebooting.");
+      ESP_LOGE(tag, "Could not ping Gateway. Rebooting.");
       esp_restart();
     }
   }

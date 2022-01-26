@@ -112,11 +112,18 @@ void Esp32Gong::Start()
 
 	storage.Mount();
 
-	mbButtonPressed = !gpio_get_level(GPIO_NUM_0);
+	#ifdef WIFIMODEBUTTON_GPIO
+		mbButtonPressed = !gpio_get_level(GPIO_NUM_0);
 
-	gpio_pad_select_gpio(10); // TODO *********************
-	gpio_set_direction(GPIO_NUM_0, GPIO_MODE_INPUT);
-	gpio_set_pull_mode(GPIO_NUM_0, GPIO_PULLUP_ONLY);
+		gpio_pad_select_gpio(GPIO_NUM_0); // TODO *********************
+		gpio_set_direction(GPIO_NUM_0, GPIO_MODE_INPUT);
+		gpio_set_pull_mode(GPIO_NUM_0, GPIO_PULLUP_ONLY);
+
+	#else
+		gpio_pad_select_gpio(GPIO_NUM_0); // TODO *********************
+		gpio_set_direction(GPIO_NUM_0, GPIO_MODE_OUTPUT);
+		mbButtonPressed = false;
+	#endif
 
 	gpio_pad_select_gpio((gpio_num_t)ONBOARDLED_GPIO);
 	gpio_set_direction((gpio_num_t)ONBOARDLED_GPIO, (gpio_mode_t)GPIO_MODE_OUTPUT);
@@ -300,24 +307,28 @@ void Esp32Gong::TaskResetButton()
 		ticks++;
 
 		gpio_set_level((gpio_num_t)ONBOARDLED_GPIO, (gpio_mode_t)level);
-		vTaskDelay(500 / portTICK_PERIOD_MS);
 
-		if (!gpio_get_level(GPIO_NUM_0))
-		{
-			if (!mbButtonPressed)
+		// DONT USE ONBOARD BOOT BUTTON GPIO0, AS USB POWER DEVICES MAY INADVERTADLY TRIGGER AP MODE 
+		//   USE an extra button switch and a GPIO that does not conflict with boot and serial modes
+
+		#ifdef WIFIMODEBUTTON_GPIO
+			if (!gpio_get_level(WIFIMODEBUTTON_GPIO))
 			{
-				ESP_LOGI(LOGTAG, "Factory settings button pressed... rebooting into Access Point mode.");
-				mConfig.ToggleAPMode();
-				mConfig.Write();
-				esp_restart();
+				if (!mbButtonPressed)
+				{
+					ESP_LOGI(LOGTAG, "Factory settings button pressed... rebooting into Access Point mode.");
+					mConfig.ToggleAPMode();
+					mConfig.Write();
+					esp_restart();
+				}
 			}
-		}
-		else
-		{
-			mbButtonPressed = false;
-		}
+			else
+			{
+				mbButtonPressed = false;
+			}
+		#endif
 
-		vTaskDelay(1);
+		vTaskDelay(500 / portTICK_PERIOD_MS);
 	}
 }
 

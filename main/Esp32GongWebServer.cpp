@@ -78,7 +78,7 @@ bool Esp32GongWebServer::HandleRequest(HttpRequestParser &httpParser, HttpRespon
 
 	DynamicRequestHandler requestHandler;
 
-	ESP_LOGI(tag, "TTF Length %d", uiFontTtfLength);
+	//ESP_LOGI(tag, "TTF Length %d", uiFontTtfLength);
 
 	if (httpParser.GetUrl().equals("/") || httpParser.GetUrl().equals("/index.html"))
 	{
